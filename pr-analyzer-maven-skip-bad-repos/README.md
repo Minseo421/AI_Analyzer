@@ -1,71 +1,254 @@
 # PR AI Disclosure Analyzer
 
-This Java Maven project checks whether closed human-created GitHub pull requests include AI usage disclosure text.
+This Java Maven project supports an academic research study on AI-use disclosure governance in open source software pull requests.
 
-It works for any public GitHub repository, not only `coreruleset/coreruleset`.
+The tool collects empirical PR-level data for studying:
+
+- AI-use disclosure compliance in OSS pull requests.
+- Governance mechanisms around mandatory AI disclosure.
+- Repository-level disclosure compliance rates.
+
+The analyzer produces:
+
+1. A PR-level dataset compatible with `pr_dataset.csv`.
+2. An optional repository-level compliance summary.
+3. The original `report.csv` output for debugging and audit checks.
+
+Automated detection is only a first pass. Human validation is required before reporting final research results.
+
+## Requirements
+
+- Java 17.
+- Maven.
+- A GitHub token is recommended for larger samples because unauthenticated GitHub API requests are rate-limited.
+
+Check installed versions:
+
+```bash
+java -version
+mvn -version
+```
+
+Java class file version notes:
+
+- Class file version `61.0` means Java 17.
+- Class file version `52.0` means Java 8.
+- `UnsupportedClassVersionError` usually means the project was built with Java 17 but is being run with an older Java runtime.
 
 ## Build
 
+Clone or open this repository, then enter the Maven project folder:
+
 ```bash
+cd pr-analyzer-maven-skip-bad-repos
 mvn clean package
 ```
 
-## Analyze one PR
+## Input Files
 
-```bash
-java -jar target/pr-analyzer-maven-1.0.0.jar https://github.com/coreruleset/coreruleset/pull/4493
-```
-
-## Analyze latest closed human PRs for one repository
-
-```bash
-java -jar target/pr-analyzer-maven-1.0.0.jar --latest https://github.com/coreruleset/coreruleset 100 report.csv
-```
-
-The CSV includes a `Repository` column, so the repo name is saved together with every PR row.
-
-## Analyze multiple repositories
-
-Create `repos.txt`:
+`repos.txt` should contain one canonical GitHub repository URL per line:
 
 ```text
+https://github.com/apache/airflow
 https://github.com/coreruleset/coreruleset
 https://github.com/fedify-dev/fedify
-OWASP/owasp-mastg
 ```
 
-Then run:
+Do not use GitHub PR search URLs or URLs with query strings. The parser also accepts `OWNER/REPO`, but canonical repository URLs are preferred for research reproducibility.
+
+Research workbook/schema files:
+
+- `policy-tracker.csv` / `policy_tracker.csv` / `policy_tracker.xlsx`: repository-level manual governance coding, such as policy location, visibility, enforcement, and mandatory disclosure coding.
+- `pr_dataset.csv` / `pr_dataset.xlsx`: source-of-truth PR-level research dataset schema.
+
+The analyzer reads GitHub PR data directly. It does not automatically merge policy coding into PR rows; fields such as `AI Disclosure Required` still require manual policy coding.
+
+## Run Commands
+
+Analyze one PR and print a console report:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar https://github.com/OWNER/REPO/pull/NUMBER
+```
+
+Original/debug modes:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --latest https://github.com/OWNER/REPO 100 report.csv
+```
 
 ```bash
 java -jar target/pr-analyzer-maven-1.0.0.jar --repos repos.txt 100 report.csv
 ```
 
-This checks 100 latest closed human PRs per repository and saves one combined `report.csv`.
-
-## CSV columns
-
-- Repository
-- Pull request number
-- URL
-- Author
-- State
-- Closed
-- Human author
-- GitHub user type
-- AI Disclosure
-- Merged
-- AI Disclosure evidence
-- HTML scrape success
-- HTML scrape error
-
-## GitHub API rate limit
-
-For many repositories, you may hit GitHub's unauthenticated API rate limit.
-
-Set a GitHub token before running:
+Research dataset modes:
 
 ```bash
-export GITHUB_TOKEN=your_token_here
+java -jar target/pr-analyzer-maven-1.0.0.jar --latest-pr-dataset https://github.com/OWNER/REPO 100 pr_dataset_output.csv
 ```
 
-Then run the same command again.
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr_dataset_output.csv
+```
+
+Research dataset plus repository compliance summary:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --latest-pr-dataset https://github.com/OWNER/REPO 100 pr_dataset_output.csv repo_compliance_summary.csv
+```
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr_dataset_output.csv repo_compliance_summary.csv
+```
+
+The numeric argument is the number of latest closed human PRs to collect per repository. The current implementation filters out bot PRs while collecting rows.
+
+## Output Files
+
+### `pr_dataset_output.csv`
+
+One row per reviewed PR. The header matches `pr_dataset.csv`.
+
+Key columns:
+
+- `Repo`: repository full name.
+- `PR #`: GitHub pull request number.
+- `PR URL`: browser URL for manual validation.
+- `Title`: PR title from the GitHub API.
+- `Author`: PR author login.
+- `Created Date`: GitHub `created_at` timestamp.
+- `Closed Date`: GitHub `closed_at` timestamp.
+- `Merged Date`: GitHub `merged_at` timestamp, blank if not merged.
+- `Bot`: `Yes` or `No` based on the current bot heuristic.
+- `Status`: `Merged`, `Closed`, or `Unknown`.
+- `AI Disclosure Required`: currently `MANUAL_REVIEW_REQUIRED`; fill from policy coding.
+- `AI Disclosure Present`: `Yes` when disclosure-like text was detected, otherwise `No`.
+- `Disclosure Classification`: `MANUAL_REVIEW_REQUIRED` for detected text, `None` when no disclosure is detected.
+- `Disclosure Text`: extracted evidence for manual review.
+
+Negative statements such as `No AI used` still count as `AI Disclosure Present = Yes` because the contributor answered the disclosure question. `Disclosure Text` is evidence for review, not final proof.
+
+### `repo_compliance_summary.csv`
+
+One row per repository when a summary output path is supplied.
+
+Columns:
+
+- `Repo`: repository full name.
+- `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset for that repository.
+- `Bot PRs Excluded`: closed PRs skipped by the bot heuristic while collecting the sample.
+- `AI Disclosure Present Count`: rows where disclosure-like text was detected.
+- `Positive Disclosure Count`: preliminary detector count for possible positive disclosures.
+- `Negative Disclosure Count`: preliminary detector count for possible negative disclosures.
+- `Ambiguous Disclosure Count`: preliminary detector count for ambiguous AI disclosure mentions.
+- `No Disclosure Count`: eligible reviewed rows with no detected disclosure.
+- `Manual Review Required Count`: currently all eligible reviewed rows.
+- `Compliance Rate`: `AI Disclosure Present Count / Eligible PRs Reviewed`.
+
+Classification counts are preliminary and should be treated as manual-review queues until validated.
+
+Example summary row:
+
+```csv
+"owner/repo","3","2","2","1","1","0","1","3","0.6667"
+```
+
+### `report.csv`
+
+The older/audit output. It is preserved for debugging and includes extra technical fields such as GitHub user type, boolean disclosure flag, HTML scrape success, and HTML scrape error.
+
+## Methodology Notes
+
+- Bot PRs are excluded from the generated PR dataset by the current implementation. `Bot PRs Excluded` records how many closed PRs were skipped during collection.
+- The compliance denominator is eligible human PRs reviewed. For the study, make sure the input collection matches the intended eligibility window, such as the approved 3-month span.
+- AI disclosure detection is not fully reliable without human validation.
+- GitHub page chrome, navigation text, Copilot marketing text, and filenames such as `CLAUDE.md` should not be counted as contributor disclosure.
+- Manual review is required before final compliance rates are reported.
+
+Detailed methodology documents:
+
+- [`methodology/data_dictionary.md`](methodology/data_dictionary.md)
+- [`methodology/workbook_mapping.md`](methodology/workbook_mapping.md)
+- [`methodology/repository_analysis_framework.md`](methodology/repository_analysis_framework.md)
+- [`methodology/coding_framework.md`](methodology/coding_framework.md)
+- [`methodology/validation_protocol.md`](methodology/validation_protocol.md)
+- [`methodology/methodology_workflow.md`](methodology/methodology_workflow.md)
+
+## Recommended Pilot Workflow
+
+Start with a small run to confirm Java, Maven, and GitHub access:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --latest-pr-dataset https://github.com/apache/airflow 5 test.csv
+```
+
+Then run a larger single-repo pilot and inspect the output quality:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --latest-pr-dataset https://github.com/apache/airflow 30 airflow_pr_dataset_output.csv airflow_repo_compliance_summary.csv
+```
+
+Only after checking the pilot output should you run the full `repos.txt` dataset:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr_dataset_output.csv repo_compliance_summary.csv
+```
+
+## Detector Harness
+
+Run the lightweight detector and summary harness:
+
+```bash
+javac -encoding UTF-8 -d /tmp/pr-analyzer-test-classes src/main/java/com/example/aichecker/*.java src/test/java/com/example/aichecker/*.java
+java -cp /tmp/pr-analyzer-test-classes com.example.aichecker.AiDisclosureDetectorHarness
+```
+
+The harness covers explicit positive and negative disclosure examples, GitHub Copilot page chrome, `CLAUDE.md` filename-only mentions, ambiguous disclosure text, and summary count calculation.
+
+## Troubleshooting
+
+`UnsupportedClassVersionError`:
+
+- You are probably running Java 8 or another older runtime.
+- Install/use Java 17 and confirm with `java -version`.
+
+`mvn: command not found`:
+
+- Maven is not installed or not on your `PATH`.
+- Install Maven, then confirm with `mvn -version`.
+
+GitHub rate limit errors:
+
+- Set `GITHUB_TOKEN`.
+- Re-run the same command after exporting the token.
+
+Empty output:
+
+- Confirm the repository URL is valid and public.
+- Confirm the repository has closed human PRs.
+- Check whether the requested count is too high for the available closed human PRs.
+- Remember that bot PRs are skipped.
+
+Malformed `repos.txt` entries:
+
+- Use one canonical repository URL per line.
+- Avoid PR URLs, search URLs, query strings, and browser filter URLs.
+- Blank lines and lines beginning with `#` are ignored.
+
+False positives from scraped HTML:
+
+- The detector filters common GitHub page chrome and marketing text, but manual review is still required.
+- Do not treat generic GitHub Copilot navigation/marketing text as contributor disclosure.
+
+## Human Validation Checklist
+
+Before reporting results:
+
+- Verify PR URLs open correctly.
+- Confirm PRs are in the intended study window.
+- Confirm bots are excluded or flagged correctly.
+- Review every detected AI disclosure.
+- Review non-detected rows when required by the sampling/validation protocol.
+- Manually classify each row as `Positive`, `Negative`, `Ambiguous`, or `None`.
+- Fill or merge policy fields such as `AI Disclosure Required`.
+- Calculate final compliance only after manual validation.

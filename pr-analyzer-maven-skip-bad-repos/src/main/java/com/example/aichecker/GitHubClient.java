@@ -34,14 +34,18 @@ public class GitHubClient {
     }
 
     public String fetchHtml(String url) throws IOException, InterruptedException {
-        return sendGet(url);
+        return sendGet(url, "text/html");
     }
 
     private String sendGet(String url) throws IOException, InterruptedException {
+        return sendGet(url, "application/vnd.github+json");
+    }
+
+    private String sendGet(String url, String acceptHeader) throws IOException, InterruptedException {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(30))
-                .header("Accept", "application/vnd.github+json")
+                .header("Accept", acceptHeader)
                 .header("User-Agent", "pr-ai-disclosure-analyzer");
         if (token != null && !token.isBlank()) {
             builder.header("Authorization", "Bearer " + token.trim());
@@ -56,14 +60,30 @@ public class GitHubClient {
     private PullRequestData parsePullRequestObject(String repository, String json) {
         int number = JsonTools.intValue(json, "number", -1);
         String url = JsonTools.stringValue(json, "html_url", "");
+        String title = JsonTools.stringValue(json, "title", "");
         String state = JsonTools.stringValue(json, "state", "");
+        String createdAt = JsonTools.nullableStringValue(json, "created_at");
         String mergedAt = JsonTools.nullableStringValue(json, "merged_at");
         String closedAt = JsonTools.nullableStringValue(json, "closed_at");
         String body = JsonTools.nullableStringValue(json, "body");
         String userObject = JsonTools.objectValue(json, "user");
         String author = JsonTools.stringValue(userObject, "login", "");
         String userType = JsonTools.stringValue(userObject, "type", "");
-        return new PullRequestData(repository, number, url, state, closedAt != null, author, userType, mergedAt != null, body == null ? "" : body);
+        return new PullRequestData(
+                repository,
+                number,
+                url,
+                title,
+                createdAt == null ? "" : createdAt,
+                closedAt == null ? "" : closedAt,
+                mergedAt == null ? "" : mergedAt,
+                state,
+                closedAt != null,
+                author,
+                userType,
+                mergedAt != null,
+                body == null ? "" : body
+        );
     }
 
     private String enc(String value) {

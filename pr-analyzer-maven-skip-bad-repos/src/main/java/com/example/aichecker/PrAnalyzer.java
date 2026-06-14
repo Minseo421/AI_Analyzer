@@ -1,12 +1,15 @@
 package com.example.aichecker;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PrAnalyzer {
     private final GitHubClient gitHubClient = new GitHubClient();
     private final AiDisclosureDetector detector = new AiDisclosureDetector();
     private final List<String> skippedRepos = new ArrayList<>();
+    private final Map<String, Integer> botPrsExcluded = new LinkedHashMap<>();
 
     public PrReportRow analyzeSingle(PullRequestUrl prUrl) throws Exception {
         PullRequestData apiData = gitHubClient.getPullRequest(prUrl.owner(), prUrl.repo(), prUrl.number());
@@ -15,6 +18,7 @@ public class PrAnalyzer {
 
     public List<PrReportRow> analyzeLatestClosedHumanPrs(RepoUrl repoUrl, int targetCount) throws Exception {
         List<PrReportRow> rows = new ArrayList<>();
+        botPrsExcluded.put(repoUrl.fullName(), 0);
         int page = 1;
         System.out.println();
         System.out.println("Latest closed human PRs for " + repoUrl.fullName());
@@ -25,7 +29,10 @@ public class PrAnalyzer {
             for (PullRequestData pr : prs) {
                 if (rows.size() >= targetCount) break;
                 if (!pr.closed()) continue;
-                if (!BotDetector.isHuman(pr.author(), pr.userType())) continue;
+                if (!BotDetector.isHuman(pr.author(), pr.userType())) {
+                    botPrsExcluded.merge(repoUrl.fullName(), 1, Integer::sum);
+                    continue;
+                }
                 PrReportRow row = analyze(pr);
                 rows.add(row);
                 System.out.println(row.toConsoleTableRow(rows.size()));
@@ -39,6 +46,7 @@ public class PrAnalyzer {
 
     public List<PrReportRow> analyzeMultipleRepos(List<RepoUrl> repoUrls, int targetCountPerRepo) {
         skippedRepos.clear();
+        botPrsExcluded.clear();
         List<PrReportRow> allRows = new ArrayList<>();
         for (RepoUrl repoUrl : repoUrls) {
             try {
@@ -56,6 +64,10 @@ public class PrAnalyzer {
         }
         printMultiRepoSummary(allRows);
         return allRows;
+    }
+
+    public Map<String, Integer> botPrsExcludedByRepository() {
+        return new LinkedHashMap<>(botPrsExcluded);
     }
 
     private void printDisclosureSummary(List<PrReportRow> rows) {
@@ -138,6 +150,10 @@ public class PrAnalyzer {
                 apiData.repository(),
                 apiData.number(),
                 apiData.url(),
+                apiData.title(),
+                apiData.createdAt(),
+                apiData.closedAt(),
+                apiData.mergedAt(),
                 apiData.author(),
                 apiData.state(),
                 apiData.closed(),
@@ -146,6 +162,8 @@ public class PrAnalyzer {
                 disclosure.disclosed(),
                 apiData.merged(),
                 disclosure.evidence(),
+                disclosure.classification(),
+                disclosure.source(),
                 htmlData.success(),
                 htmlData.error()
         );
