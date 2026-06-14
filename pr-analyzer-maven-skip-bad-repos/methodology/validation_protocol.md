@@ -118,6 +118,32 @@ Do not count these as disclosures without additional contributor self-disclosure
 
 File names such as `CLAUDE.md` are not automatically disclosure. Treat them as non-disclosure unless there is separate contributor-authored text stating AI use or non-use, such as `I used Claude to draft this PR` or `No AI was used`.
 
+## Inter-Rater Reliability
+
+Use inter-rater reliability to estimate whether two researchers can independently apply the PR coding rules consistently.
+
+Workflow:
+
+1. Generate a fixed sample with `--sample-for-kappa repos.txt 50 kappa_sample.csv`.
+2. Give the same `kappa_sample.csv` to two coders.
+3. Each coder independently labels `Disclosure Present` and `Disclosure Classification`.
+4. Calculate Cohen's Kappa with `--calculate-kappa coder_a_labels.csv coder_b_labels.csv kappa_results.csv`.
+5. Review disagreements only after kappa has been calculated.
+
+Methodology requirements:
+
+- Coders must work independently.
+- Coders should open the PR URL and verify context manually.
+- Script-detected disclosure text may be shown as evidence, but it is not a human label.
+- Script-human comparison is separate from human-human inter-rater reliability.
+- Human consensus after disagreement resolution becomes the gold-standard dataset.
+- The tool should support consistent presentation and calculation; it does not replace human judgement.
+
+Cohen's Kappa is calculated as `(observed agreement - expected agreement) / (1 - expected agreement)` for:
+
+- `Disclosure Present`: `Yes` / `No`.
+- `Disclosure Classification`: `Positive` / `Negative` / `Ambiguous` / `None`.
+
 ## Resolving Disagreements
 
 Use the following process:

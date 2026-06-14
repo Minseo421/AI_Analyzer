@@ -103,6 +103,23 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr
 
 The numeric argument is the number of latest closed human PRs to collect per repository. The current implementation filters out bot PRs while collecting rows.
 
+Inter-rater reliability modes:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-kappa repos.txt 50 kappa_sample.csv
+```
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv anna_labels.csv
+java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv minseo_labels.csv
+```
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv minseo_labels.csv kappa_results.csv
+```
+
+The kappa sample command is deterministic: it reuses the same latest-closed-human-PR ordering as the existing repository collection logic, with the numeric argument interpreted as PRs per repository. `Sample ID` is stable as `Repo#PR`. The interactive coding command refuses to overwrite an existing labels file.
+
 ## Output Files
 
 ### `pr_dataset_output.csv`
@@ -157,6 +174,20 @@ Example summary row:
 
 The older/audit output. It is preserved for debugging and includes extra technical fields such as GitHub user type, boolean disclosure flag, HTML scrape success, and HTML scrape error.
 
+### Inter-rater reliability files
+
+`kappa_sample.csv` is a fixed PR sample for independent coding. It includes `Sample ID`, PR metadata, script-detected disclosure evidence, script disclosure-present value, and notes.
+
+`anna_labels.csv` and `coworker_labels.csv` are coder-specific labels created from the same sample. Each row records:
+
+- `Sample ID`
+- `PR URL`
+- `Disclosure Present`: `Yes` or `No`
+- `Disclosure Classification`: `Positive`, `Negative`, `Ambiguous`, or `None`
+- `Notes`
+
+`kappa_results.csv` compares two coder files by `Sample ID` and reports matched PR count, raw agreement, Cohen's Kappa, confusion matrices, missing labels, and disagreement rows.
+
 ## Methodology Notes
 
 - Bot PRs are excluded from the generated PR dataset by the current implementation. `Bot PRs Excluded` records how many closed PRs were skipped during collection.
@@ -172,6 +203,7 @@ Detailed methodology documents:
 - [`methodology/repository_analysis_framework.md`](methodology/repository_analysis_framework.md)
 - [`methodology/coding_framework.md`](methodology/coding_framework.md)
 - [`methodology/validation_protocol.md`](methodology/validation_protocol.md)
+- [`methodology/cohens_kappa_workflow.md`](methodology/cohens_kappa_workflow.md)
 - [`methodology/methodology_workflow.md`](methodology/methodology_workflow.md)
 
 ## Recommended Pilot Workflow
@@ -204,6 +236,35 @@ java -cp /tmp/pr-analyzer-test-classes com.example.aichecker.AiDisclosureDetecto
 ```
 
 The harness covers explicit positive and negative disclosure examples, GitHub Copilot page chrome, `CLAUDE.md` filename-only mentions, ambiguous disclosure text, and summary count calculation.
+
+## Inter-Rater Reliability Workflow
+
+Use this workflow before final coding to estimate human-human agreement. The script comparison is separate from inter-rater reliability: script-detected text may help reviewers find evidence, but Cohen's Kappa should compare independent human labels.
+
+1. Generate a fixed sample:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-kappa repos.txt 50 kappa_sample.csv
+```
+
+2. Give the same `kappa_sample.csv` to two coders. Coders must work independently and should open each `PR URL` to verify the context manually.
+
+3. Each coder creates their own labels file:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv anna_labels.csv
+java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv coworker_labels.csv
+```
+
+The interactive prompt accepts `Yes` or `No` for disclosure present and `Positive`, `Negative`, `Ambiguous`, or `None` for classification. Enter `SKIP` to leave a PR out of that coder file and return to it later in a separate output file.
+
+4. Calculate agreement:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv coworker_labels.csv kappa_results.csv
+```
+
+5. Review disagreements after kappa is calculated. Resolve disagreements by discussion or third-reviewer adjudication, then create the consensus gold-standard dataset. Do not use the script to replace human judgement.
 
 ## Troubleshooting
 

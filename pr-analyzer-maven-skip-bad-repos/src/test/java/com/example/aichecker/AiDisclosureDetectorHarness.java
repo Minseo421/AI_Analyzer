@@ -39,7 +39,23 @@ public class AiDisclosureDetectorHarness {
         require(lines.size() == 2, "summary should contain header and one repo row");
         require(lines.get(1).equals("\"owner/repo\",\"3\",\"2\",\"2\",\"1\",\"1\",\"0\",\"1\",\"3\",\"0.6667\""), "summary counts and compliance rate");
 
+        Path coderA = Files.createTempFile("coder-a-labels", ".csv");
+        Path coderB = Files.createTempFile("coder-b-labels", ".csv");
+        Files.writeString(coderA, labelsCsv("Yes", "Positive", "No", "None"), StandardCharsets.UTF_8);
+        Files.writeString(coderB, labelsCsv("Yes", "Positive", "Yes", "Ambiguous"), StandardCharsets.UTF_8);
+        Path kappa = Files.createTempFile("kappa-results", ".csv");
+        KappaWorkflow.calculateKappa(coderA, coderB, kappa);
+        String kappaText = Files.readString(kappa, StandardCharsets.UTF_8);
+        require(kappaText.contains("\"Disclosure Present\",\"Matched PRs used\",\"2\""), "kappa matched rows");
+        require(kappaText.contains("Disagreement Rows"), "kappa disagreement section");
+
         System.out.println("AiDisclosureDetectorHarness passed");
+    }
+
+    private static String labelsCsv(String present1, String classification1, String present2, String classification2) {
+        return "Sample ID,Repo,PR #,PR URL,Disclosure Present,Disclosure Classification,Notes\n"
+                + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1," + present1 + "," + classification1 + ",\n"
+                + "owner/repo#2,owner/repo,2,https://github.com/owner/repo/pull/2," + present2 + "," + classification2 + ",\n";
     }
 
     private static PrReportRow row(String repo, int number, boolean disclosed, String classification) {
