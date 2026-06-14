@@ -178,7 +178,7 @@ The older/audit output. It is preserved for debugging and includes extra technic
 
 `kappa_sample.csv` is a fixed PR sample for independent coding. It includes `Sample ID`, PR metadata, script-detected disclosure evidence, script disclosure-present value, and notes.
 
-`anna_labels.csv` and `coworker_labels.csv` are coder-specific labels created from the same sample. Each row records:
+`anna_labels.csv` and `minseo_labels.csv` are coder-specific labels created from the same sample. Each row records:
 
 - `Sample ID`
 - `PR URL`
@@ -253,7 +253,7 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-kappa repos.txt 50 kap
 
 ```bash
 java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv anna_labels.csv
-java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv coworker_labels.csv
+java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv minseo_labels.csv
 ```
 
 The interactive prompt accepts `Yes` or `No` for disclosure present and `Positive`, `Negative`, `Ambiguous`, or `None` for classification. Enter `SKIP` to leave a PR out of that coder file and return to it later in a separate output file.
@@ -261,7 +261,7 @@ The interactive prompt accepts `Yes` or `No` for disclosure present and `Positiv
 4. Calculate agreement:
 
 ```bash
-java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv coworker_labels.csv kappa_results.csv
+java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv minseo_labels.csv kappa_results.csv
 ```
 
 5. Review disagreements after kappa is calculated. Resolve disagreements by discussion or third-reviewer adjudication, then create the consensus gold-standard dataset. Do not use the script to replace human judgement.
