@@ -4,7 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
@@ -75,9 +77,10 @@ public class Main {
                 List<RepoUrl> repoUrls = readRepoList(repoListFile);
                 PrAnalyzer analyzer = new PrAnalyzer();
                 List<PrReportRow> rows = analyzer.analyzeMultipleRepos(repoUrls, targetCountPerRepo);
-                int sampleRows = KappaWorkflow.writeSample(output, rows);
+                KappaWorkflow.SampleWriteResult sampleResult = KappaWorkflow.writeSampleWithSummary(output, rows);
+                printKappaSampleSummary(repoUrls, rows, sampleResult);
                 System.out.println("Kappa sample saved: " + output.toAbsolutePath());
-                System.out.println("Sample rows: " + sampleRows);
+                System.out.println("Sample rows: " + sampleResult.totalRows());
                 return;
             }
             if (args.length == 3 && args[0].equals("--code-kappa-sample")) {
@@ -150,6 +153,29 @@ public class Main {
         System.out.println("CSV saved: " + output.toAbsolutePath());
         System.out.println("Human closed PRs checked: " + rows.size());
         System.out.printf("AI disclosure percentage: %.2f%% (%d/%d)%n", percentage, disclosed, rows.size());
+    }
+
+    private static void printKappaSampleSummary(List<RepoUrl> repoUrls, List<PrReportRow> rows, KappaWorkflow.SampleWriteResult sampleResult) {
+        Map<String, Integer> eligibleByRepository = new LinkedHashMap<>();
+        for (RepoUrl repoUrl : repoUrls) {
+            eligibleByRepository.put(repoUrl.fullName(), 0);
+        }
+        for (PrReportRow row : rows) {
+            eligibleByRepository.merge(row.repository(), 1, Integer::sum);
+        }
+
+        System.out.println();
+        System.out.println("Kappa sample repository summary");
+        for (RepoUrl repoUrl : repoUrls) {
+            String repository = repoUrl.fullName();
+            int eligible = eligibleByRepository.getOrDefault(repository, 0);
+            int written = sampleResult.rowsByRepository().getOrDefault(repository, 0);
+            System.out.println("Repository processed: " + repository);
+            System.out.println("Eligible closed human PRs found: " + eligible);
+            System.out.println("PRs written for repository: " + written);
+        }
+        System.out.println("Total rows written: " + sampleResult.totalRows());
+        System.out.println();
     }
 
     private static void printUsage() {

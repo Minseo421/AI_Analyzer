@@ -49,6 +49,32 @@ public class AiDisclosureDetectorHarness {
         require(kappaText.contains("\"Disclosure Present\",\"Matched PRs used\",\"2\""), "kappa matched rows");
         require(kappaText.contains("Disagreement Rows"), "kappa disagreement section");
 
+        Path sample = Files.createTempFile("kappa-sample", ".csv");
+        KappaWorkflow.SampleWriteResult sampleResult = KappaWorkflow.writeSampleWithSummary(sample, List.of(
+                row("fedify-dev/fedify", 10, false, "none"),
+                row("fedify-dev/fedify", 9, true, "possible_positive"),
+                row("apache/airflow", 20, false, "none"),
+                row("apache/airflow", 19, false, "none"),
+                row("cloudnative-pg/cloudnative-pg", 30, true, "possible_negative"),
+                row("cloudnative-pg/cloudnative-pg", 29, false, "none")
+        ));
+        require(sampleResult.totalRows() == 6, "combined kappa sample should include every repository row");
+        require(sampleResult.rowsByRepository().get("fedify-dev/fedify") == 2, "fedify sample count");
+        require(sampleResult.rowsByRepository().get("apache/airflow") == 2, "airflow sample count");
+        require(sampleResult.rowsByRepository().get("cloudnative-pg/cloudnative-pg") == 2, "cloudnative sample count");
+        List<Map<String, String>> sampleRows = CsvTools.readRows(sample);
+        require(sampleRows.size() == 6, "combined kappa CSV row count");
+        require("fedify-dev/fedify#10".equals(sampleRows.get(0).get("Sample ID")), "first sample id should be stable");
+        require("apache/airflow#20".equals(sampleRows.get(2).get("Sample ID")), "second repository should be appended");
+        require("cloudnative-pg/cloudnative-pg#30".equals(sampleRows.get(4).get("Sample ID")), "third repository should be appended");
+
+        try {
+            KappaWorkflow.codeSample(sample, coderA);
+            throw new AssertionError("codeSample should refuse to overwrite an existing labels file");
+        } catch (java.io.IOException expected) {
+            require(expected.getMessage().contains("already exists"), "overwrite refusal message");
+        }
+
         System.out.println("AiDisclosureDetectorHarness passed");
     }
 

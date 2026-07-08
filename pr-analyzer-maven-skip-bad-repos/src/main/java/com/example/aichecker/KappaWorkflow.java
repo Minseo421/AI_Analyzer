@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -19,8 +20,12 @@ public class KappaWorkflow {
     private static final List<String> CLASSIFICATION_VALUES = List.of("Positive", "Negative", "Ambiguous", "None");
 
     public static int writeSample(Path path, List<PrReportRow> rows) throws IOException {
+        return writeSampleWithSummary(path, rows).totalRows();
+    }
+
+    public static SampleWriteResult writeSampleWithSummary(Path path, List<PrReportRow> rows) throws IOException {
         Set<String> seen = new LinkedHashSet<>();
-        int written = 0;
+        Map<String, Integer> writtenByRepository = new LinkedHashMap<>();
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             writer.write("Sample ID,Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Status,"
                     + "Disclosure Text detected by script,Script AI Disclosure Present,Notes");
@@ -46,10 +51,11 @@ public class KappaWorkflow {
                         CsvTools.csv("")
                 ));
                 writer.newLine();
-                written++;
+                writtenByRepository.merge(row.repository(), 1, Integer::sum);
             }
         }
-        return written;
+        int totalRows = writtenByRepository.values().stream().mapToInt(Integer::intValue).sum();
+        return new SampleWriteResult(writtenByRepository, totalRows);
     }
 
     public static void codeSample(Path samplePath, Path labelsPath) throws IOException {
@@ -307,5 +313,11 @@ public class KappaWorkflow {
     }
 
     private record MetricResult(List<String> labels, Map<String, Map<String, Integer>> matrix, int n, double observed, double expected, double kappa) {
+    }
+
+    public record SampleWriteResult(Map<String, Integer> rowsByRepository, int totalRows) {
+        public SampleWriteResult {
+            rowsByRepository = Collections.unmodifiableMap(new LinkedHashMap<>(rowsByRepository));
+        }
     }
 }
