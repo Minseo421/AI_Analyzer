@@ -98,6 +98,24 @@ public class Main {
                 System.out.println("Kappa results saved: " + output.toAbsolutePath());
                 return;
             }
+            if (args.length == 4 && args[0].equals("--create-consensus")) {
+                Path coderA = Path.of(args[1]);
+                Path coderB = Path.of(args[2]);
+                Path output = Path.of(args[3]);
+                ConsensusWorkflow.ConsensusResult result = ConsensusWorkflow.createConsensus(coderA, coderB, output);
+                System.out.println("Consensus labels saved: " + output.toAbsolutePath());
+                printConsensusSummary(result);
+                return;
+            }
+            if (args.length == 4 && args[0].equals("--validate-detector")) {
+                Path sample = Path.of(args[1]);
+                Path consensus = Path.of(args[2]);
+                Path output = Path.of(args[3]);
+                ConsensusWorkflow.DetectorValidationResult result = ConsensusWorkflow.validateDetector(sample, consensus, output);
+                System.out.println("Detector validation saved: " + output.toAbsolutePath());
+                printDetectorValidationSummary(result);
+                return;
+            }
             if (args.length > 0 && isKnownMode(args[0])) {
                 throw new IllegalArgumentException("Invalid arguments for " + args[0] + ". Expected: " + expectedUsage(args[0]));
             }
@@ -131,7 +149,9 @@ public class Main {
                 || mode.equals("--repos-pr-dataset")
                 || mode.equals("--sample-for-kappa")
                 || mode.equals("--code-kappa-sample")
-                || mode.equals("--calculate-kappa");
+                || mode.equals("--calculate-kappa")
+                || mode.equals("--create-consensus")
+                || mode.equals("--validate-detector");
     }
 
     private static String expectedUsage(String mode) {
@@ -143,6 +163,8 @@ public class Main {
             case "--sample-for-kappa" -> "--sample-for-kappa repos.txt COUNT_PER_REPO kappa_sample.csv";
             case "--code-kappa-sample" -> "--code-kappa-sample kappa_sample.csv coder_labels.csv";
             case "--calculate-kappa" -> "--calculate-kappa coder_a_labels.csv coder_b_labels.csv kappa_results.csv";
+            case "--create-consensus" -> "--create-consensus coder_a_labels.csv coder_b_labels.csv consensus_labels.csv";
+            case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
             default -> "";
         };
     }
@@ -178,6 +200,31 @@ public class Main {
         System.out.println();
     }
 
+    private static void printConsensusSummary(ConsensusWorkflow.ConsensusResult result) {
+        System.out.println("Matched rows: " + result.matchedRows());
+        System.out.println("Full agreements: " + result.fullAgreements());
+        System.out.println("Disagreements needing resolution: " + result.disagreements());
+        printMissingIds("Only in coder A", result.onlyInCoderA());
+        printMissingIds("Only in coder B", result.onlyInCoderB());
+    }
+
+    private static void printDetectorValidationSummary(ConsensusWorkflow.DetectorValidationResult result) {
+        System.out.println("Total matched rows: " + result.totalMatchedRows());
+        System.out.println("True positives: " + result.truePositives());
+        System.out.println("True negatives: " + result.trueNegatives());
+        System.out.println("False positives: " + result.falsePositives());
+        System.out.println("False negatives: " + result.falseNegatives());
+        printMissingIds("Only in kappa sample", result.onlyInSample());
+        printMissingIds("Only in consensus", result.onlyInConsensus());
+    }
+
+    private static void printMissingIds(String label, List<String> ids) {
+        System.out.println(label + ": " + ids.size());
+        for (String id : ids) {
+            System.out.println("- " + id);
+        }
+    }
+
     private static void printUsage() {
         System.out.println("Usage:");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar https://github.com/OWNER/REPO/pull/NUMBER");
@@ -188,6 +235,8 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-kappa repos.txt 50 kappa_sample.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv anna_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv coworker_labels.csv kappa_results.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_labels.csv coworker_labels.csv consensus_labels.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");
         System.out.println();
         System.out.println("repos.txt can contain either GitHub URLs or OWNER/REPO names, one per line.");
     }

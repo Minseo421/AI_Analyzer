@@ -120,6 +120,20 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv m
 
 The kappa sample command is deterministic: it reuses the same latest-closed-human-PR ordering as the existing repository collection logic, with the numeric argument interpreted as PRs per repository. `Sample ID` is stable as `Repo#PR`. The interactive coding command refuses to overwrite an existing labels file.
 
+Human consensus and detector validation modes:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_labels.csv minseo_labels.csv consensus_labels.csv
+```
+
+Researchers should manually resolve any `Needs Resolution` rows in `consensus_labels.csv` by filling in the blank consensus fields and changing `Agreement Status` to `Resolved`.
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv
+```
+
+Detector validation is separate from Cohen's Kappa: Kappa compares human coders with each other, while detector validation compares `Script AI Disclosure Present` from `kappa_sample.csv` against the completed human consensus labels.
+
 ## Output Files
 
 ### `pr_dataset_output.csv`
