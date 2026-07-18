@@ -29,6 +29,67 @@ public class AiDisclosureDetectorHarness {
         require(ambiguous.disclosed(), "ambiguous AI disclosure mention should be detected for review");
         require("possible_ambiguous".equals(ambiguous.classification()), "ambiguous classification");
 
+        DisclosureResult uncheckedTemplate = detector.detect("""
+                <!--
+                If generative AI tooling has been used in the process of authoring this PR, please
+                change below checkbox to `[X]` followed by the name of the tool, uncomment the "Generated-by".
+                -->
+
+                - [ ] Yes (please specify the tool below)
+                """, "");
+        require(!uncheckedTemplate.disclosed(), "unchecked affirmative template checkbox should not count");
+
+        DisclosureResult uncheckedVisibleQuestion = detector.detect("""
+                ## AI usage disclosure
+                - [ ] Yes
+                - [ ] No
+                Generated-by:
+                """, "");
+        require(!uncheckedVisibleQuestion.disclosed(), "unchanged visible checkbox template should not count");
+
+        DisclosureResult checkedYes = detector.detect("- [x] Yes - GitHub Copilot", "");
+        require(checkedYes.disclosed(), "checked affirmative checkbox should count");
+        require("possible_positive".equals(checkedYes.classification()), "checked affirmative classification");
+        require(checkedYes.evidence().contains("GitHub Copilot"), "checked affirmative evidence");
+
+        DisclosureResult checkedAiToolingUsed = detector.detect("* [X] AI tooling was used", "");
+        require(checkedAiToolingUsed.disclosed(), "checked AI tooling checkbox should count");
+        require("possible_positive".equals(checkedAiToolingUsed.classification()), "checked AI tooling classification");
+
+        DisclosureResult checkedNo = detector.detect("- [X] No generative AI was used", "");
+        require(checkedNo.disclosed(), "checked negative checkbox should count");
+        require("possible_negative".equals(checkedNo.classification()), "checked negative classification");
+
+        DisclosureResult checkboxChoice = detector.detect("""
+                - [ ] Yes
+                - [x] No
+                """, "");
+        require(checkboxChoice.disclosed(), "checked no in multiple-choice template should count");
+        require("possible_negative".equals(checkboxChoice.classification()), "checked no choice classification");
+
+        DisclosureResult contradictoryCheckboxes = detector.detect("""
+                - [x] Yes
+                - [x] No
+                """, "");
+        require(contradictoryCheckboxes.disclosed(), "contradictory checked boxes should be flagged");
+        require("possible_ambiguous".equals(contradictoryCheckboxes.classification()), "contradictory checked boxes classification");
+
+        DisclosureResult commentedGeneratedBy = detector.detect("<!-- Generated-by: ChatGPT -->", "");
+        require(!commentedGeneratedBy.disclosed(), "commented Generated-by should not count");
+
+        DisclosureResult emptyGeneratedBy = detector.detect("Generated-by:", "");
+        require(!emptyGeneratedBy.disclosed(), "empty Generated-by should not count");
+
+        DisclosureResult completedGeneratedBy = detector.detect("Generated-by: Claude", "");
+        require(completedGeneratedBy.disclosed(), "completed Generated-by should count");
+        require("possible_positive".equals(completedGeneratedBy.classification()), "completed Generated-by classification");
+
+        requirePositive(detector.detect("I used ChatGPT to generate the initial implementation.", ""), "explicit ChatGPT statement");
+        requirePositive(detector.detect("This PR was written with GitHub Copilot.", ""), "written with Copilot statement");
+        requirePositive(detector.detect("Claude helped generate the tests.", ""), "Claude helped statement");
+        requireNegative(detector.detect("No generative AI tools were used for this PR.", ""), "explicit no AI statement");
+        requireNegative(detector.detect("I did not use AI assistance.", ""), "explicit did not use AI statement");
+
         Path summary = Files.createTempFile("repo-compliance-summary", ".csv");
         CsvWriter.writeRepoComplianceSummary(summary, List.of(
                 row("owner/repo", 1, true, "possible_positive"),
@@ -210,5 +271,15 @@ public class AiDisclosureDetectorHarness {
         if (!condition) {
             throw new AssertionError(message);
         }
+    }
+
+    private static void requirePositive(DisclosureResult result, String message) {
+        require(result.disclosed(), message + " should disclose");
+        require("possible_positive".equals(result.classification()), message + " should be positive");
+    }
+
+    private static void requireNegative(DisclosureResult result, String message) {
+        require(result.disclosed(), message + " should disclose");
+        require("possible_negative".equals(result.classification()), message + " should be negative");
     }
 }
