@@ -134,6 +134,20 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.cs
 
 Detector validation is separate from Cohen's Kappa: Kappa compares human coders with each other, while detector validation compares `Script AI Disclosure Present` from `kappa_sample.csv` against the completed human consensus labels.
 
+To re-run the current detector rules against the same fixed kappa sample without selecting new PRs:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv
+```
+
+Then compare the updated detector results against the same human consensus:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample_reanalyzed.csv consensus_labels.csv detector_validation_reanalyzed.csv
+```
+
+Re-analysis preserves the original PR sample, row order, and `Sample ID` values, so changes in precision, recall, false positives, or false negatives are attributable to detector rule changes rather than a different set of pull requests.
+
 ## Output Files
 
 ### `pr_dataset_output.csv`

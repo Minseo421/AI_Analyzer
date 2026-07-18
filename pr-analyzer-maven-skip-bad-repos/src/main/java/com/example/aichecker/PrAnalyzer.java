@@ -6,13 +6,27 @@ import java.util.List;
 import java.util.Map;
 
 public class PrAnalyzer {
-    private final GitHubClient gitHubClient = new GitHubClient();
+    private final GitHubClient gitHubClient;
     private final AiDisclosureDetector detector = new AiDisclosureDetector();
     private final List<String> skippedRepos = new ArrayList<>();
     private final Map<String, Integer> botPrsExcluded = new LinkedHashMap<>();
 
+    public PrAnalyzer() {
+        this(new GitHubClient());
+    }
+
+    PrAnalyzer(GitHubClient gitHubClient) {
+        this.gitHubClient = gitHubClient;
+    }
+
     public PrReportRow analyzeSingle(PullRequestUrl prUrl) throws Exception {
         PullRequestData apiData = gitHubClient.getPullRequest(prUrl.owner(), prUrl.repo(), prUrl.number());
+        return analyze(apiData);
+    }
+
+    public PrReportRow analyzeExistingPullRequest(String repository, int number) throws Exception {
+        RepoUrl repoUrl = RepoUrl.parse(repository);
+        PullRequestData apiData = gitHubClient.getPullRequest(repoUrl.owner(), repoUrl.repo(), number);
         return analyze(apiData);
     }
 

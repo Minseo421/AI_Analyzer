@@ -35,6 +35,15 @@ public class CsvTools {
         return rows;
     }
 
+    public static List<String> readHeader(Path path) throws IOException {
+        String content = Files.readString(path, StandardCharsets.UTF_8);
+        List<List<String>> records = parseRecords(content);
+        if (records.isEmpty()) {
+            return List.of();
+        }
+        return new ArrayList<>(records.get(0));
+    }
+
     public static String csv(String value) {
         String safe = value == null ? "" : value;
         return "\"" + safe.replace("\"", "\"\"") + "\"";

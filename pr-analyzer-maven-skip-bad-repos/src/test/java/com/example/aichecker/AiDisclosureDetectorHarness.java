@@ -194,6 +194,84 @@ public class AiDisclosureDetectorHarness {
             require(expected.getMessage().contains("Consensus Disclosure Present"), "incomplete consensus validation");
         }
 
+        Path humanLabelsBeforeReanalysis = Files.createTempFile("human-labels-before-reanalysis", ".csv");
+        Path consensusBeforeReanalysis = Files.createTempFile("consensus-before-reanalysis", ".csv");
+        Files.writeString(humanLabelsBeforeReanalysis, labelsCsv("Yes", "Positive", "No", "None"), StandardCharsets.UTF_8);
+        Files.writeString(consensusBeforeReanalysis, resolvedConsensusCsv(), StandardCharsets.UTF_8);
+        String humanLabelsOriginal = Files.readString(humanLabelsBeforeReanalysis, StandardCharsets.UTF_8);
+        String consensusOriginal = Files.readString(consensusBeforeReanalysis, StandardCharsets.UTF_8);
+
+        Path reanalysisInput = Files.createTempFile("kappa-sample-reanalysis-input", ".csv");
+        Files.writeString(reanalysisInput, reanalysisInputCsv(), StandardCharsets.UTF_8);
+        FakeGitHubClient fakeClient = new FakeGitHubClient();
+        fakeClient.add("owner/repo", 1, """
+                <!-- If generative AI tooling has been used, select Yes. -->
+                - [ ] Yes (please specify the tool below)
+                """);
+        fakeClient.add("owner/repo", 2, "- [x] Yes - GitHub Copilot");
+        fakeClient.add("owner/repo", 3, "- [X] No generative AI was used");
+        fakeClient.add("owner/repo", 4, "I used ChatGPT to generate the initial implementation.");
+        fakeClient.fail("owner/repo", 5, "fixture fetch failed");
+        Path reanalysisOutput = tempMissingPath("kappa-sample-reanalyzed", ".csv");
+        KappaSampleReanalysisWorkflow.ReanalysisResult reanalysisResult = KappaSampleReanalysisWorkflow.reanalyze(
+                reanalysisInput,
+                reanalysisOutput,
+                new PrAnalyzer(fakeClient)
+        );
+        require(reanalysisResult.totalInputRows() == 5, "reanalysis input row count");
+        require(reanalysisResult.succeeded() == 4, "reanalysis success count");
+        require(reanalysisResult.failed() == 1, "reanalysis failure count");
+        require(reanalysisResult.rowsWritten() == 5, "reanalysis output row count");
+        require(fakeClient.requests().equals(List.of("owner/repo#1", "owner/repo#2", "owner/repo#3", "owner/repo#4", "owner/repo#5")), "reanalysis should use original repo and PR numbers in order");
+
+        List<Map<String, String>> reanalyzedRows = CsvTools.readRows(reanalysisOutput);
+        require(reanalyzedRows.size() == 5, "reanalyzed CSV row count");
+        require("owner/repo#1".equals(reanalyzedRows.get(0).get("Sample ID")), "reanalyzed first sample id");
+        require("owner/repo#5".equals(reanalyzedRows.get(4).get("Sample ID")), "reanalyzed failed sample id preserved");
+        require("No".equals(reanalyzedRows.get(0).get("Script AI Disclosure Present")), "unchecked template reanalyzed as no");
+        require(reanalyzedRows.get(0).get("Disclosure Text detected by script").isBlank(), "unchecked template evidence cleared");
+        require("Yes".equals(reanalyzedRows.get(1).get("Script AI Disclosure Present")), "checked yes reanalyzed as yes");
+        require("possible_positive".equals(reanalyzedRows.get(1).get("Script Disclosure Classification")), "checked yes classification updated");
+        require("Yes".equals(reanalyzedRows.get(2).get("Script AI Disclosure Present")), "checked no still records disclosure present");
+        require("possible_negative".equals(reanalyzedRows.get(2).get("Script Disclosure Classification")), "checked no classification updated");
+        require("Yes".equals(reanalyzedRows.get(3).get("Script AI Disclosure Present")), "explicit contributor disclosure reanalyzed as yes");
+        require("Fetch Failed".equals(reanalyzedRows.get(4).get("Reanalysis Status")), "failed fetch status");
+        require(reanalyzedRows.get(4).get("Script AI Disclosure Present").isBlank(), "failed fetch script value blank");
+
+        require(humanLabelsOriginal.equals(Files.readString(humanLabelsBeforeReanalysis, StandardCharsets.UTF_8)), "human labels unchanged by reanalysis");
+        require(consensusOriginal.equals(Files.readString(consensusBeforeReanalysis, StandardCharsets.UTF_8)), "consensus labels unchanged by reanalysis");
+
+        Path duplicateSample = Files.createTempFile("duplicate-kappa-sample", ".csv");
+        Files.writeString(duplicateSample, reanalysisInputCsv() + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,t,a,,,,Closed,old,Yes,old_class,old_source,\n", StandardCharsets.UTF_8);
+        try {
+            KappaSampleReanalysisWorkflow.reanalyze(duplicateSample, tempMissingPath("duplicate-output", ".csv"), new PrAnalyzer(fakeClient));
+            throw new AssertionError("reanalysis should reject duplicate Sample IDs");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("Duplicate Sample ID"), "duplicate Sample ID validation");
+        }
+
+        Path mismatchedSample = Files.createTempFile("mismatched-kappa-sample", ".csv");
+        Files.writeString(mismatchedSample, reanalysisInputCsv().replace("owner/repo#1,owner/repo,1", "owner/repo#99,owner/repo,1"), StandardCharsets.UTF_8);
+        try {
+            KappaSampleReanalysisWorkflow.reanalyze(mismatchedSample, tempMissingPath("mismatched-output", ".csv"), new PrAnalyzer(fakeClient));
+            throw new AssertionError("reanalysis should reject invalid Repo#PR relationships");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("Sample ID does not match"), "Repo#PR relationship validation");
+        }
+
+        try {
+            KappaSampleReanalysisWorkflow.reanalyze(reanalysisInput, reanalysisOutput, new PrAnalyzer(fakeClient));
+            throw new AssertionError("reanalysis should refuse to overwrite existing output");
+        } catch (java.io.IOException expected) {
+            require(expected.getMessage().contains("already exists"), "reanalysis overwrite refusal");
+        }
+
+        Path reanalysisConsensus = Files.createTempFile("reanalysis-consensus", ".csv");
+        Files.writeString(reanalysisConsensus, reanalysisConsensusCsv(), StandardCharsets.UTF_8);
+        Path reanalysisValidation = tempMissingPath("reanalysis-detector-validation", ".csv");
+        ConsensusWorkflow.DetectorValidationResult reanalysisValidationResult = ConsensusWorkflow.validateDetector(reanalysisOutput, reanalysisConsensus, reanalysisValidation);
+        require(reanalysisValidationResult.totalMatchedRows() == 4, "reanalyzed output remains detector-validation compatible");
+
         System.out.println("AiDisclosureDetectorHarness passed");
     }
 
@@ -235,6 +313,23 @@ public class AiDisclosureDetectorHarness {
     private static String unresolvedConsensusCsv() {
         return "Sample ID,Repo,PR #,PR URL,Coder A Disclosure Present,Coder B Disclosure Present,Consensus Disclosure Present,Coder A Disclosure Classification,Coder B Disclosure Classification,Consensus Disclosure Classification,Agreement Status,Consensus Notes,Coder A Notes,Coder B Notes\n"
                 + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,Yes,No,,Positive,None,,Needs Resolution,,,\n";
+    }
+
+    private static String reanalysisInputCsv() {
+        return "Sample ID,Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Status,Disclosure Text detected by script,Script AI Disclosure Present,Script Disclosure Classification,Script Disclosure Source,Notes\n"
+                + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,old title 1,old author,,,,Closed,old false positive,Yes,possible_positive,PR body,note 1\n"
+                + "owner/repo#2,owner/repo,2,https://github.com/owner/repo/pull/2,old title 2,old author,,,,Closed,,No,none,PR body,note 2\n"
+                + "owner/repo#3,owner/repo,3,https://github.com/owner/repo/pull/3,old title 3,old author,,,,Closed,,No,none,PR body,note 3\n"
+                + "owner/repo#4,owner/repo,4,https://github.com/owner/repo/pull/4,old title 4,old author,,,,Closed,,No,none,PR body,note 4\n"
+                + "owner/repo#5,owner/repo,5,https://github.com/owner/repo/pull/5,old title 5,old author,,,,Closed,old,Yes,possible_positive,PR body,note 5\n";
+    }
+
+    private static String reanalysisConsensusCsv() {
+        return "Sample ID,Repo,PR #,PR URL,Coder A Disclosure Present,Coder B Disclosure Present,Consensus Disclosure Present,Coder A Disclosure Classification,Coder B Disclosure Classification,Consensus Disclosure Classification,Agreement Status,Consensus Notes,Coder A Notes,Coder B Notes\n"
+                + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,No,No,No,None,None,None,Agreed,unchecked template,,\n"
+                + "owner/repo#2,owner/repo,2,https://github.com/owner/repo/pull/2,Yes,Yes,Yes,Positive,Positive,Positive,Agreed,checked yes,,\n"
+                + "owner/repo#3,owner/repo,3,https://github.com/owner/repo/pull/3,Yes,Yes,Yes,Negative,Negative,Negative,Agreed,checked no,,\n"
+                + "owner/repo#4,owner/repo,4,https://github.com/owner/repo/pull/4,Yes,Yes,Yes,Positive,Positive,Positive,Agreed,explicit,,\n";
     }
 
     private static Path tempMissingPath(String prefix, String suffix) throws java.io.IOException {
@@ -281,5 +376,56 @@ public class AiDisclosureDetectorHarness {
     private static void requireNegative(DisclosureResult result, String message) {
         require(result.disclosed(), message + " should disclose");
         require("possible_negative".equals(result.classification()), message + " should be negative");
+    }
+
+    private static class FakeGitHubClient extends GitHubClient {
+        private final Map<String, String> bodies = new java.util.LinkedHashMap<>();
+        private final Map<String, String> failures = new java.util.LinkedHashMap<>();
+        private final List<String> requests = new java.util.ArrayList<>();
+
+        void add(String repository, int number, String body) {
+            bodies.put(repository + "#" + number, body);
+        }
+
+        void fail(String repository, int number, String reason) {
+            failures.put(repository + "#" + number, reason);
+        }
+
+        List<String> requests() {
+            return List.copyOf(requests);
+        }
+
+        @Override
+        public PullRequestData getPullRequest(String owner, String repo, int number) throws java.io.IOException {
+            String repository = owner + "/" + repo;
+            String key = repository + "#" + number;
+            requests.add(key);
+            if (failures.containsKey(key)) {
+                throw new java.io.IOException(failures.get(key));
+            }
+            if (!bodies.containsKey(key)) {
+                throw new java.io.IOException("missing fixture " + key);
+            }
+            return new PullRequestData(
+                    repository,
+                    number,
+                    "https://github.com/" + repository + "/pull/" + number,
+                    "Fresh title " + number,
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-02T00:00:00Z",
+                    "",
+                    "closed",
+                    true,
+                    "contributor",
+                    "User",
+                    false,
+                    bodies.get(key)
+            );
+        }
+
+        @Override
+        public String fetchHtml(String url) {
+            return "";
+        }
     }
 }
