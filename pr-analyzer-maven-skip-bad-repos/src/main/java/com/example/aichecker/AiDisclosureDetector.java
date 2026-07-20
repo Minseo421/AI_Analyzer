@@ -12,6 +12,7 @@ public class AiDisclosureDetector {
     private static final Pattern GENERATED_BY_PATTERN = Pattern.compile("(?im)^\\s*Generated-by:\\s*(\\S[^\\r\\n]*)$");
     private static final Pattern EMPTY_GENERATED_BY_PATTERN = Pattern.compile("(?i)^\\s*Generated-by:\\s*$");
     private static final Pattern TEMPLATE_AI_HEADING_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*(?:ai\\s+usage\\s+disclosure|ai\\s+disclosure)\\s*$");
+    private static final Pattern TEMPLATE_AI_QUESTION_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*(?:was|were|did)\\b[^\\r\\n?]{0,160}\\b(?:generative\\s+ai|ai|chatgpt|github\\s+copilot|copilot|claude|gemini|cursor|llm)\\b[^\\r\\n?]{0,160}\\?\\s*$");
     private static final Pattern AFFIRMATIVE_CHECKBOX_PATTERN = Pattern.compile("(?is)^(?:yes\\b|.*\\b(?:ai\\s+tooling|generative\\s+ai|ai|chatgpt|github\\s+copilot|copilot|claude|gemini|cursor|llm)\\b[^\\r\\n]{0,120}\\b(?:used|assisted|generated)\\b)");
     private static final Pattern NEGATIVE_CHECKBOX_PATTERN = Pattern.compile("(?is)^(?:no\\b|none\\b|n/a\\b|not\\s+applicable\\b|.*\\b(?:no|not|without)\\b[^\\r\\n]{0,80}\\b(?:ai|chatgpt|github\\s+copilot|copilot|claude|gemini|cursor|llm)\\b[^\\r\\n]{0,120}\\b(?:used|assistance|tooling|generated)\\b)");
     private static final List<Pattern> NEGATIVE_DISCLOSURE_PATTERNS = List.of(
@@ -63,6 +64,19 @@ public class AiDisclosureDetector {
             return new DisclosureResult(false, "No PR body or HTML text found");
         }
         return new DisclosureResult(false, "No contributor AI disclosure text detected");
+    }
+
+    public DetectionDiagnostics diagnosePrBody(String prBody) {
+        PreparedText prepared = prepareText(prBody == null ? "" : prBody);
+        DisclosureResult result = detectInText(prBody, "PR body");
+        return new DetectionDiagnostics(
+                prBody == null ? "" : prBody,
+                prepared.visibleText(),
+                prepared.checkedCheckboxes(),
+                prepared.uncheckedCheckboxes(),
+                visibleGeneratedByFields(prepared.textWithoutCheckboxes()),
+                result
+        );
     }
 
     private DisclosureResult detectInText(String text, String source) {
@@ -119,13 +133,19 @@ public class AiDisclosureDetector {
     }
 
     private static PreparedText prepareText(String text) {
-        String visibleText = HTML_COMMENT_PATTERN.matcher(text).replaceAll(" ");
+        String visibleText = removeHtmlComments(text);
         List<String> checkedCheckboxes = new ArrayList<>();
-        String textWithoutCheckboxes = removeTemplateResponseLines(visibleText, checkedCheckboxes);
-        return new PreparedText(visibleText, textWithoutCheckboxes, checkedCheckboxes);
+        List<String> uncheckedCheckboxes = new ArrayList<>();
+        String textWithoutCheckboxes = removeTemplateResponseLines(visibleText, checkedCheckboxes, uncheckedCheckboxes);
+        return new PreparedText(visibleText, textWithoutCheckboxes, checkedCheckboxes, uncheckedCheckboxes);
     }
 
-    private static String removeTemplateResponseLines(String text, List<String> checkedCheckboxes) {
+    static String removeHtmlComments(String text) {
+        if (isBlank(text)) return "";
+        return HTML_COMMENT_PATTERN.matcher(text).replaceAll(" ");
+    }
+
+    private static String removeTemplateResponseLines(String text, List<String> checkedCheckboxes, List<String> uncheckedCheckboxes) {
         List<String> keptLines = new ArrayList<>();
         for (String line : text.split("\\R", -1)) {
             Matcher matcher = MARKDOWN_CHECKBOX_PATTERN.matcher(line);
@@ -133,15 +153,28 @@ public class AiDisclosureDetector {
                 String checkedMarker = matcher.group(1);
                 if (!checkedMarker.isBlank()) {
                     checkedCheckboxes.add("[x] " + matcher.group(2).trim());
+                } else {
+                    uncheckedCheckboxes.add("[ ] " + matcher.group(2).trim());
                 }
                 continue;
             }
-            if (EMPTY_GENERATED_BY_PATTERN.matcher(line).matches() || TEMPLATE_AI_HEADING_PATTERN.matcher(line).matches()) {
+            if (EMPTY_GENERATED_BY_PATTERN.matcher(line).matches()
+                    || TEMPLATE_AI_HEADING_PATTERN.matcher(line).matches()
+                    || TEMPLATE_AI_QUESTION_PATTERN.matcher(line).matches()) {
                 continue;
             }
             keptLines.add(line);
         }
         return String.join("\n", keptLines);
+    }
+
+    private static List<String> visibleGeneratedByFields(String text) {
+        List<String> fields = new ArrayList<>();
+        Matcher matcher = GENERATED_BY_PATTERN.matcher(text);
+        while (matcher.find()) {
+            fields.add(cleanEvidence(matcher.group()));
+        }
+        return fields;
     }
 
     private static DisclosureResult detectCheckedCheckboxes(List<String> checkedCheckboxes, String source) {
@@ -220,6 +253,21 @@ public class AiDisclosureDetector {
         return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ").trim();
     }
 
-    private record PreparedText(String visibleText, String textWithoutCheckboxes, List<String> checkedCheckboxes) {
+    public record DetectionDiagnostics(
+            String rawPrBody,
+            String cleanedPrBody,
+            List<String> checkedCheckboxes,
+            List<String> uncheckedCheckboxes,
+            List<String> visibleGeneratedByFields,
+            DisclosureResult result
+    ) {
+        public DetectionDiagnostics {
+            checkedCheckboxes = List.copyOf(checkedCheckboxes);
+            uncheckedCheckboxes = List.copyOf(uncheckedCheckboxes);
+            visibleGeneratedByFields = List.copyOf(visibleGeneratedByFields);
+        }
+    }
+
+    private record PreparedText(String visibleText, String textWithoutCheckboxes, List<String> checkedCheckboxes, List<String> uncheckedCheckboxes) {
     }
 }

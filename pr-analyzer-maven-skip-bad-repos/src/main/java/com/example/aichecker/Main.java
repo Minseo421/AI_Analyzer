@@ -124,6 +124,14 @@ public class Main {
                 printReanalysisSummary(result);
                 return;
             }
+            if (args.length >= 4 && args[0].equals("--analyze-specific-prs")) {
+                Path sample = Path.of(args[1]);
+                Path output = Path.of(args[2]);
+                List<String> sampleIds = List.of(args).subList(3, args.length);
+                SpecificPrAnalysisWorkflow.SpecificAnalysisResult result = SpecificPrAnalysisWorkflow.analyzeSpecificPrs(sample, output, sampleIds);
+                printSpecificAnalysisSummary(result, output);
+                return;
+            }
             if (args.length > 0 && isKnownMode(args[0])) {
                 throw new IllegalArgumentException("Invalid arguments for " + args[0] + ". Expected: " + expectedUsage(args[0]));
             }
@@ -160,7 +168,8 @@ public class Main {
                 || mode.equals("--calculate-kappa")
                 || mode.equals("--create-consensus")
                 || mode.equals("--validate-detector")
-                || mode.equals("--reanalyze-kappa-sample");
+                || mode.equals("--reanalyze-kappa-sample")
+                || mode.equals("--analyze-specific-prs");
     }
 
     private static String expectedUsage(String mode) {
@@ -175,6 +184,7 @@ public class Main {
             case "--create-consensus" -> "--create-consensus coder_a_labels.csv coder_b_labels.csv consensus_labels.csv";
             case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
             case "--reanalyze-kappa-sample" -> "--reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv";
+            case "--analyze-specific-prs" -> "--analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv Repo#PR [Repo#PR...]";
             default -> "";
         };
     }
@@ -238,6 +248,17 @@ public class Main {
         }
     }
 
+    private static void printSpecificAnalysisSummary(SpecificPrAnalysisWorkflow.SpecificAnalysisResult result, Path output) {
+        System.out.println("Targeted PRs requested: " + result.requested());
+        System.out.println("Successfully analysed: " + result.succeeded());
+        System.out.println("Failed: " + result.failed());
+        System.out.println("Rows written: " + result.rowsWritten());
+        System.out.println("Output: " + output.toAbsolutePath());
+        for (SpecificPrAnalysisWorkflow.Failure failure : result.failures()) {
+            System.out.println("- " + failure.sampleId() + ": " + failure.reason());
+        }
+    }
+
     private static void printMissingIds(String label, List<String> ids) {
         System.out.println(label + ": " + ids.size());
         for (String id : ids) {
@@ -258,6 +279,7 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_labels.csv coworker_labels.csv consensus_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");
         System.out.println();
         System.out.println("repos.txt can contain either GitHub URLs or OWNER/REPO names, one per line.");
     }

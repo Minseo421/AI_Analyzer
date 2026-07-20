@@ -1,14 +1,59 @@
 package com.example.aichecker;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.List;
 import java.util.Map;
 
 public class AiDisclosureDetectorHarness {
     public static void main(String[] args) throws Exception {
         AiDisclosureDetector detector = new AiDisclosureDetector();
+        String testToken = "ghp_test_token_should_not_log";
+        HttpRequest authenticatedRequest = GitHubClient.buildGetRequest(URI.create("https://api.github.com/repos/owner/repo/pulls/1"), "application/vnd.github+json", testToken);
+        require(authenticatedRequest.headers().firstValue("Authorization").orElse("").equals("Bearer " + testToken), "Authorization header should use GITHUB_TOKEN");
+        require(authenticatedRequest.headers().firstValue("Accept").orElse("").equals("application/vnd.github+json"), "Accept header should be present");
+        require(authenticatedRequest.headers().firstValue("X-GitHub-Api-Version").orElse("").equals("2022-11-28"), "GitHub API version header should be present");
+
+        HttpRequest unauthenticatedRequest = GitHubClient.buildGetRequest(URI.create("https://api.github.com/repos/owner/repo/pulls/1"), "application/vnd.github+json", null);
+        require(unauthenticatedRequest.headers().firstValue("Authorization").isEmpty(), "Authorization header should be omitted without token");
+
+        HttpRequest blankTokenRequest = GitHubClient.buildGetRequest(URI.create("https://api.github.com/repos/owner/repo/pulls/1"), "application/vnd.github+json", "   ");
+        require(blankTokenRequest.headers().firstValue("Authorization").isEmpty(), "Authorization header should be omitted for blank token");
+
+        ByteArrayOutputStream warningBytes = new ByteArrayOutputStream();
+        PrintStream originalErr = System.err;
+        try {
+            System.setErr(new PrintStream(warningBytes, true, StandardCharsets.UTF_8));
+            GitHubClient.resetUnauthenticatedWarningForTests();
+            GitHubClient.warnUnauthenticatedOnce();
+            GitHubClient.warnUnauthenticatedOnce();
+        } finally {
+            System.setErr(originalErr);
+        }
+        String warningText = warningBytes.toString(StandardCharsets.UTF_8);
+        require(countOccurrences(warningText, "No GITHUB_TOKEN") == 1, "unauthenticated warning should print once");
+        require(!warningText.contains(testToken), "token should not appear in warning logs");
+
+        String unauthorized = GitHubClient.errorMessage("https://api.github.com/test", 401, "bad credentials", name -> Optional.empty(), true);
+        require(unauthorized.contains("GitHub authentication failed"), "401 should include authentication guidance");
+        require(!unauthorized.contains(testToken), "token should not appear in 401 message");
+
+        String rateLimited = GitHubClient.errorMessage(
+                "https://api.github.com/test",
+                403,
+                "{\"message\":\"API rate limit exceeded\"}",
+                name -> name.equalsIgnoreCase("x-ratelimit-remaining") ? Optional.of("0") : Optional.empty(),
+                false
+        );
+        require(rateLimited.contains("Authentication enabled: No"), "403 rate limit should report auth state");
+        require(rateLimited.contains("Remaining rate limit: 0"), "403 rate limit should report remaining quota");
+        require(!rateLimited.contains(testToken), "token should not appear in 403 message");
 
         DisclosureResult negative = detector.detect("generative AI tooling used to co-author this PR? No", "");
         require(negative.disclosed(), "negative disclosure should count as present");
@@ -38,6 +83,44 @@ public class AiDisclosureDetectorHarness {
                 - [ ] Yes (please specify the tool below)
                 """, "");
         require(!uncheckedTemplate.disclosed(), "unchecked affirmative template checkbox should not count");
+
+        DisclosureResult airflowTemplate = detector.detect("""
+                ##### Was generative AI tooling used to co-author this PR?
+
+                <!--
+                If generative AI tooling has been used in the process of authoring this PR, please
+                change below checkbox to `[X]` followed by the name of the tool, uncomment the "Generated-by".
+                -->
+
+                - [ ] Yes (please specify the tool below)
+
+                <!--
+                Generated-by: [Tool Name] following [the guidelines](https://github.com/apache/airflow/blob/main/contributing-docs/05_pull_requests.rst#gen-ai-assisted-contributions)
+                -->
+                """, "");
+        require(!airflowTemplate.disclosed(), "Airflow-style unchecked template should not count");
+        require(!airflowTemplate.evidence().contains("ai-assisted-contributions"), "comment URL anchor should not appear as evidence");
+
+        DisclosureResult commentedAiUrl = detector.detect("""
+                <!--
+                [AI guidance](https://example.com/gen-ai-assisted-contributions)
+                https://example.com/docs#ai-assisted-contributions
+                -->
+                """, "");
+        require(!commentedAiUrl.disclosed(), "AI terms inside commented URLs should not count");
+
+        String cleanedComments = AiDisclosureDetector.removeHtmlComments("""
+                Visible before
+                <!-- first AI comment -->
+                Visible middle
+                <!-- second Generated-by: ChatGPT comment -->
+                Visible after
+                """);
+        require(cleanedComments.contains("Visible before"), "comment removal should preserve text before comments");
+        require(cleanedComments.contains("Visible middle"), "comment removal should preserve text between comments");
+        require(cleanedComments.contains("Visible after"), "comment removal should preserve text after comments");
+        require(!cleanedComments.contains("first AI comment"), "comment removal should remove first comment");
+        require(!cleanedComments.contains("Generated-by: ChatGPT"), "comment removal should remove second comment");
 
         DisclosureResult uncheckedVisibleQuestion = detector.detect("""
                 ## AI usage disclosure
@@ -272,6 +355,87 @@ public class AiDisclosureDetectorHarness {
         ConsensusWorkflow.DetectorValidationResult reanalysisValidationResult = ConsensusWorkflow.validateDetector(reanalysisOutput, reanalysisConsensus, reanalysisValidation);
         require(reanalysisValidationResult.totalMatchedRows() == 4, "reanalyzed output remains detector-validation compatible");
 
+        Path targetedInput = Files.createTempFile("targeted-input", ".csv");
+        Files.writeString(targetedInput, targetedInputCsv(), StandardCharsets.UTF_8);
+        FakeGitHubClient targetedClient = new FakeGitHubClient();
+        targetedClient.add("owner/repo", 1, """
+                <!-- https://example.com/docs#ai-assisted-contributions -->
+                - [ ] Yes
+                """);
+        targetedClient.add("owner/repo", 2, "- [x] Yes - GitHub Copilot");
+        targetedClient.failTimes("owner/repo", 2, "request timed out", 2);
+        targetedClient.fail("owner/repo", 3, "HTTP 401 for https://api.github.com/test. GitHub authentication failed.");
+        Path targetedOutput = tempMissingPath("targeted-output", ".csv");
+        ByteArrayOutputStream diagnosticsBytes = new ByteArrayOutputStream();
+        SpecificPrAnalysisWorkflow.SpecificAnalysisResult targetedResult = SpecificPrAnalysisWorkflow.analyzeSpecificPrs(
+                targetedInput,
+                targetedOutput,
+                List.of("owner/repo#1", "owner/repo#2", "owner/repo#3"),
+                new PrAnalyzer(targetedClient),
+                new PrintStream(diagnosticsBytes, true, StandardCharsets.UTF_8)
+        );
+        require(targetedResult.requested() == 3, "targeted requested count");
+        require(targetedResult.succeeded() == 2, "targeted success count");
+        require(targetedResult.failed() == 1, "targeted failure count");
+        require(targetedResult.rowsWritten() == 4, "targeted row count");
+        require(targetedClient.requests().equals(List.of("owner/repo#1", "owner/repo#2", "owner/repo#2", "owner/repo#2", "owner/repo#3")), "targeted fetches should include retries and only requested PRs");
+        List<Map<String, String>> targetedRows = CsvTools.readRows(targetedOutput);
+        require("owner/repo#1".equals(targetedRows.get(0).get("Sample ID")), "targeted row order first");
+        require("owner/repo#4".equals(targetedRows.get(3).get("Sample ID")), "targeted row order last");
+        require("No".equals(targetedRows.get(0).get("Script AI Disclosure Present")), "targeted unchecked checkbox no");
+        require(targetedRows.get(0).get("Disclosure Text detected by script").isBlank(), "targeted unchecked evidence blank");
+        require("Yes".equals(targetedRows.get(1).get("Script AI Disclosure Present")), "targeted checked yes");
+        require("Success".equals(targetedRows.get(1).get("Reanalysis Status")), "targeted retry success status");
+        require("Fetch Failed".equals(targetedRows.get(2).get("Reanalysis Status")), "targeted 401 failure status");
+        require("old evidence 4".equals(targetedRows.get(3).get("Disclosure Text detected by script")), "unrequested row evidence unchanged");
+        require("old note 4".equals(targetedRows.get(3).get("Notes")), "unrequested row note unchanged");
+        String diagnostics = diagnosticsBytes.toString(StandardCharsets.UTF_8);
+        require(diagnostics.contains("Raw PR body:"), "diagnostics should show raw body");
+        require(diagnostics.contains("Cleaned PR body after HTML-comment removal:"), "diagnostics should show cleaned body");
+        require(diagnostics.contains("Unchecked AI checkbox lines ignored:"), "diagnostics should show ignored checkboxes");
+        require(diagnostics.contains("Detected disclosure evidence:"), "diagnostics should show evidence");
+        require(diagnostics.contains("Classification: Positive"), "diagnostics should show classification");
+        require(!diagnostics.contains("Authorization"), "diagnostics must not print authorization header");
+        require(!targetedRows.get(0).get("Disclosure Text detected by script").contains("ai-assisted-contributions"), "HTML comment content should not appear in targeted evidence");
+
+        try {
+            SpecificPrAnalysisWorkflow.analyzeSpecificPrs(targetedInput, tempMissingPath("targeted-missing", ".csv"), List.of("owner/repo#999"), new PrAnalyzer(targetedClient), System.out);
+            throw new AssertionError("targeted analysis should reject missing sample IDs");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("Sample ID not found"), "targeted missing Sample ID message");
+        }
+
+        Path duplicateTargeted = Files.createTempFile("targeted-duplicate", ".csv");
+        Files.writeString(duplicateTargeted, targetedInputCsv() + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,t,a,,,,Closed,old,Yes,old_class,old_source,Success,,note\n", StandardCharsets.UTF_8);
+        try {
+            SpecificPrAnalysisWorkflow.analyzeSpecificPrs(duplicateTargeted, tempMissingPath("targeted-duplicate-output", ".csv"), List.of("owner/repo#1"), new PrAnalyzer(targetedClient), System.out);
+            throw new AssertionError("targeted analysis should reject duplicate Sample IDs");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("Duplicate Sample ID"), "targeted duplicate Sample ID message");
+        }
+
+        try {
+            SpecificPrAnalysisWorkflow.analyzeSpecificPrs(targetedInput, targetedOutput, List.of("owner/repo#1"), new PrAnalyzer(targetedClient), System.out);
+            throw new AssertionError("targeted analysis should refuse overwrite");
+        } catch (java.io.IOException expected) {
+            require(expected.getMessage().contains("already exists"), "targeted overwrite refusal");
+        }
+
+        Path targetedConsensus = Files.createTempFile("targeted-consensus", ".csv");
+        Files.writeString(targetedConsensus, targetedConsensusCsv(), StandardCharsets.UTF_8);
+        Path targetedValidation = tempMissingPath("targeted-validation", ".csv");
+        ConsensusWorkflow.DetectorValidationResult targetedValidationResult = ConsensusWorkflow.validateDetector(targetedOutput, targetedConsensus, targetedValidation);
+        require(targetedValidationResult.totalMatchedRows() == 2, "targeted output compatible with validation for successful rows");
+
+        Path failedStatusConsensus = Files.createTempFile("targeted-failed-status-consensus", ".csv");
+        Files.writeString(failedStatusConsensus, targetedFailedStatusConsensusCsv(), StandardCharsets.UTF_8);
+        try {
+            ConsensusWorkflow.validateDetector(targetedOutput, failedStatusConsensus, tempMissingPath("targeted-failed-validation", ".csv"));
+            throw new AssertionError("detector validation should reject matched unsuccessful reanalysis statuses");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("unsuccessful re-analysis status"), "failed reanalysis status validation");
+        }
+
         System.out.println("AiDisclosureDetectorHarness passed");
     }
 
@@ -332,6 +496,25 @@ public class AiDisclosureDetectorHarness {
                 + "owner/repo#4,owner/repo,4,https://github.com/owner/repo/pull/4,Yes,Yes,Yes,Positive,Positive,Positive,Agreed,explicit,,\n";
     }
 
+    private static String targetedInputCsv() {
+        return "Sample ID,Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Status,Disclosure Text detected by script,Script AI Disclosure Present,Script Disclosure Classification,Script Disclosure Source,Reanalysis Status,Reanalysis Error,Notes\n"
+                + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,t,a,,,,Closed,old evidence 1,Yes,possible_positive,PR body,Fetch Failed,old error 1,old note 1\n"
+                + "owner/repo#2,owner/repo,2,https://github.com/owner/repo/pull/2,t,a,,,,Closed,old evidence 2,No,none,PR body,Fetch Failed,old error 2,old note 2\n"
+                + "owner/repo#3,owner/repo,3,https://github.com/owner/repo/pull/3,t,a,,,,Closed,old evidence 3,No,none,PR body,Fetch Failed,old error 3,old note 3\n"
+                + "owner/repo#4,owner/repo,4,https://github.com/owner/repo/pull/4,t,a,,,,Closed,old evidence 4,Yes,possible_positive,PR body,Success,,old note 4\n";
+    }
+
+    private static String targetedConsensusCsv() {
+        return "Sample ID,Repo,PR #,PR URL,Coder A Disclosure Present,Coder B Disclosure Present,Consensus Disclosure Present,Coder A Disclosure Classification,Coder B Disclosure Classification,Consensus Disclosure Classification,Agreement Status,Consensus Notes,Coder A Notes,Coder B Notes\n"
+                + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,No,No,No,None,None,None,Agreed,targeted unchecked,,\n"
+                + "owner/repo#2,owner/repo,2,https://github.com/owner/repo/pull/2,Yes,Yes,Yes,Positive,Positive,Positive,Agreed,targeted checked,,\n";
+    }
+
+    private static String targetedFailedStatusConsensusCsv() {
+        return "Sample ID,Repo,PR #,PR URL,Coder A Disclosure Present,Coder B Disclosure Present,Consensus Disclosure Present,Coder A Disclosure Classification,Coder B Disclosure Classification,Consensus Disclosure Classification,Agreement Status,Consensus Notes,Coder A Notes,Coder B Notes\n"
+                + "owner/repo#3,owner/repo,3,https://github.com/owner/repo/pull/3,No,No,No,None,None,None,Agreed,failed,,\n";
+    }
+
     private static Path tempMissingPath(String prefix, String suffix) throws java.io.IOException {
         Path path = Files.createTempFile(prefix, suffix);
         Files.delete(path);
@@ -378,6 +561,16 @@ public class AiDisclosureDetectorHarness {
         require("possible_negative".equals(result.classification()), message + " should be negative");
     }
 
+    private static int countOccurrences(String text, String pattern) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(pattern, index)) >= 0) {
+            count++;
+            index += pattern.length();
+        }
+        return count;
+    }
+
     private static class FakeGitHubClient extends GitHubClient {
         private final Map<String, String> bodies = new java.util.LinkedHashMap<>();
         private final Map<String, String> failures = new java.util.LinkedHashMap<>();
@@ -391,6 +584,10 @@ public class AiDisclosureDetectorHarness {
             failures.put(repository + "#" + number, reason);
         }
 
+        void failTimes(String repository, int number, String reason, int times) {
+            transientFailures.put(repository + "#" + number, new TransientFailure(reason, times));
+        }
+
         List<String> requests() {
             return List.copyOf(requests);
         }
@@ -400,6 +597,11 @@ public class AiDisclosureDetectorHarness {
             String repository = owner + "/" + repo;
             String key = repository + "#" + number;
             requests.add(key);
+            TransientFailure transientFailure = transientFailures.get(key);
+            if (transientFailure != null && transientFailure.remaining() > 0) {
+                transientFailure.decrement();
+                throw new java.io.IOException(transientFailure.reason());
+            }
             if (failures.containsKey(key)) {
                 throw new java.io.IOException(failures.get(key));
             }
@@ -426,6 +628,30 @@ public class AiDisclosureDetectorHarness {
         @Override
         public String fetchHtml(String url) {
             return "";
+        }
+
+        private final Map<String, TransientFailure> transientFailures = new java.util.LinkedHashMap<>();
+
+        private static class TransientFailure {
+            private final String reason;
+            private int remaining;
+
+            TransientFailure(String reason, int remaining) {
+                this.reason = reason;
+                this.remaining = remaining;
+            }
+
+            String reason() {
+                return reason;
+            }
+
+            int remaining() {
+                return remaining;
+            }
+
+            void decrement() {
+                remaining--;
+            }
         }
     }
 }

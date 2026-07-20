@@ -98,6 +98,7 @@ public class ConsensusWorkflow {
         for (String id : matchedIds) {
             Map<String, String> sample = sampleById.get(id);
             Map<String, String> consensus = consensusById.get(id);
+            validateSampleReanalysisStatus(sample, samplePath, id);
             String scriptPresent = normalizeRequired(sample.get("Script AI Disclosure Present"), PRESENT_VALUES, "Script AI Disclosure Present", samplePath, id);
             String consensusPresent = normalizeRequired(consensus.get("Consensus Disclosure Present"), PRESENT_VALUES, "Consensus Disclosure Present", consensusPath, id);
             String consensusClassification = normalizeRequired(consensus.get("Consensus Disclosure Classification"), CLASSIFICATION_VALUES, "Consensus Disclosure Classification", consensusPath, id);
@@ -226,6 +227,13 @@ public class ConsensusWorkflow {
         String status = normalizeRequired(row.get("Agreement Status"), CONSENSUS_STATUSES, "Agreement Status", path, id);
         if (status.equals("Needs Resolution")) {
             throw new IllegalArgumentException("Consensus row still needs resolution in " + path + ": " + id);
+        }
+    }
+
+    private static void validateSampleReanalysisStatus(Map<String, String> row, Path path, String id) {
+        String status = row.getOrDefault("Reanalysis Status", "").trim();
+        if (!status.isBlank() && !status.equalsIgnoreCase("Success")) {
+            throw new IllegalArgumentException("Sample row has unsuccessful re-analysis status in " + path + " for Sample ID " + id + ": " + status);
         }
     }
 

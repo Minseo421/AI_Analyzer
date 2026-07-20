@@ -30,6 +30,15 @@ public class PrAnalyzer {
         return analyze(apiData);
     }
 
+    public AnalysisDetail analyzeExistingPullRequestDetail(String repository, int number) throws Exception {
+        RepoUrl repoUrl = RepoUrl.parse(repository);
+        PullRequestData apiData = gitHubClient.getPullRequest(repoUrl.owner(), repoUrl.repo(), number);
+        HtmlData htmlData = fetchHtmlSafe(apiData.url());
+        DisclosureResult disclosure = detector.detect(apiData.body(), htmlData.text());
+        AiDisclosureDetector.DetectionDiagnostics diagnostics = detector.diagnosePrBody(apiData.body());
+        return new AnalysisDetail(toReportRow(apiData, htmlData, disclosure), apiData, htmlData, diagnostics);
+    }
+
     public List<PrReportRow> analyzeLatestClosedHumanPrs(RepoUrl repoUrl, int targetCount) throws Exception {
         List<PrReportRow> rows = new ArrayList<>();
         botPrsExcluded.put(repoUrl.fullName(), 0);
@@ -159,6 +168,10 @@ public class PrAnalyzer {
     private PrReportRow analyze(PullRequestData apiData) {
         HtmlData htmlData = fetchHtmlSafe(apiData.url());
         DisclosureResult disclosure = detector.detect(apiData.body(), htmlData.text());
+        return toReportRow(apiData, htmlData, disclosure);
+    }
+
+    private PrReportRow toReportRow(PullRequestData apiData, HtmlData htmlData, DisclosureResult disclosure) {
         boolean human = BotDetector.isHuman(apiData.author(), apiData.userType());
         return new PrReportRow(
                 apiData.repository(),
@@ -190,5 +203,13 @@ public class PrAnalyzer {
         } catch (Exception e) {
             return new HtmlData(false, "", e.getMessage());
         }
+    }
+
+    public record AnalysisDetail(
+            PrReportRow row,
+            PullRequestData apiData,
+            HtmlData htmlData,
+            AiDisclosureDetector.DetectionDiagnostics diagnostics
+    ) {
     }
 }
