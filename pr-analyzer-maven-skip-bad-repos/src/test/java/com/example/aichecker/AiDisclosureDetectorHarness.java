@@ -55,6 +55,65 @@ public class AiDisclosureDetectorHarness {
         require(rateLimited.contains("Remaining rate limit: 0"), "403 rate limit should report remaining quota");
         require(!rateLimited.contains(testToken), "token should not appear in 403 message");
 
+        require("apache/airflow".equals(RepoListImporter.normalizeRepository("https://github.com/apache/airflow")), "normalize https GitHub URL");
+        require("apache/airflow".equals(RepoListImporter.normalizeRepository("https://github.com/apache/airflow/")), "normalize trailing slash");
+        require("apache/airflow".equals(RepoListImporter.normalizeRepository("http://github.com/apache/airflow")), "normalize http GitHub URL");
+        require("apache/airflow".equals(RepoListImporter.normalizeRepository("github.com/apache/airflow")), "normalize schemeless GitHub URL");
+        require("apache/airflow".equals(RepoListImporter.normalizeRepository("apache/airflow")), "accept owner/repo");
+        require("apache/airflow".equals(RepoListImporter.normalizeRepository("https://github.com/apache/airflow.git")), "normalize git suffix");
+        try {
+            RepoListImporter.normalizeRepository("https://github.com/apache/airflow/blob/main/README.md");
+            throw new AssertionError("policy or file URL should be rejected");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("below the repository root"), "reject file URL");
+        }
+        try {
+            RepoListImporter.normalizeRepository("https://github.com/apache");
+            throw new AssertionError("missing repository name should be rejected");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("owner/repository"), "reject missing repo");
+        }
+
+        Path repoImportCsv = Files.createTempFile("repo-import", ".csv");
+        Files.writeString(repoImportCsv, repoImportCsv(), StandardCharsets.UTF_8);
+        Path existingRepos = Files.createTempFile("existing-repos", ".txt");
+        Files.writeString(existingRepos, "old/removed\napache/airflow\n", StandardCharsets.UTF_8);
+        RepoListImporter.ImportResult importResult = RepoListImporter.importFromCsv(repoImportCsv, existingRepos, true);
+        require(importResult.repositoryRowsInspected() == 9, "repo import inspected row count");
+        require(importResult.nonEmptyRepositoryLinks() == 8, "repo import non-empty link count");
+        require(importResult.validRepositoriesWritten() == 0, "repo import should not write valid rows when invalid links exist");
+        require(importResult.duplicateRepositoriesRemoved() == 1, "repo import duplicate count");
+        require(importResult.invalidRepositoryLinks() == 2, "repo import invalid count");
+        require(!importResult.written(), "repo import should not write when invalid links exist");
+        require(importResult.added().contains("owner/repo"), "repo import added comparison");
+        require(importResult.removed().contains("old/removed"), "repo import removed comparison");
+        require(importResult.unchanged() == 1, "repo import unchanged comparison");
+
+        Path validRepoImportCsv = Files.createTempFile("valid-repo-import", ".csv");
+        Files.writeString(validRepoImportCsv, validRepoImportCsv(), StandardCharsets.UTF_8);
+        Path validRepoOutput = tempMissingPath("valid-repos", ".txt");
+        RepoListImporter.ImportResult validImport = RepoListImporter.importFromCsv(validRepoImportCsv, validRepoOutput, false);
+        require(validImport.written(), "valid repo import should write");
+        List<String> importedRepos = Files.readAllLines(validRepoOutput, StandardCharsets.UTF_8);
+        require(importedRepos.equals(List.of("apache/airflow", "owner/repo", "OSGeo/gdal", "processing/p5.js")), "repo import preserves order and normalization");
+        try {
+            RepoListImporter.importFromCsv(validRepoImportCsv, validRepoOutput, false);
+            throw new AssertionError("repo import should refuse overwrite without replace");
+        } catch (java.io.IOException expected) {
+            require(expected.getMessage().contains("--replace"), "repo import overwrite refusal");
+        }
+
+        Path policyTracker = Path.of("policy-tracker.csv");
+        if (Files.exists(policyTracker)) {
+            Path policyImportOutput = tempMissingPath("policy-tracker-repos", ".txt");
+            RepoListImporter.ImportResult policyImport = RepoListImporter.importFromCsv(policyTracker, policyImportOutput, false);
+            List<String> policyRepos = Files.readAllLines(policyImportOutput, StandardCharsets.UTF_8);
+            require(policyImport.validRepositoriesWritten() == 41, "policy tracker should produce 41 repos");
+            require(policyRepos.size() == 41, "policy tracker output row count");
+            require("apache/airflow".equals(policyRepos.get(0)), "policy tracker first repo");
+            require("sympy/sympy".equals(policyRepos.get(40)), "policy tracker last repo");
+        }
+
         DisclosureResult negative = detector.detect("generative AI tooling used to co-author this PR? No", "");
         require(negative.disclosed(), "negative disclosure should count as present");
         require("possible_negative".equals(negative.classification()), "negative disclosure classification");
@@ -486,6 +545,29 @@ public class AiDisclosureDetectorHarness {
                 + "owner/repo#3,owner/repo,3,https://github.com/owner/repo/pull/3,old title 3,old author,,,,Closed,,No,none,PR body,note 3\n"
                 + "owner/repo#4,owner/repo,4,https://github.com/owner/repo/pull/4,old title 4,old author,,,,Closed,,No,none,PR body,note 4\n"
                 + "owner/repo#5,owner/repo,5,https://github.com/owner/repo/pull/5,old title 5,old author,,,,Closed,old,Yes,possible_positive,PR body,note 5\n";
+    }
+
+    private static String repoImportCsv() {
+        return "Repo,Repository Link,Policy URL\n"
+                + "Airflow, https://github.com/apache/airflow ,https://github.com/apache/airflow/blob/main/policy.md\n"
+                + "Blank,,\n"
+                + "OwnerRepo,owner/repo,\n"
+                + "Duplicate,https://github.com/apache/airflow/,\n"
+                + "GitSuffix,github.com/OSGeo/gdal.git,\n"
+                + "Trailing,https://github.com/processing/p5.js/,\n"
+                + "PolicyPage,https://github.com/apache/airflow/blob/main/README.md,\n"
+                + "MissingRepo,https://github.com/apache,\n"
+                + "HTTP,http://github.com/curl/curl,\n";
+    }
+
+    private static String validRepoImportCsv() {
+        return "Repo,Notes,Repository Link\n"
+                + "Airflow,,https://github.com/apache/airflow\n"
+                + "Blank,,\n"
+                + "OwnerRepo,,owner/repo\n"
+                + "OSGeo,,github.com/OSGeo/gdal.git\n"
+                + "Processing,,https://github.com/processing/p5.js/\n"
+                + "Duplicate,,https://github.com/apache/airflow/\n";
     }
 
     private static String reanalysisConsensusCsv() {

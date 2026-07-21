@@ -46,15 +46,21 @@ mvn clean package
 
 ## Input Files
 
-`repos.txt` should contain one canonical GitHub repository URL per line:
+`repos.txt` should contain one canonical `OWNER/REPO` repository identifier per line:
 
 ```text
-https://github.com/apache/airflow
-https://github.com/coreruleset/coreruleset
-https://github.com/fedify-dev/fedify
+apache/airflow
+apache/couchdb
+apache/arrow
 ```
 
-Do not use GitHub PR search URLs or URLs with query strings. The parser also accepts `OWNER/REPO`, but canonical repository URLs are preferred for research reproducibility.
+Do not use GitHub PR search URLs, policy-page URLs, file URLs, or URLs with query strings. The repository list can be regenerated from the policy tracker CSV's `Repository Link` column:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt --replace
+```
+
+The import command normalizes GitHub repository links to `OWNER/REPO`, ignores blank rows, removes duplicates, preserves CSV order, reports invalid non-empty links, and prints repositories added or removed compared with the existing `repos.txt`.
 
 Research workbook/schema files:
 
@@ -99,6 +105,12 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --latest-pr-dataset https://github.
 
 ```bash
 java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr_dataset_output.csv repo_compliance_summary.csv
+```
+
+Repository list maintenance:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt --replace
 ```
 
 The numeric argument is the number of latest closed human PRs to collect per repository. The current implementation filters out bot PRs while collecting rows.

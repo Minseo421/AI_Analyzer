@@ -132,6 +132,20 @@ public class Main {
                 printSpecificAnalysisSummary(result, output);
                 return;
             }
+            if ((args.length == 3 || args.length == 4) && args[0].equals("--repos-from-csv")) {
+                Path csv = Path.of(args[1]);
+                Path output = Path.of(args[2]);
+                boolean replace = args.length == 4 && args[3].equals("--replace");
+                if (args.length == 4 && !replace) {
+                    throw new IllegalArgumentException("Invalid arguments for --repos-from-csv. Expected: " + expectedUsage(args[0]));
+                }
+                RepoListImporter.ImportResult result = RepoListImporter.importFromCsv(csv, output, replace);
+                printRepoImportSummary(result);
+                if (!result.written()) {
+                    throw new IllegalArgumentException("Repository list was not written because invalid repository links were found.");
+                }
+                return;
+            }
             if (args.length > 0 && isKnownMode(args[0])) {
                 throw new IllegalArgumentException("Invalid arguments for " + args[0] + ". Expected: " + expectedUsage(args[0]));
             }
@@ -169,7 +183,8 @@ public class Main {
                 || mode.equals("--create-consensus")
                 || mode.equals("--validate-detector")
                 || mode.equals("--reanalyze-kappa-sample")
-                || mode.equals("--analyze-specific-prs");
+                || mode.equals("--analyze-specific-prs")
+                || mode.equals("--repos-from-csv");
     }
 
     private static String expectedUsage(String mode) {
@@ -185,6 +200,7 @@ public class Main {
             case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
             case "--reanalyze-kappa-sample" -> "--reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv";
             case "--analyze-specific-prs" -> "--analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv Repo#PR [Repo#PR...]";
+            case "--repos-from-csv" -> "--repos-from-csv policy-tracker.csv repos.txt [--replace]";
             default -> "";
         };
     }
@@ -259,6 +275,36 @@ public class Main {
         }
     }
 
+    private static void printRepoImportSummary(RepoListImporter.ImportResult result) {
+        System.out.println("Repository rows inspected: " + result.repositoryRowsInspected());
+        System.out.println("Non-empty repository links: " + result.nonEmptyRepositoryLinks());
+        System.out.println("Valid repositories written: " + result.validRepositoriesWritten());
+        System.out.println("Duplicate repositories removed: " + result.duplicateRepositoriesRemoved());
+        System.out.println("Invalid repository links: " + result.invalidRepositoryLinks());
+        System.out.println("Output: " + result.output().toAbsolutePath());
+        System.out.println();
+        System.out.println("Repositories added:");
+        printListOrNone(result.added());
+        System.out.println();
+        System.out.println("Repositories removed:");
+        printListOrNone(result.removed());
+        System.out.println();
+        System.out.println("Repositories unchanged: " + result.unchanged());
+        for (RepoListImporter.InvalidRepositoryLink invalid : result.invalidLinks()) {
+            System.out.println("Invalid repository link at CSV row " + invalid.csvRowNumber() + ": " + invalid.value());
+        }
+    }
+
+    private static void printListOrNone(List<String> values) {
+        if (values.isEmpty()) {
+            System.out.println("- None");
+            return;
+        }
+        for (String value : values) {
+            System.out.println("- " + value);
+        }
+    }
+
     private static void printMissingIds(String label, List<String> ids) {
         System.out.println(label + ": " + ids.size());
         for (String id : ids) {
@@ -280,6 +326,7 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt [--replace]");
         System.out.println();
         System.out.println("repos.txt can contain either GitHub URLs or OWNER/REPO names, one per line.");
     }
