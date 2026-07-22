@@ -1,15 +1,29 @@
 package com.example.aichecker;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.net.Authenticator;
+import java.net.CookieHandler;
+import java.net.ProxySelector;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 
 public class AiDisclosureDetectorHarness {
     public static void main(String[] args) throws Exception {
@@ -54,6 +68,76 @@ public class AiDisclosureDetectorHarness {
         require(rateLimited.contains("Authentication enabled: No"), "403 rate limit should report auth state");
         require(rateLimited.contains("Remaining rate limit: 0"), "403 rate limit should report remaining quota");
         require(!rateLimited.contains(testToken), "token should not appear in 403 message");
+
+        FakeHttpClient retrySuccessHttp = new FakeHttpClient();
+        retrySuccessHttp.enqueue(new IOException("/192.168.1.63:49808: GOAWAY received"));
+        retrySuccessHttp.enqueue(jsonResponse(200, prJson("retry success"), Map.of()));
+        List<Long> retrySuccessSleeps = new ArrayList<>();
+        GitHubClient retrySuccessClient = new GitHubClient(() -> retrySuccessHttp, null, retrySuccessSleeps::add);
+        PullRequestData retrySuccessPr = retrySuccessClient.getPullRequest("owner", "repo", 7);
+        require("retry success".equals(retrySuccessPr.title()), "GOAWAY retry should eventually return PR");
+        require(retrySuccessHttp.requests().size() == 2, "GOAWAY retry should recreate request");
+        require(retrySuccessSleeps.size() == 1, "GOAWAY retry should back off once");
+
+        FakeHttpClient exhaustedHttp = new FakeHttpClient();
+        exhaustedHttp.enqueue(new java.net.SocketTimeoutException("socket timed out"));
+        exhaustedHttp.enqueue(new java.net.SocketTimeoutException("socket timed out"));
+        exhaustedHttp.enqueue(new java.net.SocketTimeoutException("socket timed out"));
+        exhaustedHttp.enqueue(new java.net.SocketTimeoutException("socket timed out"));
+        GitHubClient exhaustedClient = new GitHubClient(() -> exhaustedHttp, testToken, millis -> {});
+        try {
+            exhaustedClient.getPullRequest("owner", "repo", 8);
+            throw new AssertionError("transient failures should exhaust after four attempts");
+        } catch (IOException expected) {
+            require(expected.getMessage().contains("after 4 attempts"), "exhausted retry message");
+            require(!expected.getMessage().contains(testToken), "exhausted retry should not expose token");
+        }
+        require(exhaustedHttp.requests().size() == 4, "transient retry should try at most four times");
+
+        FakeHttpClient retryAfterHttp = new FakeHttpClient();
+        retryAfterHttp.enqueue(jsonResponse(429, "{\"message\":\"secondary rate limit\"}", Map.of("Retry-After", "2")));
+        retryAfterHttp.enqueue(jsonResponse(200, prJson("retry after success"), Map.of()));
+        List<Long> retryAfterSleeps = new ArrayList<>();
+        GitHubClient retryAfterClient = new GitHubClient(() -> retryAfterHttp, null, retryAfterSleeps::add);
+        retryAfterClient.getPullRequest("owner", "repo", 9);
+        require(retryAfterSleeps.equals(List.of(2000L)), "Retry-After seconds should control backoff");
+
+        FakeHttpClient permanentHttp = new FakeHttpClient();
+        permanentHttp.enqueue(jsonResponse(404, "{\"message\":\"not found\"}", Map.of()));
+        GitHubClient permanentClient = new GitHubClient(() -> permanentHttp, null, millis -> {});
+        try {
+            permanentClient.getPullRequest("owner", "repo", 10);
+            throw new AssertionError("404 should not be retried");
+        } catch (IOException expected) {
+            require(expected.getMessage().contains("HTTP 404"), "404 error should be preserved");
+        }
+        require(permanentHttp.requests().size() == 1, "404 should be attempted once");
+
+        List<FakeHttpClient> goAwayClients = new ArrayList<>();
+        GitHubClient recreatedClient = new GitHubClient(() -> {
+            FakeHttpClient fake = new FakeHttpClient();
+            goAwayClients.add(fake);
+            if (goAwayClients.size() == 1) {
+                fake.enqueue(new IOException("GOAWAY received"));
+            } else {
+                fake.enqueue(jsonResponse(200, prJson("new client success"), Map.of()));
+            }
+            return fake;
+        }, null, millis -> {});
+        recreatedClient.getPullRequest("owner", "repo", 11);
+        require(goAwayClients.size() == 2, "GOAWAY should recreate the underlying client before retry");
+
+        FakeHttpClient interruptedHttp = new FakeHttpClient();
+        interruptedHttp.enqueue(jsonResponse(503, "{\"message\":\"temporarily unavailable\"}", Map.of()));
+        GitHubClient interruptedClient = new GitHubClient(() -> interruptedHttp, null, millis -> {
+            throw new InterruptedException("stop");
+        });
+        try {
+            interruptedClient.getPullRequest("owner", "repo", 12);
+            throw new AssertionError("interrupted backoff should propagate interruption");
+        } catch (InterruptedException expected) {
+            require("stop".equals(expected.getMessage()), "interrupted backoff reason");
+        }
 
         require("apache/airflow".equals(RepoListImporter.normalizeRepository("https://github.com/apache/airflow")), "normalize https GitHub URL");
         require("apache/airflow".equals(RepoListImporter.normalizeRepository("https://github.com/apache/airflow/")), "normalize trailing slash");
@@ -229,8 +313,63 @@ public class AiDisclosureDetectorHarness {
         requirePositive(detector.detect("I used ChatGPT to generate the initial implementation.", ""), "explicit ChatGPT statement");
         requirePositive(detector.detect("This PR was written with GitHub Copilot.", ""), "written with Copilot statement");
         requirePositive(detector.detect("Claude helped generate the tests.", ""), "Claude helped statement");
+        requirePositive(detector.detect("""
+                #### AI Generation Disclosure
+
+                Used codex to write these
+
+                #### Release Notes
+                NO ENTRY
+                """, ""), "AI disclosure section with Codex answer");
+        requirePositive(detector.detect("""
+                ## AI disclosure
+
+                Yes, I used Claude for the tests.
+                """, ""), "AI disclosure section with Claude answer");
+        requirePositive(detector.detect("**AI use:** Used Copilot", ""), "bold AI use field");
+        requirePositive(detector.detect("Generated documentation with ChatGPT.", ""), "generated documentation with ChatGPT");
+        requirePositive(detector.detect("Cursor helped refactor this function.", ""), "Cursor helped refactor statement");
         requireNegative(detector.detect("No generative AI tools were used for this PR.", ""), "explicit no AI statement");
         requireNegative(detector.detect("I did not use AI assistance.", ""), "explicit did not use AI statement");
+        requireNegative(detector.detect("AI Generation Disclosure: No AI was used", ""), "inline heading no AI statement");
+        requireNegative(detector.detect("I did not use Codex or any other generative AI.", ""), "explicit no Codex statement");
+        require(!detector.detect("""
+                <!--
+                Example: Generated documentation with ChatGPT
+                -->
+                """, "").disclosed(), "HTML comment example should not count");
+        require(!detector.detect("""
+                > Generated documentation with ChatGPT.
+                """, "").disclosed(), "quoted contributor text should not count");
+        require(!detector.detect("""
+                ## AI Generation Disclosure
+
+
+                ## Release Notes
+                """, "").disclosed(), "empty AI disclosure section should not count");
+        require(!detector.detect("Please disclose any AI use in this section.", "").disclosed(), "template instruction should not count");
+        require(!detector.detect("This fixes an issue caused by Copilot.", "").disclosed(), "caused by Copilot is not a disclosure");
+        require(!detector.detect("Update codex references in the historical manuscript notes.", "").disclosed(), "ordinary codex noun should not count");
+        requireAmbiguous(detector.detect("""
+                ## AI disclosure
+
+                Codex
+                """, ""), "bare Codex answer");
+        requireAmbiguous(detector.detect("""
+                ## AI disclosure
+
+                N/A
+                """, ""), "N/A answer");
+        requireAmbiguous(detector.detect("Minor AI help.", ""), "minor AI help");
+        requireAmbiguous(detector.detect("""
+                ## AI disclosure
+
+                Used Claude for tests.
+
+                ## Notes
+
+                I did not use Codex or any other generative AI.
+                """, ""), "conflicting disclosure statements");
 
         Path summary = Files.createTempFile("repo-compliance-summary", ".csv");
         CsvWriter.writeRepoComplianceSummary(summary, List.of(
@@ -470,7 +609,6 @@ public class AiDisclosureDetectorHarness {
                 - [ ] Yes
                 """);
         targetedClient.add("owner/repo", 2, "- [x] Yes - GitHub Copilot");
-        targetedClient.failTimes("owner/repo", 2, "request timed out", 2);
         targetedClient.fail("owner/repo", 3, "HTTP 401 for https://api.github.com/test. GitHub authentication failed.");
         Path targetedOutput = tempMissingPath("targeted-output", ".csv");
         ByteArrayOutputStream diagnosticsBytes = new ByteArrayOutputStream();
@@ -485,7 +623,7 @@ public class AiDisclosureDetectorHarness {
         require(targetedResult.succeeded() == 2, "targeted success count");
         require(targetedResult.failed() == 1, "targeted failure count");
         require(targetedResult.rowsWritten() == 4, "targeted row count");
-        require(targetedClient.requests().equals(List.of("owner/repo#1", "owner/repo#2", "owner/repo#2", "owner/repo#2", "owner/repo#3")), "targeted fetches should include retries and only requested PRs");
+        require(targetedClient.requests().equals(List.of("owner/repo#1", "owner/repo#2", "owner/repo#3")), "targeted fetches should include only requested PRs");
         List<Map<String, String>> targetedRows = CsvTools.readRows(targetedOutput);
         require("owner/repo#1".equals(targetedRows.get(0).get("Sample ID")), "targeted row order first");
         require("owner/repo#4".equals(targetedRows.get(3).get("Sample ID")), "targeted row order last");
@@ -542,6 +680,27 @@ public class AiDisclosureDetectorHarness {
         } catch (IllegalArgumentException expected) {
             require(expected.getMessage().contains("unsuccessful re-analysis status"), "failed reanalysis status validation");
         }
+
+        FakeGitHubClient retryFailedClient = new FakeGitHubClient();
+        retryFailedClient.add("owner/repo", 1, "No AI use");
+        retryFailedClient.add("owner/repo", 2, "- [x] Yes - GitHub Copilot");
+        retryFailedClient.add("owner/repo", 3, "I used ChatGPT to generate the initial implementation.");
+        Path retryFailedOutput = tempMissingPath("retry-failed-output", ".csv");
+        SpecificPrAnalysisWorkflow.SpecificAnalysisResult retryFailedResult = SpecificPrAnalysisWorkflow.retryFailedPrs(
+                targetedInput,
+                retryFailedOutput,
+                new PrAnalyzer(retryFailedClient),
+                new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8)
+        );
+        require(retryFailedResult.requested() == 3, "retry failed should select only failed rows");
+        require(retryFailedResult.succeeded() == 3, "retry failed success count");
+        require(retryFailedClient.requests().equals(List.of("owner/repo#1", "owner/repo#2", "owner/repo#3")), "retry failed should not refetch successful rows");
+        List<Map<String, String>> retryFailedRows = CsvTools.readRows(retryFailedOutput);
+        require("Success".equals(retryFailedRows.get(0).get("Reanalysis Status")), "retry failed row 1 status");
+        require("Success".equals(retryFailedRows.get(1).get("Reanalysis Status")), "retry failed row 2 status");
+        require("Success".equals(retryFailedRows.get(2).get("Reanalysis Status")), "retry failed row 3 status");
+        require("old evidence 4".equals(retryFailedRows.get(3).get("Disclosure Text detected by script")), "retry failed successful row unchanged");
+        require("Success".equals(retryFailedRows.get(3).get("Reanalysis Status")), "retry failed original success status unchanged");
 
         System.out.println("AiDisclosureDetectorHarness passed");
     }
@@ -651,6 +810,26 @@ public class AiDisclosureDetectorHarness {
         return path;
     }
 
+    private static String prJson(String title) {
+        return """
+                {
+                  "number": 7,
+                  "html_url": "https://github.com/owner/repo/pull/7",
+                  "title": "%s",
+                  "state": "closed",
+                  "created_at": "2026-01-01T00:00:00Z",
+                  "closed_at": "2026-01-02T00:00:00Z",
+                  "merged_at": null,
+                  "body": "",
+                  "user": {"login": "contributor", "type": "User"}
+                }
+                """.formatted(title);
+    }
+
+    private static HttpResponse<String> jsonResponse(int statusCode, String body, Map<String, String> headers) {
+        return new FakeHttpResponse(statusCode, body, headers);
+    }
+
     private static PrReportRow row(String repo, int number, boolean disclosed, String classification) {
         return new PrReportRow(
                 repo,
@@ -689,6 +868,11 @@ public class AiDisclosureDetectorHarness {
     private static void requireNegative(DisclosureResult result, String message) {
         require(result.disclosed(), message + " should disclose");
         require("possible_negative".equals(result.classification()), message + " should be negative");
+    }
+
+    private static void requireAmbiguous(DisclosureResult result, String message) {
+        require(result.disclosed(), message + " should be detected");
+        require("possible_ambiguous".equals(result.classification()), message + " should be ambiguous");
     }
 
     private static int countOccurrences(String text, String pattern) {
@@ -782,6 +966,129 @@ public class AiDisclosureDetectorHarness {
             void decrement() {
                 remaining--;
             }
+        }
+    }
+
+    private static class FakeHttpClient extends HttpClient {
+        private final ArrayDeque<Object> outcomes = new ArrayDeque<>();
+        private final List<HttpRequest> requests = new ArrayList<>();
+
+        void enqueue(Object outcome) {
+            outcomes.add(outcome);
+        }
+
+        List<HttpRequest> requests() {
+            return List.copyOf(requests);
+        }
+
+        @Override
+        public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) throws IOException {
+            requests.add(request);
+            if (outcomes.isEmpty()) {
+                throw new IOException("missing fake HTTP outcome");
+            }
+            Object outcome = outcomes.removeFirst();
+            if (outcome instanceof IOException io) {
+                throw io;
+            }
+            @SuppressWarnings("unchecked")
+            HttpResponse<T> response = (HttpResponse<T>) outcome;
+            return response;
+        }
+
+        @Override
+        public Optional<CookieHandler> cookieHandler() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Duration> connectTimeout() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Redirect followRedirects() {
+            return Redirect.NEVER;
+        }
+
+        @Override
+        public Optional<ProxySelector> proxy() {
+            return Optional.empty();
+        }
+
+        @Override
+        public SSLContext sslContext() {
+            try {
+                return SSLContext.getDefault();
+            } catch (java.security.NoSuchAlgorithmException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        @Override
+        public SSLParameters sslParameters() {
+            return new SSLParameters();
+        }
+
+        @Override
+        public Optional<Authenticator> authenticator() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Version version() {
+            return Version.HTTP_2;
+        }
+
+        @Override
+        public Optional<Executor> executor() {
+            return Optional.empty();
+        }
+
+        @Override
+        public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) {
+            throw new UnsupportedOperationException("sendAsync not used");
+        }
+
+        @Override
+        public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler, HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
+            throw new UnsupportedOperationException("sendAsync not used");
+        }
+    }
+
+    private record FakeHttpResponse(int statusCode, String body, Map<String, String> headerValues) implements HttpResponse<String> {
+        @Override
+        public HttpRequest request() {
+            return null;
+        }
+
+        @Override
+        public Optional<HttpResponse<String>> previousResponse() {
+            return Optional.empty();
+        }
+
+        @Override
+        public HttpHeaders headers() {
+            Map<String, List<String>> values = new java.util.LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : headerValues.entrySet()) {
+                values.put(entry.getKey(), List.of(entry.getValue()));
+            }
+            return HttpHeaders.of(values, (name, value) -> true);
+        }
+
+        @Override
+        public URI uri() {
+            return URI.create("https://api.github.com/repos/owner/repo/pulls/7");
+        }
+
+        @Override
+        public HttpClient.Version version() {
+            return HttpClient.Version.HTTP_2;
+        }
+
+        @Override
+        public Optional<javax.net.ssl.SSLSession> sslSession() {
+            return Optional.empty();
         }
     }
 }

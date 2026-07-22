@@ -139,6 +139,13 @@ public class Main {
                 printSpecificAnalysisSummary(result, output);
                 return;
             }
+            if (args.length == 3 && args[0].equals("--retry-failed-reanalysis")) {
+                Path sample = Path.of(args[1]);
+                Path output = Path.of(args[2]);
+                SpecificPrAnalysisWorkflow.SpecificAnalysisResult result = SpecificPrAnalysisWorkflow.retryFailedPrs(sample, output);
+                printSpecificAnalysisSummary(result, output);
+                return;
+            }
             if ((args.length == 3 || args.length == 4) && args[0].equals("--repos-from-csv")) {
                 Path csv = Path.of(args[1]);
                 Path output = Path.of(args[2]);
@@ -191,6 +198,7 @@ public class Main {
                 || mode.equals("--validate-detector")
                 || mode.equals("--reanalyze-kappa-sample")
                 || mode.equals("--analyze-specific-prs")
+                || mode.equals("--retry-failed-reanalysis")
                 || mode.equals("--repos-from-csv");
     }
 
@@ -207,6 +215,7 @@ public class Main {
             case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
             case "--reanalyze-kappa-sample" -> "--reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv";
             case "--analyze-specific-prs" -> "--analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv Repo#PR [Repo#PR...]";
+            case "--retry-failed-reanalysis" -> "--retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv";
             case "--repos-from-csv" -> "--repos-from-csv policy-tracker.csv repos.txt [--replace]";
             default -> "";
         };
@@ -395,6 +404,7 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt [--replace]");
         System.out.println();
         System.out.println("repos.txt can contain either GitHub URLs or OWNER/REPO names, one per line.");

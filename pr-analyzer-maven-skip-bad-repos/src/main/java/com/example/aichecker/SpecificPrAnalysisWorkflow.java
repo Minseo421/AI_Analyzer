@@ -3,7 +3,6 @@ package com.example.aichecker;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,10 +24,33 @@ public class SpecificPrAnalysisWorkflow {
     private static final String SCRIPT_SOURCE = "Script Disclosure Source";
     private static final String REANALYSIS_STATUS = "Reanalysis Status";
     private static final String REANALYSIS_ERROR = "Reanalysis Error";
-    private static final int MAX_ATTEMPTS = 3;
 
     public static SpecificAnalysisResult analyzeSpecificPrs(Path inputPath, Path outputPath, List<String> requestedSampleIds) throws IOException {
         return analyzeSpecificPrs(inputPath, outputPath, requestedSampleIds, new PrAnalyzer(), System.out);
+    }
+
+    public static SpecificAnalysisResult retryFailedPrs(Path inputPath, Path outputPath) throws IOException {
+        return retryFailedPrs(inputPath, outputPath, new PrAnalyzer(), System.out);
+    }
+
+    static SpecificAnalysisResult retryFailedPrs(Path inputPath, Path outputPath, PrAnalyzer analyzer, PrintStream out) throws IOException {
+        List<String> header = CsvTools.readHeader(inputPath);
+        List<Map<String, String>> rows = CsvTools.readRows(inputPath);
+        validateHeader(header, inputPath);
+        if (!header.contains(REANALYSIS_STATUS)) {
+            throw new IllegalArgumentException("Missing required column in " + inputPath + ": " + REANALYSIS_STATUS);
+        }
+        List<String> failedSampleIds = new ArrayList<>();
+        for (Map<String, String> row : rows) {
+            String status = row.getOrDefault(REANALYSIS_STATUS, "").trim();
+            if (!status.isBlank() && !status.equalsIgnoreCase("Success")) {
+                failedSampleIds.add(row.get(SAMPLE_ID));
+            }
+        }
+        if (failedSampleIds.isEmpty()) {
+            throw new IllegalArgumentException("No rows with unsuccessful re-analysis status found in " + inputPath);
+        }
+        return analyzeSpecificPrs(inputPath, outputPath, failedSampleIds, analyzer, out);
     }
 
     static SpecificAnalysisResult analyzeSpecificPrs(Path inputPath, Path outputPath, List<String> requestedSampleIds, PrAnalyzer analyzer, PrintStream out) throws IOException {
@@ -112,23 +134,13 @@ public class SpecificPrAnalysisWorkflow {
     private static AttemptResult analyzeWithRetries(String sampleId, Map<String, String> inputRow, PrAnalyzer analyzer, PrintStream out) {
         String repo = inputRow.get(REPO).trim();
         int number = Integer.parseInt(inputRow.get(PR_NUMBER).trim());
-        Exception last = null;
-        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            try {
-                return new AttemptResult(analyzer.analyzeExistingPullRequestDetail(repo, number), "");
-            } catch (Exception e) {
-                last = e;
-                String reason = shortError(e.getMessage());
-                out.println("Attempt " + attempt + " of " + MAX_ATTEMPTS + " failed for " + sampleId + ": " + reason);
-                if (attempt < MAX_ATTEMPTS && isTransient(e)) {
-                    out.println("Retrying...");
-                    sleepBriefly(attempt);
-                    continue;
-                }
-                break;
-            }
+        try {
+            return new AttemptResult(analyzer.analyzeExistingPullRequestDetail(repo, number), "");
+        } catch (Exception e) {
+            String reason = shortError(e.getMessage());
+            out.println("Fetch failed for " + sampleId + ": " + reason);
+            return new AttemptResult(null, reason);
         }
-        return new AttemptResult(null, shortError(last == null ? "" : last.getMessage()));
     }
 
     private static void printDiagnostics(PrAnalyzer.AnalysisDetail detail, String fetchStatus, PrintStream out) {
@@ -175,23 +187,6 @@ public class SpecificPrAnalysisWorkflow {
             case "possible_ambiguous" -> "Ambiguous";
             default -> "None";
         };
-    }
-
-    private static boolean isTransient(Exception e) {
-        if (e instanceof SocketTimeoutException) return true;
-        String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase(java.util.Locale.ROOT);
-        if (message.contains("timed out") || message.contains("timeout") || message.contains("connection reset")) {
-            return true;
-        }
-        return message.contains("http 502") || message.contains("http 503") || message.contains("http 504");
-    }
-
-    private static void sleepBriefly(int attempt) {
-        try {
-            Thread.sleep(100L * attempt);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     private static List<String> outputHeader(List<String> inputHeader) {
