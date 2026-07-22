@@ -20,7 +20,7 @@ Eligible PRs should match the study's sampling frame before compliance is calcul
 Coding rules:
 
 - Include PRs from repositories selected for the study.
-- Include PRs in the intended study window, such as the approved 3-month span.
+- Include PRs in the intended study window. For each repository, the requested number of latest closed, human-authored pull requests is collected first. A four-calendar-month eligibility cutoff is then applied using each pull request's closure timestamp (`closed_at`). Pull requests closed before the cutoff are excluded and are not replaced, so the final number analysed can be lower than the requested count.
 - Include PRs with human contributors unless the research design explicitly includes bots.
 - Exclude or separately report bot PRs according to the bot handling rules below.
 - Record whether the PR was merged or closed unmerged.

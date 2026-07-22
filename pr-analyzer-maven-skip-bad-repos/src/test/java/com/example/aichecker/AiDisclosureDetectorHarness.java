@@ -14,7 +14,10 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -570,6 +573,75 @@ public class AiDisclosureDetectorHarness {
         require(humanLabelsOriginal.equals(Files.readString(humanLabelsBeforeReanalysis, StandardCharsets.UTF_8)), "human labels unchanged by reanalysis");
         require(consensusOriginal.equals(Files.readString(consensusBeforeReanalysis, StandardCharsets.UTF_8)), "consensus labels unchanged by reanalysis");
 
+        FakeGitHubClient cutoffClient = new FakeGitHubClient();
+        cutoffClient.addPage("window/repo", 1, List.of(
+                pr("window/repo", 1, "2026-03-21T23:59:59Z", "human", "User"),
+                pr("window/repo", 2, "2026-03-22T00:00:00Z", "human", "User"),
+                pr("window/repo", 3, "2026-03-22T00:00:01Z", "human", "User"),
+                pr("window/repo", 4, "2026-03-20T00:00:00Z", "bot-user", "Bot"),
+                pr("window/repo", 5, "2026-03-23T00:00:00Z", "human", "User"),
+                pr("window/repo", 6, "2026-03-24T00:00:00Z", "human", "User")
+        ));
+        cutoffClient.addPage("window/repo", 2, List.of(
+                pr("window/repo", 7, "2026-03-25T00:00:00Z", "human", "User")
+        ));
+        PrAnalyzer cutoffAnalyzer = new PrAnalyzer(cutoffClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
+        List<PrReportRow> cutoffRows = cutoffAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("window/repo"), 5);
+        require(cutoffRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(2, 3, 5, 6)), "cutoff should include exact/after rows and not replace excluded rows");
+        PrAnalyzer.CollectionSummary cutoffSummary = cutoffAnalyzer.collectionSummary("window/repo");
+        require(cutoffSummary.requestedCount() == 5, "cutoff requested count");
+        require(cutoffSummary.collectedBeforeDateFiltering() == 5, "cutoff should collect requested human rows before filtering");
+        require(cutoffSummary.excludedOlderThanCutoff() == 1, "cutoff older exclusion count");
+        require(cutoffSummary.finalCount() == 4, "cutoff final count may be lower than requested");
+        require(cutoffClient.pages().equals(List.of("window/repo#page1")), "cutoff should not fetch replacements after filtering");
+
+        FakeGitHubClient paginationClient = new FakeGitHubClient();
+        paginationClient.addPage("page/repo", 1, List.of(
+                pr("page/repo", 1, "2026-03-21T23:59:59Z", "human", "User"),
+                pr("page/repo", 2, "2026-03-20T00:00:00Z", "bot-user", "Bot")
+        ));
+        paginationClient.addPage("page/repo", 2, List.of(
+                pr("page/repo", 3, "2026-03-22T00:00:00Z", "human", "User"),
+                pr("page/repo", 4, "2026-03-22T00:00:01Z", "human", "User")
+        ));
+        PrAnalyzer paginationAnalyzer = new PrAnalyzer(paginationClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
+        List<PrReportRow> paginationRows = paginationAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("page/repo"), 3);
+        require(paginationRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(3, 4)), "pagination should continue until pre-cutoff requested count is exhausted");
+        require(paginationClient.pages().equals(List.of("page/repo#page1", "page/repo#page2")), "pagination should fetch second page");
+        require(paginationAnalyzer.collectionSummary("page/repo").excludedOlderThanCutoff() == 1, "pagination older exclusion count");
+        require(paginationAnalyzer.botPrsExcludedByRepository().get("page/repo") == 1, "bot PRs should not count toward initial requested count");
+
+        FakeGitHubClient calendarClient = new FakeGitHubClient();
+        calendarClient.addPage("calendar/repo", 1, List.of(
+                pr("calendar/repo", 1, "2026-02-28T00:00:00Z", "human", "User")
+        ));
+        PrAnalyzer calendarAnalyzer = new PrAnalyzer(calendarClient, Clock.fixed(Instant.parse("2026-06-30T00:00:00Z"), ZoneOffset.UTC));
+        List<PrReportRow> calendarRows = calendarAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("calendar/repo"), 1);
+        require(calendarRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(1)), "four calendar months should not mean fixed 120 days");
+
+        FakeGitHubClient malformedClient = new FakeGitHubClient();
+        malformedClient.addPage("bad/repo", 1, List.of(
+                pr("bad/repo", 1, "", "human", "User"),
+                pr("bad/repo", 2, "not-a-date", "human", "User"),
+                pr("bad/repo", 3, "2026-03-22T00:00:00Z", "human", "User")
+        ));
+        PrAnalyzer malformedAnalyzer = new PrAnalyzer(malformedClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
+        List<PrReportRow> malformedRows = malformedAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("bad/repo"), 3);
+        require(malformedRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(3)), "missing or invalid closed_at should be excluded");
+        require(malformedAnalyzer.collectionSummary("bad/repo").excludedMalformedClosedAt() == 2, "malformed closed_at count");
+
+        FakeGitHubClient multiRepoClient = new FakeGitHubClient();
+        multiRepoClient.addPage("multi/one", 1, List.of(pr("multi/one", 1, "2026-03-22T00:00:00Z", "human", "User")));
+        multiRepoClient.addPage("multi/two", 1, List.of(pr("multi/two", 1, "2026-03-21T23:59:59Z", "human", "User")));
+        PrAnalyzer multiRepoAnalyzer = new PrAnalyzer(multiRepoClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
+        multiRepoAnalyzer.analyzeMultipleRepos(List.of(RepoUrl.parse("multi/one"), RepoUrl.parse("multi/two")), 1);
+        require(multiRepoAnalyzer.collectionSummary("multi/one").closedAtCutoff().equals(multiRepoAnalyzer.collectionSummary("multi/two").closedAtCutoff()), "cutoff should be consistent across repositories in one run");
+
+        FakeGitHubClient directClient = new FakeGitHubClient();
+        directClient.add("direct/repo", 1, "I used ChatGPT to generate the initial implementation.");
+        PrReportRow directRow = new PrAnalyzer(directClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC)).analyzeExistingPullRequest("direct/repo", 1);
+        require(directRow.pullRequestNumber() == 1 && directRow.aiDisclosure(), "direct specified-PR analysis should remain unaffected by cutoff");
+
         Path duplicateSample = Files.createTempFile("duplicate-kappa-sample", ".csv");
         Files.writeString(duplicateSample, reanalysisInputCsv() + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,t,a,,,,Closed,old,Yes,old_class,old_source,\n", StandardCharsets.UTF_8);
         try {
@@ -830,6 +902,24 @@ public class AiDisclosureDetectorHarness {
         return new FakeHttpResponse(statusCode, body, headers);
     }
 
+    private static PullRequestData pr(String repository, int number, String closedAt, String author, String userType) {
+        return new PullRequestData(
+                repository,
+                number,
+                "https://github.com/" + repository + "/pull/" + number,
+                "Paged PR " + number,
+                "2026-01-01T00:00:00Z",
+                closedAt,
+                "",
+                "closed",
+                true,
+                author,
+                userType,
+                false,
+                ""
+        );
+    }
+
     private static PrReportRow row(String repo, int number, boolean disclosed, String classification) {
         return new PrReportRow(
                 repo,
@@ -889,6 +979,8 @@ public class AiDisclosureDetectorHarness {
         private final Map<String, String> bodies = new java.util.LinkedHashMap<>();
         private final Map<String, String> failures = new java.util.LinkedHashMap<>();
         private final List<String> requests = new java.util.ArrayList<>();
+        private final Map<String, List<PullRequestData>> pages = new java.util.LinkedHashMap<>();
+        private final List<String> pageRequests = new java.util.ArrayList<>();
 
         void add(String repository, int number, String body) {
             bodies.put(repository + "#" + number, body);
@@ -902,8 +994,16 @@ public class AiDisclosureDetectorHarness {
             transientFailures.put(repository + "#" + number, new TransientFailure(reason, times));
         }
 
+        void addPage(String repository, int page, List<PullRequestData> prs) {
+            pages.put(repository + "#page" + page, List.copyOf(prs));
+        }
+
         List<String> requests() {
             return List.copyOf(requests);
+        }
+
+        List<String> pages() {
+            return List.copyOf(pageRequests);
         }
 
         @Override
@@ -942,6 +1042,13 @@ public class AiDisclosureDetectorHarness {
         @Override
         public String fetchHtml(String url) {
             return "";
+        }
+
+        @Override
+        public List<PullRequestData> getClosedPullRequestsPage(String owner, String repo, int page) {
+            String key = owner + "/" + repo + "#page" + page;
+            pageRequests.add(key);
+            return pages.getOrDefault(key, List.of());
         }
 
         private final Map<String, TransientFailure> transientFailures = new java.util.LinkedHashMap<>();

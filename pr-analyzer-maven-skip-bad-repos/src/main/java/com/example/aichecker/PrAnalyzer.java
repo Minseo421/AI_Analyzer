@@ -4,19 +4,33 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 
 public class PrAnalyzer {
     private final GitHubClient gitHubClient;
     private final AiDisclosureDetector detector = new AiDisclosureDetector();
+    private final ZonedDateTime runDateTime;
+    private final Instant closedAtCutoff;
     private final List<String> skippedRepos = new ArrayList<>();
     private final Map<String, Integer> botPrsExcluded = new LinkedHashMap<>();
+    private final Map<String, CollectionSummary> collectionSummaries = new LinkedHashMap<>();
 
     public PrAnalyzer() {
-        this(new GitHubClient());
+        this(new GitHubClient(), Clock.systemUTC());
     }
 
     PrAnalyzer(GitHubClient gitHubClient) {
+        this(gitHubClient, Clock.systemUTC());
+    }
+
+    PrAnalyzer(GitHubClient gitHubClient, Clock clock) {
         this.gitHubClient = gitHubClient;
+        this.runDateTime = ZonedDateTime.now(clock).withZoneSameInstant(ZoneOffset.UTC);
+        this.closedAtCutoff = runDateTime.minusMonths(4).toInstant();
     }
 
     public PrReportRow analyzeSingle(PullRequestUrl prUrl) throws Exception {
@@ -40,29 +54,47 @@ public class PrAnalyzer {
     }
 
     public List<PrReportRow> analyzeLatestClosedHumanPrs(RepoUrl repoUrl, int targetCount) throws Exception {
+        List<PullRequestData> collected = new ArrayList<>();
         List<PrReportRow> rows = new ArrayList<>();
         botPrsExcluded.put(repoUrl.fullName(), 0);
         int page = 1;
         System.out.println();
         System.out.println("Latest closed human PRs for " + repoUrl.fullName());
         System.out.println(PrReportRow.consoleHeader());
-        while (rows.size() < targetCount && page <= 20) {
+        while (collected.size() < targetCount) {
             List<PullRequestData> prs = gitHubClient.getClosedPullRequestsPage(repoUrl.owner(), repoUrl.repo(), page);
             if (prs.isEmpty()) break;
             for (PullRequestData pr : prs) {
-                if (rows.size() >= targetCount) break;
+                if (collected.size() >= targetCount) break;
                 if (!pr.closed()) continue;
                 if (!BotDetector.isHuman(pr.author(), pr.userType())) {
                     botPrsExcluded.merge(repoUrl.fullName(), 1, Integer::sum);
                     continue;
                 }
-                PrReportRow row = analyze(pr);
-                rows.add(row);
-                System.out.println(row.toConsoleTableRow(rows.size()));
+                collected.add(pr);
             }
             page++;
         }
+        int excludedOlderThanCutoff = 0;
+        int excludedMalformedClosedAt = 0;
+        for (PullRequestData pr : collected) {
+            ClosedAtEligibility eligibility = closedAtEligibility(pr);
+            if (eligibility.eligible()) {
+                PrReportRow row = analyze(pr);
+                rows.add(row);
+                System.out.println(row.toConsoleTableRow(rows.size()));
+            } else if (eligibility.malformed()) {
+                excludedMalformedClosedAt++;
+                System.out.println("WARNING: Excluding " + repoUrl.fullName() + "#" + pr.number()
+                        + " because closed_at is missing or invalid: " + (pr.closedAt() == null || pr.closedAt().isBlank() ? "(blank)" : pr.closedAt()));
+            } else {
+                excludedOlderThanCutoff++;
+            }
+        }
+        CollectionSummary summary = new CollectionSummary(targetCount, collected.size(), excludedOlderThanCutoff, excludedMalformedClosedAt, rows.size(), runDateTime.toString(), closedAtCutoff.toString());
+        collectionSummaries.put(repoUrl.fullName(), summary);
         System.out.println(PrReportRow.consoleFooter());
+        printCollectionSummary(repoUrl.fullName(), summary);
         printDisclosureSummary(rows);
         return rows;
     }
@@ -91,6 +123,41 @@ public class PrAnalyzer {
 
     public Map<String, Integer> botPrsExcludedByRepository() {
         return new LinkedHashMap<>(botPrsExcluded);
+    }
+
+    public Map<String, CollectionSummary> collectionSummariesByRepository() {
+        return new LinkedHashMap<>(collectionSummaries);
+    }
+
+    public CollectionSummary collectionSummary(String repository) {
+        return collectionSummaries.get(repository);
+    }
+
+    private ClosedAtEligibility closedAtEligibility(PullRequestData pr) {
+        if (pr.closedAt() == null || pr.closedAt().isBlank()) {
+            return new ClosedAtEligibility(false, true);
+        }
+        try {
+            Instant closedAt = Instant.parse(pr.closedAt());
+            return new ClosedAtEligibility(!closedAt.isBefore(closedAtCutoff), false);
+        } catch (DateTimeParseException e) {
+            return new ClosedAtEligibility(false, true);
+        }
+    }
+
+    private static void printCollectionSummary(String repository, CollectionSummary summary) {
+        System.out.println();
+        System.out.println("Collection eligibility summary for " + repository);
+        System.out.println("Requested latest closed human PRs: " + summary.requestedCount());
+        System.out.println("Collected before date filtering: " + summary.collectedBeforeDateFiltering());
+        System.out.println("Excluded as older than four calendar months: " + summary.excludedOlderThanCutoff());
+        if (summary.excludedMalformedClosedAt() > 0) {
+            System.out.println("Excluded because closed_at was missing or invalid: " + summary.excludedMalformedClosedAt());
+        }
+        System.out.println("Final PRs written: " + summary.finalCount());
+        if (summary.finalCount() < summary.requestedCount()) {
+            System.out.println("Fewer than requested were written because the four-calendar-month cutoff is applied after the requested count is collected; excluded rows are not replaced.");
+        }
     }
 
     private void printDisclosureSummary(List<PrReportRow> rows) {
@@ -211,5 +278,19 @@ public class PrAnalyzer {
             HtmlData htmlData,
             AiDisclosureDetector.DetectionDiagnostics diagnostics
     ) {
+    }
+
+    public record CollectionSummary(
+            int requestedCount,
+            int collectedBeforeDateFiltering,
+            int excludedOlderThanCutoff,
+            int excludedMalformedClosedAt,
+            int finalCount,
+            String runDateTime,
+            String closedAtCutoff
+    ) {
+    }
+
+    private record ClosedAtEligibility(boolean eligible, boolean malformed) {
     }
 }
