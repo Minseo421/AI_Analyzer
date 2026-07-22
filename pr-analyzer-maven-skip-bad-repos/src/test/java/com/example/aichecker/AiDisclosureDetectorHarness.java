@@ -252,7 +252,30 @@ public class AiDisclosureDetectorHarness {
         require(kappaText.contains("\"Disclosure Present\",\"Matched PRs used\",\"2\""), "kappa matched rows");
         require(kappaText.contains("Disagreement Rows"), "kappa disagreement section");
 
-        Path sample = Files.createTempFile("kappa-sample", ".csv");
+        List<RepoUrl> repoSelectionInput = List.of(
+                RepoUrl.parse("alpha/one"),
+                RepoUrl.parse("beta/two"),
+                RepoUrl.parse("alpha/one"),
+                RepoUrl.parse("gamma/three"),
+                RepoUrl.parse("delta/four"),
+                RepoUrl.parse("epsilon/five")
+        );
+        KappaWorkflow.RepositorySelection seededSelection = KappaWorkflow.selectRandomRepositories(repoSelectionInput, 2026L);
+        KappaWorkflow.RepositorySelection repeatedSeedSelection = KappaWorkflow.selectRandomRepositories(repoSelectionInput, 2026L);
+        KappaWorkflow.RepositorySelection differentSeedSelection = KappaWorkflow.selectRandomRepositories(repoSelectionInput, 2027L);
+        require(seededSelection.availableRepositories() == 5, "kappa selection should dedupe repositories before sampling");
+        require(seededSelection.selectedRepositories().size() == 3, "kappa selection should select exactly three repositories");
+        require(new java.util.LinkedHashSet<>(seededSelection.selectedRepositories()).size() == 3, "kappa selection should be distinct");
+        require(seededSelection.selectedRepositories().equals(repeatedSeedSelection.selectedRepositories()), "same kappa seed should produce same repositories");
+        require(!seededSelection.selectedRepositories().equals(differentSeedSelection.selectedRepositories()), "different kappa seeds can produce different repositories");
+        try {
+            KappaWorkflow.selectRandomRepositories(List.of(RepoUrl.parse("one/repo"), RepoUrl.parse("two/repo")), 1L);
+            throw new AssertionError("kappa selection should require at least three repositories");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("At least 3 valid repositories"), "kappa selection too few repos message");
+        }
+
+        Path sample = tempMissingPath("kappa-sample", ".csv");
         KappaWorkflow.SampleWriteResult sampleResult = KappaWorkflow.writeSampleWithSummary(sample, List.of(
                 row("fedify-dev/fedify", 10, false, "none"),
                 row("fedify-dev/fedify", 9, true, "possible_positive"),
@@ -270,6 +293,31 @@ public class AiDisclosureDetectorHarness {
         require("fedify-dev/fedify#10".equals(sampleRows.get(0).get("Sample ID")), "first sample id should be stable");
         require("apache/airflow#20".equals(sampleRows.get(2).get("Sample ID")), "second repository should be appended");
         require("cloudnative-pg/cloudnative-pg#30".equals(sampleRows.get(4).get("Sample ID")), "third repository should be appended");
+        try {
+            KappaWorkflow.writeSampleWithSummary(sample, List.of(row("owner/repo", 1, false, "none")));
+            throw new AssertionError("kappa sample writer should refuse overwrite");
+        } catch (java.io.IOException expected) {
+            require(expected.getMessage().contains("already exists"), "kappa sample overwrite refusal");
+        }
+
+        Path fiftySample = tempMissingPath("kappa-fifty-sample", ".csv");
+        List<PrReportRow> fiftyRows = new java.util.ArrayList<>();
+        for (int i = 100; i > 50; i--) {
+            fiftyRows.add(row("repo/full", i, false, "none"));
+        }
+        for (int i = 7; i > 0; i--) {
+            fiftyRows.add(row("repo/short", i, false, "none"));
+        }
+        for (int i = 250; i > 200; i--) {
+            fiftyRows.add(row("repo/third", i, false, "none"));
+        }
+        KappaWorkflow.writeSampleWithSummary(fiftySample, fiftyRows);
+        List<Map<String, String>> fiftySampleRows = CsvTools.readRows(fiftySample);
+        require(fiftySampleRows.size() == 107, "combined sample should include 50 plus short repo plus 50 rows");
+        require("repo/full#100".equals(fiftySampleRows.get(0).get("Sample ID")), "latest-first ordering first repo");
+        require("repo/full#51".equals(fiftySampleRows.get(49).get("Sample ID")), "first repo contributes 50 rows");
+        require("repo/short#7".equals(fiftySampleRows.get(50).get("Sample ID")), "short repo appended after first group");
+        require("repo/third#250".equals(fiftySampleRows.get(57).get("Sample ID")), "third repo appended after short repo");
 
         try {
             KappaWorkflow.codeSample(sample, coderA);

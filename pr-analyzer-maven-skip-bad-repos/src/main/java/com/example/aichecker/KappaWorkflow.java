@@ -12,6 +12,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -24,6 +25,9 @@ public class KappaWorkflow {
     }
 
     public static SampleWriteResult writeSampleWithSummary(Path path, List<PrReportRow> rows) throws IOException {
+        if (Files.exists(path)) {
+            throw new IOException("Kappa sample already exists: " + path + ". Choose a new output path to avoid overwriting work.");
+        }
         Set<String> seen = new LinkedHashSet<>();
         Map<String, Integer> writtenByRepository = new LinkedHashMap<>();
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
@@ -56,6 +60,24 @@ public class KappaWorkflow {
         }
         int totalRows = writtenByRepository.values().stream().mapToInt(Integer::intValue).sum();
         return new SampleWriteResult(writtenByRepository, totalRows);
+    }
+
+    public static RepositorySelection selectRandomRepositories(List<RepoUrl> repoUrls, long seed) {
+        List<RepoUrl> unique = uniqueRepositories(repoUrls);
+        if (unique.size() < 3) {
+            throw new IllegalArgumentException("At least 3 valid repositories are required to create the kappa sample.");
+        }
+        List<RepoUrl> shuffled = new ArrayList<>(unique);
+        Collections.shuffle(shuffled, new Random(seed));
+        return new RepositorySelection(unique.size(), seed, List.copyOf(shuffled.subList(0, 3)));
+    }
+
+    public static List<RepoUrl> uniqueRepositories(List<RepoUrl> repoUrls) {
+        Map<String, RepoUrl> unique = new LinkedHashMap<>();
+        for (RepoUrl repoUrl : repoUrls) {
+            unique.putIfAbsent(repoUrl.fullName(), repoUrl);
+        }
+        return new ArrayList<>(unique.values());
     }
 
     public static void codeSample(Path samplePath, Path labelsPath) throws IOException {
@@ -153,8 +175,6 @@ public class KappaWorkflow {
         System.out.println("PR #: " + row.get("PR #"));
         System.out.println("PR URL: " + row.get("PR URL"));
         System.out.println("Title: " + row.get("Title"));
-        String detected = row.getOrDefault("Disclosure Text detected by script", "");
-        System.out.println("Script evidence: " + (detected.isBlank() ? "(none)" : detected));
         System.out.println("Enter SKIP at either label prompt to skip this PR.");
     }
 
@@ -318,6 +338,12 @@ public class KappaWorkflow {
     public record SampleWriteResult(Map<String, Integer> rowsByRepository, int totalRows) {
         public SampleWriteResult {
             rowsByRepository = Collections.unmodifiableMap(new LinkedHashMap<>(rowsByRepository));
+        }
+    }
+
+    public record RepositorySelection(int availableRepositories, long seed, List<RepoUrl> selectedRepositories) {
+        public RepositorySelection {
+            selectedRepositories = List.copyOf(selectedRepositories);
         }
     }
 }

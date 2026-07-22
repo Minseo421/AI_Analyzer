@@ -302,7 +302,6 @@ java -jar target/pr-analyzer-maven-1.0.0.jar \
 - The reliability sample is deterministic and based on latest closed human PRs collected by the existing analyzer.
 - Bot PRs are excluded according to the current project methodology and implementation.
 - Both researchers use the same `kappa_sample.csv`.
-- Script evidence may be shown to coders, but coders independently verify evidence and assign labels.
 - Consensus labels, not script labels, become the gold standard.
 
 ## Expected Input Files

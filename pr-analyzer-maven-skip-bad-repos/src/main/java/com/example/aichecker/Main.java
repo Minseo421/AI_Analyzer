@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Main {
     public static void main(String[] args) {
@@ -74,11 +75,17 @@ public class Main {
                 Path repoListFile = Path.of(args[1]);
                 int targetCountPerRepo = Integer.parseInt(args[2]);
                 Path output = Path.of(args[3]);
+                if (Files.exists(output)) {
+                    throw new java.io.IOException("Kappa sample already exists: " + output + ". Choose a new output path to avoid overwriting work.");
+                }
                 List<RepoUrl> repoUrls = readRepoList(repoListFile);
+                long seed = kappaSampleSeed();
+                KappaWorkflow.RepositorySelection selection = KappaWorkflow.selectRandomRepositories(repoUrls, seed);
+                printKappaRepositorySelection(selection, targetCountPerRepo);
                 PrAnalyzer analyzer = new PrAnalyzer();
-                List<PrReportRow> rows = analyzer.analyzeMultipleRepos(repoUrls, targetCountPerRepo);
+                List<PrReportRow> rows = analyzeSelectedKappaRepositories(selection.selectedRepositories(), targetCountPerRepo, analyzer);
                 KappaWorkflow.SampleWriteResult sampleResult = KappaWorkflow.writeSampleWithSummary(output, rows);
-                printKappaSampleSummary(repoUrls, rows, sampleResult);
+                printKappaSampleSummary(selection.selectedRepositories(), rows, sampleResult);
                 System.out.println("Kappa sample saved: " + output.toAbsolutePath());
                 System.out.println("Sample rows: " + sampleResult.totalRows());
                 return;
@@ -213,6 +220,55 @@ public class Main {
         System.out.printf("AI disclosure percentage: %.2f%% (%d/%d)%n", percentage, disclosed, rows.size());
     }
 
+    private static long kappaSampleSeed() {
+        String value = System.getenv("KAPPA_SAMPLE_SEED");
+        if (value == null || value.isBlank()) {
+            return ThreadLocalRandom.current().nextLong();
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("KAPPA_SAMPLE_SEED must be a valid integer.");
+        }
+    }
+
+    private static void printKappaRepositorySelection(KappaWorkflow.RepositorySelection selection, int targetCountPerRepo) {
+        System.out.println("Kappa repository selection seed: " + selection.seed());
+        System.out.println("Valid repositories available: " + selection.availableRepositories());
+        System.out.println("Repositories selected: " + selection.selectedRepositories().size());
+        System.out.println("PRs requested per repository: " + targetCountPerRepo);
+        System.out.println();
+        System.out.println("Randomly selected repositories:");
+        int index = 1;
+        for (RepoUrl repoUrl : selection.selectedRepositories()) {
+            System.out.println(index + ". " + repoUrl.fullName());
+            index++;
+        }
+        System.out.println();
+    }
+
+    private static List<PrReportRow> analyzeSelectedKappaRepositories(List<RepoUrl> repoUrls, int targetCountPerRepo, PrAnalyzer analyzer) {
+        List<PrReportRow> allRows = new ArrayList<>();
+        for (RepoUrl repoUrl : repoUrls) {
+            System.out.println("Processing " + repoUrl.fullName() + "...");
+            List<PrReportRow> rows;
+            try {
+                rows = analyzer.analyzeLatestClosedHumanPrs(repoUrl, targetCountPerRepo);
+            } catch (Exception e) {
+                rows = List.of();
+                System.out.println("WARNING: Failed to process " + repoUrl.fullName() + ": " + shortError(e.getMessage()));
+            }
+            System.out.println("Eligible PRs found: " + rows.size());
+            System.out.println("Rows written: " + rows.size());
+            if (rows.size() < targetCountPerRepo) {
+                System.out.println("WARNING: " + repoUrl.fullName() + " contained only " + rows.size() + " eligible closed human PRs.");
+            }
+            System.out.println();
+            allRows.addAll(rows);
+        }
+        return allRows;
+    }
+
     private static void printKappaSampleSummary(List<RepoUrl> repoUrls, List<PrReportRow> rows, KappaWorkflow.SampleWriteResult sampleResult) {
         Map<String, Integer> eligibleByRepository = new LinkedHashMap<>();
         for (RepoUrl repoUrl : repoUrls) {
@@ -310,6 +366,19 @@ public class Main {
         for (String id : ids) {
             System.out.println("- " + id);
         }
+    }
+
+    private static String shortError(String value) {
+        if (value == null || value.isBlank()) return "Unknown error";
+        String cleaned = value.replace('\n', ' ').replace('\r', ' ').trim();
+        int bodyIndex = cleaned.indexOf(" body=");
+        if (bodyIndex >= 0) {
+            cleaned = cleaned.substring(0, bodyIndex);
+        }
+        if (cleaned.length() > 180) {
+            cleaned = cleaned.substring(0, 177) + "...";
+        }
+        return cleaned;
     }
 
     private static void printUsage() {
