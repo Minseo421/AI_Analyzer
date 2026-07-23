@@ -3,6 +3,7 @@ package com.example.aichecker;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +14,7 @@ import java.util.Map;
 
 public class CsvTools {
     public static List<Map<String, String>> readRows(Path path) throws IOException {
-        String content = Files.readString(path, StandardCharsets.UTF_8);
+        String content = readCsvText(path);
         List<List<String>> records = parseRecords(content);
         List<Map<String, String>> rows = new ArrayList<>();
         if (records.isEmpty()) {
@@ -36,7 +37,7 @@ public class CsvTools {
     }
 
     public static List<String> readHeader(Path path) throws IOException {
-        String content = Files.readString(path, StandardCharsets.UTF_8);
+        String content = readCsvText(path);
         List<List<String>> records = parseRecords(content);
         if (records.isEmpty()) {
             return List.of();
@@ -47,6 +48,14 @@ public class CsvTools {
     public static String csv(String value) {
         String safe = value == null ? "" : value;
         return "\"" + safe.replace("\"", "\"\"") + "\"";
+    }
+
+    private static String readCsvText(Path path) throws IOException {
+        try {
+            return Files.readString(path, StandardCharsets.UTF_8);
+        } catch (MalformedInputException e) {
+            return Files.readString(path, StandardCharsets.ISO_8859_1);
+        }
     }
 
     private static List<List<String>> parseRecords(String content) throws IOException {

@@ -428,6 +428,50 @@ public class AiDisclosureDetectorHarness {
         require(lines.size() == 2, "summary should contain header and one repo row");
         require(lines.get(1).equals("\"owner/repo\",\"3\",\"2\",\"2\",\"1\",\"1\",\"0\",\"1\",\"3\",\"0.6667\""), "summary counts and compliance rate");
 
+        require(DisclosureVisibilityCorrelationWorkflow.canonicalRepo("https://github.com/Apache/Airflow/").orElseThrow().equals("apache/airflow"), "canonical GitHub URL with case and trailing slash");
+        require(DisclosureVisibilityCorrelationWorkflow.canonicalRepo("github.com/Owner/Repo.git").orElseThrow().equals("owner/repo"), "canonical GitHub URL with git suffix");
+        require(DisclosureVisibilityCorrelationWorkflow.parseLeadingNumber("2 (becuase of a link in their pr template)").orElseThrow() == 2.0, "leading visibility score with explanation");
+        require(DisclosureVisibilityCorrelationWorkflow.parseLeadingNumber("").isEmpty(), "blank visibility score missing");
+        require(java.util.Arrays.equals(DisclosureVisibilityCorrelationWorkflow.ranks(new double[]{1, 1, 3, 4}), new double[]{1.5, 1.5, 3.0, 4.0}), "average tied ranks");
+
+        Path prCorrelationInput = Files.createTempFile("pr-correlation-input", ".csv");
+        Files.writeString(prCorrelationInput, visibilityPrDatasetCsv(), StandardCharsets.UTF_8);
+        Path policyCorrelationInput = Files.createTempFile("policy-correlation-input", ".csv");
+        Files.writeString(policyCorrelationInput, visibilityPolicyCsv(), StandardCharsets.UTF_8);
+        Path visibilitySummary = tempMissingPath("visibility-summary", ".csv");
+        Path visibilityCorrelation = tempMissingPath("visibility-correlation", ".csv");
+        DisclosureVisibilityCorrelationWorkflow.Result visibilityResult = DisclosureVisibilityCorrelationWorkflow.analyze(
+                prCorrelationInput,
+                policyCorrelationInput,
+                visibilitySummary,
+                visibilityCorrelation
+        );
+        List<Map<String, String>> visibilityRows = CsvTools.readRows(visibilitySummary);
+        require(visibilityRows.size() == 7, "one summary row per distinct PR dataset repository");
+        Map<String, Map<String, String>> visibilityByRepo = indexByColumn(visibilityRows, "Repository");
+        require("3".equals(visibilityByRepo.get("alpha/one").get("Total PR Rows")), "group multiple PR rows by repository");
+        require("2".equals(visibilityByRepo.get("alpha/one").get("Successfully Analysed Eligible PRs")), "exclude failed analysis from denominator");
+        require("1".equals(visibilityByRepo.get("alpha/one").get("Failed or Excluded PRs")), "failed row count");
+        require("0.5".equals(visibilityByRepo.get("alpha/one").get("Disclosure Rate")), "alpha disclosure rate");
+        require("0.00%".equals(visibilityByRepo.get("beta/two").get("Disclosure Rate Percentage")), "repo with no disclosures");
+        require("100.00%".equals(visibilityByRepo.get("gamma/three").get("Disclosure Rate Percentage")), "repo with 100 percent disclosure");
+        require(visibilityByRepo.get("delta/four").get("Disclosure Rate").isBlank(), "zero successfully analysed PRs should have blank rate");
+        require("Unmatched".equals(visibilityByRepo.get("epsilon/five").get("Match Status")), "unmatched repository");
+        require("Ambiguous".equals(visibilityByRepo.get("zeta/six").get("Match Status")), "ambiguous repository match");
+        require(visibilityByRepo.get("eta/seven").get("Visibility Score Numeric").isBlank(), "blank visibility excluded");
+        require(visibilityResult.spearmanResult().n() == 3, "correlation should use repository-level observations only");
+        require(Math.abs(visibilityResult.spearmanResult().rho() - 1.0) < 0.0000001, "known Spearman coefficient for monotonic data");
+        String visibilityCorrelationText = Files.readString(visibilityCorrelation, StandardCharsets.UTF_8);
+        require(visibilityCorrelationText.contains("Visibility Score vs Disclosure Rate"), "correlation output metric pair");
+        require(visibilityCorrelationText.contains("\"3\""), "correlation output sample size");
+
+        DisclosureVisibilityCorrelationWorkflow.SpearmanResult constantSpearman = DisclosureVisibilityCorrelationWorkflow.SpearmanResult.calculate(List.of(
+                new DisclosureVisibilityCorrelationWorkflow.Observation("a/a", 1.0, 0.5),
+                new DisclosureVisibilityCorrelationWorkflow.Observation("b/b", 2.0, 0.5),
+                new DisclosureVisibilityCorrelationWorkflow.Observation("c/c", 3.0, 0.5)
+        ));
+        require(Double.isNaN(constantSpearman.rho()), "constant disclosure rates should make Spearman undefined");
+
         Path coderA = Files.createTempFile("coder-a-labels", ".csv");
         Path coderB = Files.createTempFile("coder-b-labels", ".csv");
         Files.writeString(coderA, labelsCsv("Yes", "Positive", "No", "None"), StandardCharsets.UTF_8);
@@ -960,10 +1004,41 @@ public class AiDisclosureDetectorHarness {
                 + "owner/repo#3,owner/repo,3,https://github.com/owner/repo/pull/3,No,No,No,None,None,None,Agreed,failed,,\n";
     }
 
+    private static String visibilityPrDatasetCsv() {
+        return "Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Bot,Status,AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text\n"
+                + "Alpha/One,1,https://github.com/Alpha/One/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
+                + "alpha/one,2,https://github.com/alpha/one/pull/2,t,a,2026-01-01T00:00:00Z,2026-04-02T00:00:00Z,,No,Closed,MANUAL_REVIEW_REQUIRED,No,None,\n"
+                + "alpha/one,3,https://github.com/alpha/one/pull/3,t,a,2026-01-01T00:00:00Z,2026-04-03T00:00:00Z,,No,Fetch Failed,MANUAL_REVIEW_REQUIRED,,None,\n"
+                + "beta/two,1,https://github.com/beta/two/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,No,None,\n"
+                + "gamma/three,1,https://github.com/gamma/three/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
+                + "delta/four,1,https://github.com/delta/four/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Analysis Failed,MANUAL_REVIEW_REQUIRED,,None,\n"
+                + "epsilon/five,1,https://github.com/epsilon/five/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
+                + "zeta/six,1,https://github.com/zeta/six/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
+                + "eta/seven,1,https://github.com/eta/seven/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,No,None,\n";
+    }
+
+    private static String visibilityPolicyCsv() {
+        return "Repo,Repository Link,Visibility Score,Governance Score\n"
+                + "Alpha Display,https://github.com/alpha/one/,2 (becuase of a link in their pr template),3\n"
+                + "Beta Display,https://github.com/BETA/two.git,1,2\n"
+                + "Gamma Display,https://github.com/gamma/three,3,4\n"
+                + "Zeta A,https://github.com/zeta/six,4,4\n"
+                + "Zeta B,https://github.com/Zeta/Six/,4,4\n"
+                + "Eta Display,https://github.com/eta/seven,,1\n";
+    }
+
     private static Path tempMissingPath(String prefix, String suffix) throws java.io.IOException {
         Path path = Files.createTempFile(prefix, suffix);
         Files.delete(path);
         return path;
+    }
+
+    private static Map<String, Map<String, String>> indexByColumn(List<Map<String, String>> rows, String column) {
+        Map<String, Map<String, String>> indexed = new java.util.LinkedHashMap<>();
+        for (Map<String, String> row : rows) {
+            indexed.put(row.get(column), row);
+        }
+        return indexed;
     }
 
     private static String prJson(String title) {

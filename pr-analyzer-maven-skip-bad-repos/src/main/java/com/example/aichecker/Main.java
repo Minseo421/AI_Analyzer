@@ -164,6 +164,20 @@ public class Main {
                 }
                 return;
             }
+            if (args.length == 5 && args[0].equals("--visibility-correlation")) {
+                Path prDataset = Path.of(args[1]);
+                Path policyTracker = Path.of(args[2]);
+                Path summaryOutput = Path.of(args[3]);
+                Path correlationOutput = Path.of(args[4]);
+                DisclosureVisibilityCorrelationWorkflow.Result result = DisclosureVisibilityCorrelationWorkflow.analyze(prDataset, policyTracker, summaryOutput, correlationOutput);
+                System.out.println("Per-repository disclosure summary saved: " + summaryOutput.toAbsolutePath());
+                System.out.println("Visibility/disclosure correlation saved: " + correlationOutput.toAbsolutePath());
+                System.out.println("Distinct repositories found: " + result.summaryRows().size());
+                System.out.println("Correlation observations used: " + result.spearmanResult().n());
+                System.out.println("Spearman rho: " + formatStat(result.spearmanResult().rho()));
+                System.out.println("P-value: " + formatStat(result.spearmanResult().pValue()));
+                return;
+            }
             if (args.length > 0 && isKnownMode(args[0])) {
                 throw new IllegalArgumentException("Invalid arguments for " + args[0] + ". Expected: " + expectedUsage(args[0]));
             }
@@ -203,7 +217,8 @@ public class Main {
                 || mode.equals("--reanalyze-kappa-sample")
                 || mode.equals("--analyze-specific-prs")
                 || mode.equals("--retry-failed-reanalysis")
-                || mode.equals("--repos-from-csv");
+                || mode.equals("--repos-from-csv")
+                || mode.equals("--visibility-correlation");
     }
 
     private static String expectedUsage(String mode) {
@@ -221,6 +236,7 @@ public class Main {
             case "--analyze-specific-prs" -> "--analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv Repo#PR [Repo#PR...]";
             case "--retry-failed-reanalysis" -> "--retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv";
             case "--repos-from-csv" -> "--repos-from-csv policy-tracker.csv repos.txt [--replace]";
+            case "--visibility-correlation" -> "--visibility-correlation pr_dataset_output.csv policy_tracker.csv repo_visibility_summary.csv visibility_correlation.csv";
             default -> "";
         };
     }
@@ -424,6 +440,11 @@ public class Main {
         return cleaned;
     }
 
+    private static String formatStat(double value) {
+        if (Double.isNaN(value)) return "UNDEFINED";
+        return String.format(java.util.Locale.ROOT, "%.10f", value);
+    }
+
     private static void printUsage() {
         System.out.println("Usage:");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar https://github.com/OWNER/REPO/pull/NUMBER");
@@ -442,6 +463,7 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt [--replace]");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --visibility-correlation pr_dataset_output.csv policy_tracker.csv repo_visibility_summary.csv visibility_correlation.csv");
         System.out.println();
         System.out.println("repos.txt can contain either GitHub URLs or OWNER/REPO names, one per line.");
     }
