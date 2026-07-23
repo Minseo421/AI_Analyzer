@@ -233,7 +233,7 @@ Preliminary script summary:
 
 - `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset.
 - `AI Disclosure Present Count`: rows where disclosure-like text was detected.
-- `Compliance Rate = AI Disclosure Present Count / Eligible PRs Reviewed`.
+- `Disclosure Compliance Rate = AI Disclosure Present Count / Eligible PRs Reviewed`.
 - `Manual Review Required Count`: rows requiring validation before final reporting.
 
 Final research calculation:

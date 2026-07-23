@@ -8,6 +8,7 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -25,6 +26,8 @@ public class GitHubClient {
     private static final int MAX_ATTEMPTS = 4;
     private static final long BASE_BACKOFF_MILLIS = 250;
     private static final long MAX_BACKOFF_MILLIS = 8_000;
+    private static final Duration CONNECT_TIMEOUT = timeoutFromEnv("GITHUB_CONNECT_TIMEOUT_SECONDS", 15);
+    private static final Duration REQUEST_TIMEOUT = timeoutFromEnv("GITHUB_REQUEST_TIMEOUT_SECONDS", 60);
     private static boolean unauthenticatedWarningPrinted = false;
 
     private final Supplier<HttpClient> clientFactory;
@@ -81,14 +84,15 @@ public class GitHubClient {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             HttpRequest request = buildGetRequest(URI.create(url), acceptHeader, token);
             try {
+                logFetch(url, attempt, "request_start", "Starting", REQUEST_TIMEOUT);
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() >= 200 && response.statusCode() < 300) {
                     logFetch(url, attempt, "success", "Success");
                     return response.body();
                 }
                 String message = errorMessage(url, response.statusCode(), response.body(), response.headers(), isAuthenticated());
-                HttpStatusException failure = new HttpStatusException(response.statusCode(), message, response.headers().firstValue("Retry-After"));
-                if (!isRetryableStatus(response.statusCode())) {
+                HttpStatusException failure = new HttpStatusException(response.statusCode(), message, retryAfter(response.body(), response.headers()));
+                if (!isRetryableStatus(response.statusCode()) && !isRetryableRateLimit(response.statusCode(), response.body())) {
                     logFetch(url, attempt, "permanent_http_" + response.statusCode(), "Failed");
                     throw failure;
                 }
@@ -98,6 +102,13 @@ public class GitHubClient {
                     throw new IOException("GitHub fetch failed after " + MAX_ATTEMPTS + " attempts: " + sanitize(message), failure);
                 }
                 sleepBeforeRetry(attempt, failure.retryAfter());
+            } catch (HttpTimeoutException e) {
+                lastFailure = e;
+                logFetch(url, attempt, "request_timeout", attempt == MAX_ATTEMPTS ? "Failed" : "Retrying", REQUEST_TIMEOUT);
+                if (attempt == MAX_ATTEMPTS) {
+                    throw new IOException("GitHub fetch timed out after " + attempt + " attempts with request timeout " + REQUEST_TIMEOUT.toSeconds() + "s for " + safeUrlForLog(url), e);
+                }
+                sleepBeforeRetry(attempt, Optional.empty());
             } catch (IOException e) {
                 if (e instanceof HttpStatusException) {
                     throw e;
@@ -137,7 +148,7 @@ public class GitHubClient {
     static HttpRequest buildGetRequest(URI uri, String acceptHeader, String token) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(uri)
-                .timeout(Duration.ofSeconds(30))
+                .timeout(REQUEST_TIMEOUT)
                 .header("Accept", acceptHeader)
                 .header("X-GitHub-Api-Version", API_VERSION)
                 .header("User-Agent", "pr-ai-disclosure-analyzer");
@@ -171,7 +182,7 @@ public class GitHubClient {
     }
 
     private static HttpClient newHttpClient() {
-        return HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build();
+        return HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build();
     }
 
     private static boolean isRetryableStatus(int statusCode) {
@@ -181,6 +192,10 @@ public class GitHubClient {
                 || statusCode == 502
                 || statusCode == 503
                 || statusCode == 504;
+    }
+
+    private static boolean isRetryableRateLimit(int statusCode, String body) {
+        return statusCode == 403 && isRateLimitBody(body);
     }
 
     private static boolean isRetryableException(IOException e) {
@@ -220,6 +235,7 @@ public class GitHubClient {
 
     private void sleepBeforeRetry(int attempt, Optional<String> retryAfter) throws InterruptedException {
         long delay = retryAfter.flatMap(GitHubClient::parseRetryAfterMillis)
+                .map(millis -> Math.min(millis, MAX_BACKOFF_MILLIS))
                 .orElseGet(() -> backoffMillis(attempt));
         sleeper.sleep(delay);
     }
@@ -246,12 +262,52 @@ public class GitHubClient {
         }
     }
 
+    private static Optional<String> retryAfter(String body, java.net.http.HttpHeaders headers) {
+        Optional<String> retryAfter = headers.firstValue("Retry-After");
+        if (retryAfter.isPresent()) {
+            return retryAfter;
+        }
+        if (!isRateLimitBody(body)) {
+            return Optional.empty();
+        }
+        return headers.firstValue("x-ratelimit-reset")
+                .flatMap(GitHubClient::millisUntilEpochSeconds);
+    }
+
+    private static Optional<String> millisUntilEpochSeconds(String value) {
+        if (value == null || value.isBlank()) return Optional.empty();
+        try {
+            long epochSeconds = Long.parseLong(value.trim());
+            long millis = epochSeconds * 1000L - java.time.Instant.now().toEpochMilli();
+            return Optional.of(Long.toString(Math.max(0, millis / 1000L)));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+    }
+
     private static void logFetch(String url, int attempt, String category, String outcome) {
+        logFetch(url, attempt, category, outcome, null);
+    }
+
+    private static void logFetch(String url, int attempt, String category, String outcome, Duration timeout) {
         System.err.println("GitHub fetch repo=" + repositoryFromUrl(url)
                 + " pr=" + prNumberFromUrl(url)
+                + " url=" + safeUrlForLog(url)
                 + " attempt=" + attempt
+                + (timeout == null ? "" : " timeout_seconds=" + timeout.toSeconds())
                 + " category=" + category
                 + " outcome=" + outcome);
+    }
+
+    private static String safeUrlForLog(String url) {
+        if (url == null || url.isBlank()) return "unknown";
+        String cleaned = url.replace('\n', ' ').replace('\r', ' ').trim();
+        int tokenIndex = cleaned.toLowerCase(Locale.ROOT).indexOf("access_token=");
+        if (tokenIndex >= 0) {
+            int end = cleaned.indexOf('&', tokenIndex);
+            cleaned = cleaned.substring(0, tokenIndex) + "access_token=[REDACTED]" + (end >= 0 ? cleaned.substring(end) : "");
+        }
+        return cleaned;
     }
 
     private static String repositoryFromUrl(String url) {
@@ -284,6 +340,22 @@ public class GitHubClient {
             return null;
         }
         return value.trim();
+    }
+
+    private static Duration timeoutFromEnv(String name, long defaultSeconds) {
+        String value = System.getenv(name);
+        if (value == null || value.isBlank()) {
+            return Duration.ofSeconds(defaultSeconds);
+        }
+        try {
+            long seconds = Long.parseLong(value.trim());
+            if (seconds <= 0) {
+                throw new IllegalArgumentException(name + " must be positive.");
+            }
+            return Duration.ofSeconds(seconds);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(name + " must be a positive integer number of seconds.");
+        }
     }
 
     private PullRequestData parsePullRequestObject(String repository, String json) {

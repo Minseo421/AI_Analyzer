@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Main {
@@ -50,8 +51,7 @@ public class Main {
                 Path output = Path.of(args[3]);
                 List<RepoUrl> repoUrls = readRepoList(repoListFile);
                 PrAnalyzer analyzer = new PrAnalyzer();
-                List<PrReportRow> rows = analyzer.analyzeMultipleRepos(repoUrls, targetCountPerRepo);
-                CsvWriter.write(output, rows);
+                List<PrReportRow> rows = analyzeMultipleReposIncrementally(repoUrls, targetCountPerRepo, output, analyzer, false);
                 printSavedSummary(output, rows);
                 return;
             }
@@ -61,12 +61,16 @@ public class Main {
                 Path output = Path.of(args[3]);
                 List<RepoUrl> repoUrls = readRepoList(repoListFile);
                 PrAnalyzer analyzer = new PrAnalyzer();
-                List<PrReportRow> rows = analyzer.analyzeMultipleRepos(repoUrls, targetCountPerRepo);
-                CsvWriter.writePrDataset(output, rows);
+                boolean resumedOutput = Files.exists(output) && Files.size(output) > 0;
+                List<PrReportRow> rows = analyzeMultipleReposIncrementally(repoUrls, targetCountPerRepo, output, analyzer, true);
                 if (args.length == 5) {
                     Path summaryOutput = Path.of(args[4]);
-                    CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository());
-                    System.out.println("Repository compliance summary saved: " + summaryOutput.toAbsolutePath());
+                    if (resumedOutput) {
+                        System.out.println("Repository compliance summary not written during resume because existing completed rows are not re-analysed in memory. Regenerate the summary after the resumed dataset is complete.");
+                    } else {
+                        CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository());
+                        System.out.println("Repository compliance summary saved: " + summaryOutput.toAbsolutePath());
+                    }
                 }
                 printSavedSummary(output, rows);
                 return;
@@ -227,6 +231,36 @@ public class Main {
         System.out.println("CSV saved: " + output.toAbsolutePath());
         System.out.println("Human closed PRs checked: " + rows.size());
         System.out.printf("AI disclosure percentage: %.2f%% (%d/%d)%n", percentage, disclosed, rows.size());
+    }
+
+    private static List<PrReportRow> analyzeMultipleReposIncrementally(List<RepoUrl> repoUrls, int targetCountPerRepo, Path output, PrAnalyzer analyzer, boolean prDataset) throws Exception {
+        Set<String> completedIds = prDataset ? CsvWriter.completedPrDatasetIds(output) : CsvWriter.completedReportIds(output);
+        if (!completedIds.isEmpty()) {
+            System.out.println("Resume enabled for " + output.toAbsolutePath() + ": " + completedIds.size() + " completed PR rows already present.");
+        }
+        List<PrReportRow> allNewRows = new ArrayList<>();
+        for (RepoUrl repoUrl : repoUrls) {
+            try {
+                List<PrReportRow> rows = analyzer.analyzeLatestClosedHumanPrs(repoUrl, targetCountPerRepo, completedIds);
+                if (prDataset) {
+                    CsvWriter.appendPrDatasetRows(output, rows);
+                } else {
+                    CsvWriter.appendReportRows(output, rows);
+                }
+                for (PrReportRow row : rows) {
+                    completedIds.add(row.repository() + "#" + row.pullRequestNumber());
+                }
+                allNewRows.addAll(rows);
+                System.out.println("Incremental rows flushed for " + repoUrl.fullName() + ": " + rows.size());
+            } catch (Exception e) {
+                System.out.println();
+                System.out.println("Skipped repository: " + repoUrl.fullName());
+                System.out.println("Reason: " + shortError(e.getMessage()));
+                System.out.println("The program will continue with the next repository.");
+                System.out.println();
+            }
+        }
+        return allNewRows;
     }
 
     private static long kappaSampleSeed() {

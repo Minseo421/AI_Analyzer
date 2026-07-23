@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
@@ -36,6 +37,7 @@ public class AiDisclosureDetectorHarness {
         require(authenticatedRequest.headers().firstValue("Authorization").orElse("").equals("Bearer " + testToken), "Authorization header should use GITHUB_TOKEN");
         require(authenticatedRequest.headers().firstValue("Accept").orElse("").equals("application/vnd.github+json"), "Accept header should be present");
         require(authenticatedRequest.headers().firstValue("X-GitHub-Api-Version").orElse("").equals("2022-11-28"), "GitHub API version header should be present");
+        require(authenticatedRequest.timeout().orElseThrow().equals(Duration.ofSeconds(60)), "request timeout should be applied to every request");
 
         HttpRequest unauthenticatedRequest = GitHubClient.buildGetRequest(URI.create("https://api.github.com/repos/owner/repo/pulls/1"), "application/vnd.github+json", null);
         require(unauthenticatedRequest.headers().firstValue("Authorization").isEmpty(), "Authorization header should be omitted without token");
@@ -104,6 +106,42 @@ public class AiDisclosureDetectorHarness {
         GitHubClient retryAfterClient = new GitHubClient(() -> retryAfterHttp, null, retryAfterSleeps::add);
         retryAfterClient.getPullRequest("owner", "repo", 9);
         require(retryAfterSleeps.equals(List.of(2000L)), "Retry-After seconds should control backoff");
+
+        FakeHttpClient rateLimitResetHttp = new FakeHttpClient();
+        rateLimitResetHttp.enqueue(jsonResponse(403, "{\"message\":\"API rate limit exceeded\"}", Map.of("x-ratelimit-reset", "1")));
+        rateLimitResetHttp.enqueue(jsonResponse(200, prJson("rate reset success"), Map.of()));
+        List<Long> rateLimitSleeps = new ArrayList<>();
+        GitHubClient rateLimitResetClient = new GitHubClient(() -> rateLimitResetHttp, null, rateLimitSleeps::add);
+        PullRequestData rateLimitPr = rateLimitResetClient.getPullRequest("owner", "repo", 15);
+        require("rate reset success".equals(rateLimitPr.title()), "rate-limit reset header should allow retry");
+        require(rateLimitSleeps.equals(List.of(0L)), "past rate-limit reset should not add delay");
+
+        FakeHttpClient timeoutThenSuccessHttp = new FakeHttpClient();
+        timeoutThenSuccessHttp.enqueue(new java.net.http.HttpTimeoutException("request timed out"));
+        timeoutThenSuccessHttp.enqueue(jsonResponse(200, prJson("timeout retry success"), Map.of()));
+        List<Long> timeoutSleeps = new ArrayList<>();
+        GitHubClient timeoutThenSuccessClient = new GitHubClient(() -> timeoutThenSuccessHttp, null, timeoutSleeps::add);
+        PullRequestData timeoutRetryPr = timeoutThenSuccessClient.getPullRequest("owner", "repo", 13);
+        require("timeout retry success".equals(timeoutRetryPr.title()), "HTTP timeout should retry and then succeed");
+        require(timeoutThenSuccessHttp.requests().size() == 2, "timeout retry request count");
+        require(timeoutSleeps.size() == 1, "timeout retry should back off once");
+        require(timeoutThenSuccessHttp.requests().stream().allMatch(request -> request.timeout().orElseThrow().equals(Duration.ofSeconds(60))), "timeout should be on every retried request");
+
+        FakeHttpClient timeoutExhaustedHttp = new FakeHttpClient();
+        timeoutExhaustedHttp.enqueue(new java.net.http.HttpTimeoutException("request timed out"));
+        timeoutExhaustedHttp.enqueue(new java.net.http.HttpTimeoutException("request timed out"));
+        timeoutExhaustedHttp.enqueue(new java.net.http.HttpTimeoutException("request timed out"));
+        timeoutExhaustedHttp.enqueue(new java.net.http.HttpTimeoutException("request timed out"));
+        GitHubClient timeoutExhaustedClient = new GitHubClient(() -> timeoutExhaustedHttp, testToken, millis -> {});
+        try {
+            timeoutExhaustedClient.getPullRequest("owner", "repo", 14);
+            throw new AssertionError("HTTP timeouts should exhaust after four attempts");
+        } catch (IOException expected) {
+            require(expected.getMessage().contains("timed out after 4 attempts"), "timeout exhausted message");
+            require(expected.getMessage().contains("request timeout 60s"), "timeout duration should be recorded");
+            require(!expected.getMessage().contains(testToken), "timeout failure should not expose token");
+        }
+        require(timeoutExhaustedHttp.requests().size() == 4, "timeout exhausted request count");
 
         FakeHttpClient permanentHttp = new FakeHttpClient();
         permanentHttp.enqueue(jsonResponse(404, "{\"message\":\"not found\"}", Map.of()));
@@ -653,6 +691,41 @@ public class AiDisclosureDetectorHarness {
         PrReportRow directRow = new PrAnalyzer(directClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC)).analyzeExistingPullRequest("direct/repo", 1);
         require(directRow.pullRequestNumber() == 1 && directRow.aiDisclosure(), "direct specified-PR analysis should remain unaffected by cutoff");
 
+        FakeGitHubClient htmlFailureClient = new FakeGitHubClient();
+        htmlFailureClient.addPage("html/repo", 1, List.of(
+                pr("html/repo", 1, "2026-03-22T00:00:00Z", "human", "User"),
+                pr("html/repo", 2, "2026-03-23T00:00:00Z", "human", "User")
+        ));
+        htmlFailureClient.failHtml("https://github.com/html/repo/pull/2", "html request timed out");
+        PrAnalyzer htmlFailureAnalyzer = new PrAnalyzer(htmlFailureClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
+        List<PrReportRow> htmlFailureRows = htmlFailureAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("html/repo"), 2);
+        require(htmlFailureRows.size() == 2, "HTML failure should not stop subsequent PR analysis");
+        require(!htmlFailureRows.get(0).htmlScrapeSuccess(), "failed HTML fetch should be isolated to one row");
+        require(htmlFailureRows.get(1).htmlScrapeSuccess(), "subsequent PR should still be analysed");
+
+        FakeGitHubClient pageFailureClient = new FakeGitHubClient();
+        pageFailureClient.failPage("skip/one", 1, "page fetch timed out");
+        pageFailureClient.addPage("skip/two", 1, List.of(pr("skip/two", 1, "2026-03-22T00:00:00Z", "human", "User")));
+        PrAnalyzer pageFailureAnalyzer = new PrAnalyzer(pageFailureClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
+        List<PrReportRow> pageFailureRows = pageFailureAnalyzer.analyzeMultipleRepos(List.of(RepoUrl.parse("skip/one"), RepoUrl.parse("skip/two")), 1);
+        require(pageFailureRows.size() == 1 && "skip/two".equals(pageFailureRows.get(0).repository()), "repository failure should not stop later repositories");
+
+        Path resumeOutput = tempMissingPath("resume-pr-dataset", ".csv");
+        CsvWriter.appendPrDatasetRows(resumeOutput, List.of(row("resume/repo", 1, false, "none")));
+        Set<String> completedIds = CsvWriter.completedPrDatasetIds(resumeOutput);
+        FakeGitHubClient resumeClient = new FakeGitHubClient();
+        resumeClient.addPage("resume/repo", 1, List.of(
+                pr("resume/repo", 1, "2026-03-23T00:00:00Z", "human", "User"),
+                pr("resume/repo", 2, "2026-03-24T00:00:00Z", "human", "User")
+        ));
+        PrAnalyzer resumeAnalyzer = new PrAnalyzer(resumeClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
+        List<PrReportRow> resumeRows = resumeAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("resume/repo"), 2, completedIds);
+        CsvWriter.appendPrDatasetRows(resumeOutput, resumeRows);
+        List<Map<String, String>> resumedCsvRows = CsvTools.readRows(resumeOutput);
+        require(resumedCsvRows.size() == 2, "resume should append only missing rows");
+        require(resumedCsvRows.stream().map(row -> row.get("Repo") + "#" + row.get("PR #")).distinct().count() == 2, "resume should produce no duplicate rows");
+        require(resumeClient.htmlRequests().equals(List.of("https://github.com/resume/repo/pull/2")), "resume should skip already completed PR analysis");
+
         Path duplicateSample = Files.createTempFile("duplicate-kappa-sample", ".csv");
         Files.writeString(duplicateSample, reanalysisInputCsv() + "owner/repo#1,owner/repo,1,https://github.com/owner/repo/pull/1,t,a,,,,Closed,old,Yes,old_class,old_source,\n", StandardCharsets.UTF_8);
         try {
@@ -993,7 +1066,10 @@ public class AiDisclosureDetectorHarness {
     private static class FakeGitHubClient extends GitHubClient {
         private final Map<String, String> bodies = new java.util.LinkedHashMap<>();
         private final Map<String, String> failures = new java.util.LinkedHashMap<>();
+        private final Map<String, String> htmlFailures = new java.util.LinkedHashMap<>();
+        private final Map<String, String> pageFailures = new java.util.LinkedHashMap<>();
         private final List<String> requests = new java.util.ArrayList<>();
+        private final List<String> htmlRequests = new java.util.ArrayList<>();
         private final Map<String, List<PullRequestData>> pages = new java.util.LinkedHashMap<>();
         private final List<String> pageRequests = new java.util.ArrayList<>();
 
@@ -1003,6 +1079,14 @@ public class AiDisclosureDetectorHarness {
 
         void fail(String repository, int number, String reason) {
             failures.put(repository + "#" + number, reason);
+        }
+
+        void failHtml(String url, String reason) {
+            htmlFailures.put(url, reason);
+        }
+
+        void failPage(String repository, int page, String reason) {
+            pageFailures.put(repository + "#page" + page, reason);
         }
 
         void failTimes(String repository, int number, String reason, int times) {
@@ -1019,6 +1103,10 @@ public class AiDisclosureDetectorHarness {
 
         List<String> pages() {
             return List.copyOf(pageRequests);
+        }
+
+        List<String> htmlRequests() {
+            return List.copyOf(htmlRequests);
         }
 
         @Override
@@ -1055,14 +1143,21 @@ public class AiDisclosureDetectorHarness {
         }
 
         @Override
-        public String fetchHtml(String url) {
+        public String fetchHtml(String url) throws java.io.IOException {
+            htmlRequests.add(url);
+            if (htmlFailures.containsKey(url)) {
+                throw new java.io.IOException(htmlFailures.get(url));
+            }
             return "";
         }
 
         @Override
-        public List<PullRequestData> getClosedPullRequestsPage(String owner, String repo, int page) {
+        public List<PullRequestData> getClosedPullRequestsPage(String owner, String repo, int page) throws java.io.IOException {
             String key = owner + "/" + repo + "#page" + page;
             pageRequests.add(key);
+            if (pageFailures.containsKey(key)) {
+                throw new java.io.IOException(pageFailures.get(key));
+            }
             return pages.getOrDefault(key, List.of());
         }
 

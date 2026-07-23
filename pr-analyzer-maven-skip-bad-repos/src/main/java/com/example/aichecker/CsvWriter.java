@@ -5,48 +5,23 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class CsvWriter {
     private static final String MANUAL_REVIEW_REQUIRED = "MANUAL_REVIEW_REQUIRED";
 
     public static void write(Path path, List<PrReportRow> rows) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
-            writer.write(String.join(",",
-                    csv("Repository"),
-                    csv("Pull request number"),
-                    csv("URL"),
-                    csv("Author"),
-                    csv("State"),
-                    csv("Closed"),
-                    csv("Human author"),
-                    csv("GitHub user type"),
-                    csv("AI Disclosure"),
-                    csv("Merged"),
-                    csv("AI Disclosure evidence"),
-                    csv("HTML scrape success"),
-                    csv("HTML scrape error")
-            ));
+            writeReportHeader(writer);
             writer.newLine();
             for (PrReportRow row : rows) {
-                writer.write(String.join(",",
-                        csv(row.repository()),
-                        csv(Integer.toString(row.pullRequestNumber())),
-                        csv(row.url()),
-                        csv(row.author()),
-                        csv(row.state()),
-                        csv(Boolean.toString(row.closed())),
-                        csv(Boolean.toString(row.humanAuthor())),
-                        csv(row.githubUserType()),
-                        csv(Boolean.toString(row.aiDisclosure())),
-                        csv(Boolean.toString(row.merged())),
-                        csv(row.aiDisclosureEvidence()),
-                        csv(Boolean.toString(row.htmlScrapeSuccess())),
-                        csv(row.htmlScrapeError())
-                ));
+                writeReportRow(writer, row);
                 writer.newLine();
             }
         }
@@ -54,35 +29,63 @@ public class CsvWriter {
 
     public static void writePrDataset(Path path, List<PrReportRow> rows) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
-            writer.write("Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Bot,Status,"
-                    + "AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text");
+            writePrDatasetHeader(writer);
             writer.newLine();
             for (PrReportRow row : rows) {
-                writer.write(String.join(",",
-                        // Repo, PR #, URL, title, author, and dates come directly from the GitHub Pulls API.
-                        csv(row.repository()),
-                        csv(Integer.toString(row.pullRequestNumber())),
-                        csv(row.url()),
-                        csv(row.title()),
-                        csv(row.author()),
-                        csv(row.createdAt()),
-                        csv(row.closedAt()),
-                        csv(row.mergedAt()),
-                        // Bot is derived from GitHub user type and login-name bot heuristics.
-                        csv(yesNo(!row.humanAuthor())),
-                        // Status is derived from GitHub state plus merged_at presence.
-                        csv(datasetStatus(row)),
-                        // Required disclosure depends on repository policy coding and remains a manual workbook field.
-                        csv(MANUAL_REVIEW_REQUIRED),
-                        // Disclosure present/text come from the existing PR body and rendered HTML detector.
-                        csv(yesNo(row.aiDisclosure())),
-                        // The detector can flag AI-related text, but final classification still needs researcher validation.
-                        csv(disclosureClassification(row)),
-                        csv(disclosureText(row))
-                ));
+                writePrDatasetRow(writer, row);
                 writer.newLine();
             }
         }
+    }
+
+    public static int appendReportRows(Path path, List<PrReportRow> rows) throws IOException {
+        boolean writeHeader = !Files.exists(path) || Files.size(path) == 0;
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+            if (writeHeader) {
+                writeReportHeader(writer);
+                writer.newLine();
+            }
+            for (PrReportRow row : rows) {
+                writeReportRow(writer, row);
+                writer.newLine();
+                writer.flush();
+            }
+        }
+        return rows.size();
+    }
+
+    public static int appendPrDatasetRows(Path path, List<PrReportRow> rows) throws IOException {
+        boolean writeHeader = !Files.exists(path) || Files.size(path) == 0;
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+            if (writeHeader) {
+                writePrDatasetHeader(writer);
+                writer.newLine();
+            }
+            for (PrReportRow row : rows) {
+                writePrDatasetRow(writer, row);
+                writer.newLine();
+                writer.flush();
+            }
+        }
+        return rows.size();
+    }
+
+    public static Set<String> completedReportIds(Path path) throws IOException {
+        Set<String> ids = new LinkedHashSet<>();
+        if (!Files.exists(path) || Files.size(path) == 0) return ids;
+        for (Map<String, String> row : CsvTools.readRows(path)) {
+            addCompletedId(ids, row.get("Repository"), row.get("Pull request number"));
+        }
+        return ids;
+    }
+
+    public static Set<String> completedPrDatasetIds(Path path) throws IOException {
+        Set<String> ids = new LinkedHashSet<>();
+        if (!Files.exists(path) || Files.size(path) == 0) return ids;
+        for (Map<String, String> row : CsvTools.readRows(path)) {
+            addCompletedId(ids, row.get("Repo"), row.get("PR #"));
+        }
+        return ids;
     }
 
     public static void writeRepoComplianceSummary(Path path, List<PrReportRow> rows, Map<String, Integer> botPrsExcluded) throws IOException {
@@ -130,6 +133,74 @@ public class CsvWriter {
 
     private static long countClassification(List<PrReportRow> rows, String classification) {
         return rows.stream().filter(row -> classification.equals(row.aiDisclosureClassification())).count();
+    }
+
+    private static void writeReportHeader(BufferedWriter writer) throws IOException {
+        writer.write(String.join(",",
+                csv("Repository"),
+                csv("Pull request number"),
+                csv("URL"),
+                csv("Author"),
+                csv("State"),
+                csv("Closed"),
+                csv("Human author"),
+                csv("GitHub user type"),
+                csv("AI Disclosure"),
+                csv("Merged"),
+                csv("AI Disclosure evidence"),
+                csv("HTML scrape success"),
+                csv("HTML scrape error")
+        ));
+    }
+
+    private static void writeReportRow(BufferedWriter writer, PrReportRow row) throws IOException {
+        writer.write(String.join(",",
+                csv(row.repository()),
+                csv(Integer.toString(row.pullRequestNumber())),
+                csv(row.url()),
+                csv(row.author()),
+                csv(row.state()),
+                csv(Boolean.toString(row.closed())),
+                csv(Boolean.toString(row.humanAuthor())),
+                csv(row.githubUserType()),
+                csv(Boolean.toString(row.aiDisclosure())),
+                csv(Boolean.toString(row.merged())),
+                csv(row.aiDisclosureEvidence()),
+                csv(Boolean.toString(row.htmlScrapeSuccess())),
+                csv(row.htmlScrapeError())
+        ));
+    }
+
+    private static void writePrDatasetHeader(BufferedWriter writer) throws IOException {
+        writer.write("Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Bot,Status,"
+                + "AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text");
+    }
+
+    private static void writePrDatasetRow(BufferedWriter writer, PrReportRow row) throws IOException {
+        writer.write(String.join(",",
+                csv(row.repository()),
+                csv(Integer.toString(row.pullRequestNumber())),
+                csv(row.url()),
+                csv(row.title()),
+                csv(row.author()),
+                csv(row.createdAt()),
+                csv(row.closedAt()),
+                csv(row.mergedAt()),
+                csv(yesNo(!row.humanAuthor())),
+                csv(datasetStatus(row)),
+                csv(MANUAL_REVIEW_REQUIRED),
+                csv(yesNo(row.aiDisclosure())),
+                csv(disclosureClassification(row)),
+                csv(disclosureText(row))
+        ));
+    }
+
+    private static void addCompletedId(Set<String> ids, String repository, String number) {
+        String repo = repository == null ? "" : repository.trim();
+        String pr = number == null ? "" : number.trim();
+        if (!repo.isBlank() && !pr.isBlank()) {
+            ids.add(repo + "#" + pr);
+        }
     }
 
     private static String yesNo(boolean value) {

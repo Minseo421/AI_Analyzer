@@ -200,7 +200,7 @@ Columns:
 - `Ambiguous Disclosure Count`: preliminary detector count for ambiguous AI disclosure mentions.
 - `No Disclosure Count`: eligible reviewed rows with no detected disclosure.
 - `Manual Review Required Count`: currently all eligible reviewed rows.
-- `Compliance Rate`: `AI Disclosure Present Count / Eligible PRs Reviewed`.
+- `Disclosure Rate`: `AI Disclosure Present Count / Eligible PRs Reviewed`.
 
 Classification counts are preliminary and should be treated as manual-review queues until validated.
 
@@ -234,7 +234,7 @@ The older/audit output. It is preserved for debugging and includes extra technic
 - The compliance denominator is eligible human PRs reviewed. Eligibility uses GitHub `closed_at`, not `created_at`, `updated_at`, or `merged_at`; both merged and unmerged closed PRs are eligible. Filtering by bot status and the inclusive four-calendar-month `closed_at` cutoff occurs before the requested limit is applied, then rows are ordered locally by closure time. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands operate on specifically named/sample PRs and do not reapply dataset-selection eligibility.
 - AI disclosure detection is not fully reliable without human validation.
 - GitHub page chrome, navigation text, Copilot marketing text, and filenames such as `CLAUDE.md` should not be counted as contributor disclosure.
-- Manual review is required before final compliance rates are reported.
+- Manual review is required before final disclosure compliance rates are reported.
 
 Detailed methodology documents:
 
@@ -322,6 +322,14 @@ GitHub rate limit errors:
 
 - Set `GITHUB_TOKEN`.
 - Re-run the same command after exporting the token.
+
+Network stalls or interrupted long runs:
+
+- Each GitHub client has a 15-second connection timeout by default.
+- Each GitHub request has a 60-second full-request timeout by default.
+- Override with `GITHUB_CONNECT_TIMEOUT_SECONDS` or `GITHUB_REQUEST_TIMEOUT_SECONDS` if needed.
+- Multi-repository `--repos` and `--repos-pr-dataset` runs append and flush rows incrementally. Re-running the same command with the same output file resumes by skipping completed `Repo#PR` rows already present in that output. During resume, the optional repository compliance summary is not rewritten because already completed rows are not re-analysed in memory.
+- Exact-PR reanalysis and retry commands keep their fixed-sample behavior.
 
 Empty output:
 

@@ -57,9 +57,14 @@ public class PrAnalyzer {
     }
 
     public List<PrReportRow> analyzeLatestClosedHumanPrs(RepoUrl repoUrl, int targetCount) throws Exception {
+        return analyzeLatestClosedHumanPrs(repoUrl, targetCount, Set.of());
+    }
+
+    public List<PrReportRow> analyzeLatestClosedHumanPrs(RepoUrl repoUrl, int targetCount, Set<String> completedPrIds) throws Exception {
         Map<String, PullRequestData> eligibleById = new LinkedHashMap<>();
         List<PrReportRow> rows = new ArrayList<>();
         Set<String> seenPrs = new LinkedHashSet<>();
+        Set<String> completed = completedPrIds == null ? Set.of() : completedPrIds;
         botPrsExcluded.put(repoUrl.fullName(), 0);
         int page = 1;
         int fetchedClosedPrs = 0;
@@ -103,6 +108,11 @@ public class PrAnalyzer {
             eligible = eligible.subList(0, targetCount);
         }
         for (PullRequestData pr : eligible) {
+            String stableId = pr.repository() + "#" + pr.number();
+            if (completed.contains(stableId)) {
+                System.out.println("Skipping already completed PR: " + stableId);
+                continue;
+            }
             PrReportRow row = analyze(pr);
             rows.add(row);
             System.out.println(row.toConsoleTableRow(rows.size()));
