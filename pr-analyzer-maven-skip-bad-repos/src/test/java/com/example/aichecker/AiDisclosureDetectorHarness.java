@@ -440,14 +440,18 @@ public class AiDisclosureDetectorHarness {
         Files.writeString(policyCorrelationInput, visibilityPolicyCsv(), StandardCharsets.UTF_8);
         Path visibilitySummary = tempMissingPath("visibility-summary", ".csv");
         Path visibilityCorrelation = tempMissingPath("visibility-correlation", ".csv");
+        Path cleanedVisibilityDataset = tempMissingPath("visibility-cleaned-prs", ".csv");
+        Path visibilityExclusions = tempMissingPath("visibility-exclusions", ".csv");
         DisclosureVisibilityCorrelationWorkflow.Result visibilityResult = DisclosureVisibilityCorrelationWorkflow.analyze(
                 prCorrelationInput,
                 policyCorrelationInput,
                 visibilitySummary,
-                visibilityCorrelation
+                visibilityCorrelation,
+                cleanedVisibilityDataset,
+                visibilityExclusions
         );
         List<Map<String, String>> visibilityRows = CsvTools.readRows(visibilitySummary);
-        require(visibilityRows.size() == 7, "one summary row per distinct PR dataset repository");
+        require(visibilityRows.size() == 5, "summary should include only repositories with unique policy tracker matches");
         Map<String, Map<String, String>> visibilityByRepo = indexByColumn(visibilityRows, "Repository");
         require("3".equals(visibilityByRepo.get("alpha/one").get("Total PR Rows")), "group multiple PR rows by repository");
         require("2".equals(visibilityByRepo.get("alpha/one").get("Successfully Analysed Eligible PRs")), "exclude failed analysis from denominator");
@@ -456,11 +460,22 @@ public class AiDisclosureDetectorHarness {
         require("0.00%".equals(visibilityByRepo.get("beta/two").get("Disclosure Rate Percentage")), "repo with no disclosures");
         require("100.00%".equals(visibilityByRepo.get("gamma/three").get("Disclosure Rate Percentage")), "repo with 100 percent disclosure");
         require(visibilityByRepo.get("delta/four").get("Disclosure Rate").isBlank(), "zero successfully analysed PRs should have blank rate");
-        require("Unmatched".equals(visibilityByRepo.get("epsilon/five").get("Match Status")), "unmatched repository");
-        require("Ambiguous".equals(visibilityByRepo.get("zeta/six").get("Match Status")), "ambiguous repository match");
+        require(!visibilityByRepo.containsKey("epsilon/five"), "unmatched repository should be excluded when policy tracker is authoritative");
+        require(!visibilityByRepo.containsKey("zeta/six"), "ambiguous repository should be excluded when policy tracker is authoritative");
         require(visibilityByRepo.get("eta/seven").get("Visibility Score Numeric").isBlank(), "blank visibility excluded");
+        require(visibilityResult.policyRepositories() == 5, "policy repository count should include unique tracker repositories");
+        require(visibilityResult.cleanedPrRows() == 7, "cleaned PR dataset should include only unique policy matches and no duplicate PR IDs");
         require(visibilityResult.spearmanResult().n() == 3, "correlation should use repository-level observations only");
         require(Math.abs(visibilityResult.spearmanResult().rho() - 1.0) < 0.0000001, "known Spearman coefficient for monotonic data");
+        List<Map<String, String>> cleanedVisibilityRows = CsvTools.readRows(cleanedVisibilityDataset);
+        require(cleanedVisibilityRows.size() == 7, "cleaned dataset row count");
+        require(cleanedVisibilityRows.stream().noneMatch(row -> "epsilon/five".equals(row.get("Repo"))), "cleaned dataset excludes removed/unmatched repo");
+        require(cleanedVisibilityRows.stream().noneMatch(row -> "zeta/six".equals(row.get("Repo"))), "cleaned dataset excludes ambiguous repo");
+        require(cleanedVisibilityRows.stream().filter(row -> row.get("Repo").equals("alpha/one") && row.get("PR #").equals("1")).count() == 1, "cleaned dataset de-duplicates repo PR identifiers");
+        List<Map<String, String>> visibilityExclusionRows = CsvTools.readRows(visibilityExclusions);
+        Map<String, Map<String, String>> exclusionsByRepo = indexByColumn(visibilityExclusionRows, "Repository");
+        require(exclusionsByRepo.get("delta/four").get("Reason").contains("No successfully analysed"), "exclusions include no-rate repository");
+        require(exclusionsByRepo.get("eta/seven").get("Reason").contains("visibility"), "exclusions include missing visibility score");
         String visibilityCorrelationText = Files.readString(visibilityCorrelation, StandardCharsets.UTF_8);
         require(visibilityCorrelationText.contains("Visibility Score vs Disclosure Rate"), "correlation output metric pair");
         require(visibilityCorrelationText.contains("\"3\""), "correlation output sample size");
@@ -1007,6 +1022,7 @@ public class AiDisclosureDetectorHarness {
     private static String visibilityPrDatasetCsv() {
         return "Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Bot,Status,AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text\n"
                 + "Alpha/One,1,https://github.com/Alpha/One/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
+                + "alpha/one,1,https://github.com/alpha/one/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
                 + "alpha/one,2,https://github.com/alpha/one/pull/2,t,a,2026-01-01T00:00:00Z,2026-04-02T00:00:00Z,,No,Closed,MANUAL_REVIEW_REQUIRED,No,None,\n"
                 + "alpha/one,3,https://github.com/alpha/one/pull/3,t,a,2026-01-01T00:00:00Z,2026-04-03T00:00:00Z,,No,Fetch Failed,MANUAL_REVIEW_REQUIRED,,None,\n"
                 + "beta/two,1,https://github.com/beta/two/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,No,None,\n"
@@ -1022,6 +1038,7 @@ public class AiDisclosureDetectorHarness {
                 + "Alpha Display,https://github.com/alpha/one/,2 (becuase of a link in their pr template),3\n"
                 + "Beta Display,https://github.com/BETA/two.git,1,2\n"
                 + "Gamma Display,https://github.com/gamma/three,3,4\n"
+                + "Delta Display,https://github.com/delta/four,2,2\n"
                 + "Zeta A,https://github.com/zeta/six,4,4\n"
                 + "Zeta B,https://github.com/Zeta/Six/,4,4\n"
                 + "Eta Display,https://github.com/eta/seven,,1\n";

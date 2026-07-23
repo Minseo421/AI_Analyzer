@@ -1,0 +1,5 @@
+Repository,Retry Attempted,Final Fetch Status,HTTP Status or Exception Type,Failure Classification,Included in PR Dataset,Included in Disclosure Summary,Included in Correlation,Reason
+apache/couchdb,No,PR rows available,,Correlation excluded,Yes,Yes,No,Missing or invalid visibility score
+drupal/drupal,No,No PR rows available,,Missing PR dataset rows,No,No,No,Repository is in policy tracker but has no successfully fetched PR dataset rows
+osgeo/gdal,Yes,Failed,HTTP 403,GitHub API rate limit during retry,No,No,No,"Retry fetched pages successfully until GitHub unauthenticated API rate limit was exhausted on page 43; no complete PR dataset was produced, so the repository was excluded rather than counted as zero disclosure."
+torvalds/linux,No,Structurally unavailable,HTTP 404 from pulls endpoint; repository API returned has_pull_requests=false,Pull requests unavailable for repository,No,No,No,"Repository exists and is public, but GitHub API reports has_pull_requests=false and the pulls endpoint returns 404; excluded from PR-based disclosure analysis."

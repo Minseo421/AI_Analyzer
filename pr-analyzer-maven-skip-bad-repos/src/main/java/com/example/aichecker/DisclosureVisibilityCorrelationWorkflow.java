@@ -20,13 +20,18 @@ public class DisclosureVisibilityCorrelationWorkflow {
     private static final double ALPHA = 0.05;
 
     public static Result analyze(Path prDatasetPath, Path policyTrackerPath, Path summaryOutputPath, Path correlationOutputPath) throws IOException {
+        return analyze(prDatasetPath, policyTrackerPath, summaryOutputPath, correlationOutputPath, null, null);
+    }
+
+    public static Result analyze(Path prDatasetPath, Path policyTrackerPath, Path summaryOutputPath, Path correlationOutputPath, Path cleanedDatasetOutputPath, Path exclusionReportOutputPath) throws IOException {
         List<Map<String, String>> prRows = CsvTools.readRows(prDatasetPath);
         List<Map<String, String>> policyRows = CsvTools.readRows(policyTrackerPath);
         validatePrDataset(prRows, prDatasetPath);
         validatePolicyTracker(policyRows, policyTrackerPath);
 
-        Map<String, SummaryRow> summaries = summarizePrRows(prRows);
         PolicyIndex policyIndex = indexPolicyRows(policyRows);
+        List<Map<String, String>> cleanedPrRows = cleanPrRows(prRows, policyIndex);
+        Map<String, SummaryRow> summaries = summarizePrRows(cleanedPrRows);
         List<SummaryRow> outputRows = new ArrayList<>();
         for (SummaryRow row : summaries.values()) {
             outputRows.add(row.withPolicyMatch(policyIndex));
@@ -38,9 +43,16 @@ public class DisclosureVisibilityCorrelationWorkflow {
                 .map(row -> new Observation(row.repository(), row.visibilityScoreNumeric(), row.disclosureRate()))
                 .toList();
         SpearmanResult spearman = SpearmanResult.calculate(observations);
+        if (cleanedDatasetOutputPath != null) {
+            writeCleanedDataset(cleanedDatasetOutputPath, prRows, cleanedPrRows);
+        }
         writeSummary(summaryOutputPath, outputRows);
         writeCorrelation(correlationOutputPath, spearman, outputRows);
-        return new Result(outputRows, spearman);
+        List<ExclusionRow> exclusions = exclusionRows(policyIndex, outputRows);
+        if (exclusionReportOutputPath != null) {
+            writeExclusions(exclusionReportOutputPath, exclusions);
+        }
+        return new Result(outputRows, spearman, cleanedPrRows.size(), policyIndex.uniqueRepositoryCount(), exclusions);
     }
 
     private static void validatePrDataset(List<Map<String, String>> rows, Path path) {
@@ -119,6 +131,40 @@ public class DisclosureVisibilityCorrelationWorkflow {
         return new PolicyIndex(byRepo);
     }
 
+    private static List<Map<String, String>> cleanPrRows(List<Map<String, String>> rows, PolicyIndex policyIndex) {
+        List<Map<String, String>> cleaned = new ArrayList<>();
+        Set<String> seenPrs = new LinkedHashSet<>();
+        for (Map<String, String> row : rows) {
+            Optional<String> repo = canonicalRepo(row.get("Repo"));
+            if (repo.isEmpty() || !policyIndex.hasUniqueRepository(repo.get())) {
+                continue;
+            }
+            String prNumber = clean(row.get("PR #"));
+            if (prNumber.isBlank()) {
+                continue;
+            }
+            String id = repo.get() + "#" + prNumber;
+            if (!seenPrs.add(id)) {
+                continue;
+            }
+            Map<String, String> copy = new LinkedHashMap<>(row);
+            copy.put("Repo", repo.get());
+            cleaned.add(copy);
+        }
+        cleaned.sort(Comparator
+                .comparing((Map<String, String> row) -> clean(row.get("Repo")))
+                .thenComparingInt(row -> parsePrNumber(row.get("PR #"))));
+        return cleaned;
+    }
+
+    private static int parsePrNumber(String value) {
+        try {
+            return Integer.parseInt(clean(value));
+        } catch (NumberFormatException e) {
+            return Integer.MAX_VALUE;
+        }
+    }
+
     static Optional<String> canonicalRepo(String value) {
         String cleaned = clean(value);
         if (cleaned.isBlank()) return Optional.empty();
@@ -169,6 +215,22 @@ public class DisclosureVisibilityCorrelationWorkflow {
         }
     }
 
+    private static void writeCleanedDataset(Path path, List<Map<String, String>> originalRows, List<Map<String, String>> cleanedRows) throws IOException {
+        List<String> header = originalRows.isEmpty() ? List.of() : new ArrayList<>(originalRows.get(0).keySet());
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+            writer.write(String.join(",", header.stream().map(CsvTools::csv).toList()));
+            writer.newLine();
+            for (Map<String, String> row : cleanedRows) {
+                List<String> values = new ArrayList<>();
+                for (String column : header) {
+                    values.add(CsvTools.csv(row.getOrDefault(column, "")));
+                }
+                writer.write(String.join(",", values));
+                writer.newLine();
+            }
+        }
+    }
+
     private static void writeCorrelation(Path path, SpearmanResult result, List<SummaryRow> rows) throws IOException {
         long excluded = rows.stream().filter(row -> !row.correlationIncluded()).count();
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
@@ -188,6 +250,45 @@ public class DisclosureVisibilityCorrelationWorkflow {
             ));
             writer.newLine();
         }
+    }
+
+    private static void writeExclusions(Path path, List<ExclusionRow> rows) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+            writer.write("Repository,Retry Attempted,Final Fetch Status,HTTP Status or Exception Type,Failure Classification,Included in PR Dataset,Included in Disclosure Summary,Included in Correlation,Reason");
+            writer.newLine();
+            for (ExclusionRow row : rows) {
+                writer.write(String.join(",",
+                        CsvTools.csv(row.repository()),
+                        CsvTools.csv(row.retryAttempted()),
+                        CsvTools.csv(row.finalFetchStatus()),
+                        CsvTools.csv(row.httpStatusOrExceptionType()),
+                        CsvTools.csv(row.failureClassification()),
+                        CsvTools.csv(row.includedInPrDataset()),
+                        CsvTools.csv(row.includedInDisclosureSummary()),
+                        CsvTools.csv(row.includedInCorrelation()),
+                        CsvTools.csv(row.reason())
+                ));
+                writer.newLine();
+            }
+        }
+    }
+
+    private static List<ExclusionRow> exclusionRows(PolicyIndex policyIndex, List<SummaryRow> summaries) {
+        Map<String, SummaryRow> byRepository = new LinkedHashMap<>();
+        for (SummaryRow row : summaries) {
+            byRepository.put(row.repository(), row);
+        }
+        List<ExclusionRow> rows = new ArrayList<>();
+        for (String repository : policyIndex.uniqueRepositories()) {
+            SummaryRow summary = byRepository.get(repository);
+            if (summary == null) {
+                rows.add(new ExclusionRow(repository, "No", "No PR rows available", "", "Missing PR dataset rows", "No", "No", "No", "Repository is in policy tracker but has no successfully fetched PR dataset rows"));
+            } else if (!summary.correlationIncluded()) {
+                rows.add(new ExclusionRow(repository, "No", "PR rows available", "", "Correlation excluded", "Yes", "Yes", "No", summary.exclusionReason()));
+            }
+        }
+        rows.sort(Comparator.comparing(ExclusionRow::repository));
+        return rows;
     }
 
     private static String formatNullable(double value) {
@@ -223,6 +324,24 @@ public class DisclosureVisibilityCorrelationWorkflow {
     private record PolicyIndex(Map<String, List<PolicyRow>> byRepo) {
         private List<PolicyRow> matches(String repository) {
             return byRepo.getOrDefault(repository, List.of());
+        }
+
+        private boolean hasUniqueRepository(String repository) {
+            return matches(repository).size() == 1;
+        }
+
+        private Set<String> uniqueRepositories() {
+            Set<String> repositories = new LinkedHashSet<>();
+            for (Map.Entry<String, List<PolicyRow>> entry : byRepo.entrySet()) {
+                if (entry.getValue().size() == 1) {
+                    repositories.add(entry.getKey());
+                }
+            }
+            return repositories;
+        }
+
+        private int uniqueRepositoryCount() {
+            return uniqueRepositories().size();
         }
     }
 
@@ -301,6 +420,19 @@ public class DisclosureVisibilityCorrelationWorkflow {
     }
 
     public record Observation(String repository, double visibility, double disclosureRate) {
+    }
+
+    public record ExclusionRow(
+            String repository,
+            String retryAttempted,
+            String finalFetchStatus,
+            String httpStatusOrExceptionType,
+            String failureClassification,
+            String includedInPrDataset,
+            String includedInDisclosureSummary,
+            String includedInCorrelation,
+            String reason
+    ) {
     }
 
     public record SpearmanResult(int n, double rho, double pValue) {
@@ -399,22 +531,77 @@ public class DisclosureVisibilityCorrelationWorkflow {
 
     private static double approximatePValue(double rho, int n) {
         if (n <= 2 || Math.abs(rho) >= 1.0) return Math.abs(rho) == 1.0 ? 0.0 : Double.NaN;
-        double z = 0.5 * Math.log((1.0 + rho) / (1.0 - rho)) * Math.sqrt(n - 3.0);
-        return 2.0 * (1.0 - normalCdf(Math.abs(z)));
+        double degreesOfFreedom = n - 2.0;
+        double t = Math.abs(rho) * Math.sqrt(degreesOfFreedom / Math.max(1e-15, 1.0 - rho * rho));
+        double x = degreesOfFreedom / (degreesOfFreedom + t * t);
+        return regularizedIncompleteBeta(x, degreesOfFreedom / 2.0, 0.5);
     }
 
-    private static double normalCdf(double z) {
-        return 0.5 * (1.0 + erf(z / Math.sqrt(2.0)));
+    private static double regularizedIncompleteBeta(double x, double a, double b) {
+        if (x <= 0.0) return 0.0;
+        if (x >= 1.0) return 1.0;
+        double bt = Math.exp(logGamma(a + b) - logGamma(a) - logGamma(b)
+                + a * Math.log(x) + b * Math.log1p(-x));
+        if (x < (a + 1.0) / (a + b + 2.0)) {
+            return bt * betaContinuedFraction(a, b, x) / a;
+        }
+        return 1.0 - bt * betaContinuedFraction(b, a, 1.0 - x) / b;
     }
 
-    private static double erf(double x) {
-        double sign = x < 0 ? -1.0 : 1.0;
-        x = Math.abs(x);
-        double t = 1.0 / (1.0 + 0.3275911 * x);
-        double y = 1.0 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
-        return sign * y;
+    private static double betaContinuedFraction(double a, double b, double x) {
+        double qab = a + b;
+        double qap = a + 1.0;
+        double qam = a - 1.0;
+        double c = 1.0;
+        double d = 1.0 - qab * x / qap;
+        if (Math.abs(d) < 1e-30) d = 1e-30;
+        d = 1.0 / d;
+        double h = d;
+        for (int m = 1; m <= 200; m++) {
+            int m2 = 2 * m;
+            double aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+            d = 1.0 + aa * d;
+            if (Math.abs(d) < 1e-30) d = 1e-30;
+            c = 1.0 + aa / c;
+            if (Math.abs(c) < 1e-30) c = 1e-30;
+            d = 1.0 / d;
+            h *= d * c;
+            aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+            d = 1.0 + aa * d;
+            if (Math.abs(d) < 1e-30) d = 1e-30;
+            c = 1.0 + aa / c;
+            if (Math.abs(c) < 1e-30) c = 1e-30;
+            d = 1.0 / d;
+            double del = d * c;
+            h *= del;
+            if (Math.abs(del - 1.0) < 3e-14) break;
+        }
+        return h;
     }
 
-    public record Result(List<SummaryRow> summaryRows, SpearmanResult spearmanResult) {
+    private static double logGamma(double x) {
+        double[] coefficients = {
+                676.5203681218851,
+                -1259.1392167224028,
+                771.32342877765313,
+                -176.61502916214059,
+                12.507343278686905,
+                -0.13857109526572012,
+                9.9843695780195716e-6,
+                1.5056327351493116e-7
+        };
+        if (x < 0.5) {
+            return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * x)) - logGamma(1.0 - x);
+        }
+        x -= 1.0;
+        double a = 0.99999999999980993;
+        for (int i = 0; i < coefficients.length; i++) {
+            a += coefficients[i] / (x + i + 1.0);
+        }
+        double t = x + coefficients.length - 0.5;
+        return 0.5 * Math.log(2.0 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+    }
+
+    public record Result(List<SummaryRow> summaryRows, SpearmanResult spearmanResult, int cleanedPrRows, int policyRepositories, List<ExclusionRow> exclusions) {
     }
 }

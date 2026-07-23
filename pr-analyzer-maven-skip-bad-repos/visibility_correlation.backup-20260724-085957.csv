@@ -1,0 +1,2 @@
+Metric Pair,Spearman Rho,P-Value,Sample Size,Significance Level,Significance Result,Confidence Interval Lower,Confidence Interval Upper,Excluded Repository Count,Interpretation
+"Visibility Score vs Disclosure Rate","0.6236612231","0.0000268111","36","0.05","Significant","","","2","The repository-level association is positive and strong; this is correlation, not causation."
