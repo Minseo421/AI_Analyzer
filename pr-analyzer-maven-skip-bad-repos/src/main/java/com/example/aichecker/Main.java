@@ -101,6 +101,35 @@ public class Main {
                 System.out.println("Coder labels saved: " + labelsOutput.toAbsolutePath());
                 return;
             }
+            if ((args.length == 6 || args.length == 7) && args[0].equals("--sample-for-extended-validation")) {
+                Path prDataset = Path.of(args[1]);
+                Path existingSample = Path.of(args[2]);
+                int repositoryCount = Integer.parseInt(args[3]);
+                int rowsPerRepository = Integer.parseInt(args[4]);
+                Path output = Path.of(args[5]);
+                long seed = args.length == 7 ? Long.parseLong(args[6]) : ExtendedValidationWorkflow.DEFAULT_SAMPLE_SEED;
+                ExtendedValidationWorkflow.SampleResult result = ExtendedValidationWorkflow.sample(prDataset, existingSample, repositoryCount, rowsPerRepository, output, seed);
+                System.out.println("Extended validation sample saved: " + output.toAbsolutePath());
+                System.out.println("Extended validation seed: " + result.seed());
+                System.out.println("Candidate repositories after exclusions: " + result.candidateRepositories());
+                System.out.println("Selected repositories: " + result.selectedRepositories().size());
+                for (String repository : result.selectedRepositories()) {
+                    System.out.println("- " + repository + ": " + result.rowsByRepository().get(repository));
+                }
+                System.out.println("Existing validation rows: " + result.existingRows());
+                System.out.println("New validation rows: " + result.rowsWritten());
+                System.out.println("Combined rows if all labelled: " + result.combinedRows());
+                System.out.println("Required validation sample size: " + result.requiredRows());
+                System.out.println("Meets required size if all labelled: " + (result.combinedRows() >= result.requiredRows() ? "Yes" : "No"));
+                return;
+            }
+            if (args.length == 3 && args[0].equals("--code-validation-sample")) {
+                Path sampleInput = Path.of(args[1]);
+                Path labelsOutput = Path.of(args[2]);
+                KappaWorkflow.codeSample(sampleInput, labelsOutput);
+                System.out.println("Validation coder labels saved: " + labelsOutput.toAbsolutePath());
+                return;
+            }
             if (args.length == 4 && args[0].equals("--calculate-kappa")) {
                 Path coderA = Path.of(args[1]);
                 Path coderB = Path.of(args[2]);
@@ -125,6 +154,26 @@ public class Main {
                 ConsensusWorkflow.DetectorValidationResult result = ConsensusWorkflow.validateDetector(sample, consensus, output);
                 System.out.println("Detector validation saved: " + output.toAbsolutePath());
                 printDetectorValidationSummary(result);
+                return;
+            }
+            if (args.length == 5 && args[0].equals("--combine-detector-validation")) {
+                Path originalValidation = Path.of(args[1]);
+                Path extendedValidation = Path.of(args[2]);
+                Path combinedRows = Path.of(args[3]);
+                Path combinedMetrics = Path.of(args[4]);
+                ExtendedValidationWorkflow.CombineResult result = ExtendedValidationWorkflow.combine(originalValidation, extendedValidation, combinedRows, combinedMetrics);
+                System.out.println("Combined detector validation rows saved: " + combinedRows.toAbsolutePath());
+                System.out.println("Combined detector metrics saved: " + combinedMetrics.toAbsolutePath());
+                System.out.println("Detector version: " + result.detectorVersion());
+                System.out.println("Original usable rows: " + result.original().n());
+                System.out.println("Extended usable rows: " + result.extended().n());
+                System.out.println("Combined usable rows: " + result.combined().n());
+                System.out.println("Combined confusion matrix TP/TN/FP/FN: "
+                        + result.combined().tp() + "/"
+                        + result.combined().tn() + "/"
+                        + result.combined().fp() + "/"
+                        + result.combined().fn());
+                System.out.println("Duplicate rows reported: " + result.duplicates().size());
                 return;
             }
             if (args.length == 3 && args[0].equals("--reanalyze-kappa-sample")) {
@@ -222,9 +271,12 @@ public class Main {
                 || mode.equals("--repos-pr-dataset")
                 || mode.equals("--sample-for-kappa")
                 || mode.equals("--code-kappa-sample")
+                || mode.equals("--sample-for-extended-validation")
+                || mode.equals("--code-validation-sample")
                 || mode.equals("--calculate-kappa")
                 || mode.equals("--create-consensus")
                 || mode.equals("--validate-detector")
+                || mode.equals("--combine-detector-validation")
                 || mode.equals("--reanalyze-kappa-sample")
                 || mode.equals("--analyze-specific-prs")
                 || mode.equals("--retry-failed-reanalysis")
@@ -240,9 +292,12 @@ public class Main {
             case "--repos-pr-dataset" -> "--repos-pr-dataset repos.txt COUNT pr_dataset_output.csv [repo_compliance_summary.csv]";
             case "--sample-for-kappa" -> "--sample-for-kappa repos.txt COUNT_PER_REPO kappa_sample.csv";
             case "--code-kappa-sample" -> "--code-kappa-sample kappa_sample.csv coder_labels.csv";
+            case "--sample-for-extended-validation" -> "--sample-for-extended-validation pr_dataset_output_policy_cleaned.csv kappa_sample.csv REPOSITORIES ROWS_PER_REPOSITORY extended_validation_sample.csv [SEED]";
+            case "--code-validation-sample" -> "--code-validation-sample extended_validation_sample.csv coder_labels.csv";
             case "--calculate-kappa" -> "--calculate-kappa coder_a_labels.csv coder_b_labels.csv kappa_results.csv";
             case "--create-consensus" -> "--create-consensus coder_a_labels.csv coder_b_labels.csv consensus_labels.csv";
             case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
+            case "--combine-detector-validation" -> "--combine-detector-validation detector_validation_reanalyzed.csv extended_detector_validation.csv combined_detector_validation.csv combined_detector_metrics.csv";
             case "--reanalyze-kappa-sample" -> "--reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv";
             case "--analyze-specific-prs" -> "--analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv Repo#PR [Repo#PR...]";
             case "--retry-failed-reanalysis" -> "--retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv";
@@ -467,9 +522,12 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr_dataset_output.csv [repo_compliance_summary.csv]");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-kappa repos.txt 50 kappa_sample.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv anna_labels.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-extended-validation pr_dataset_output_policy_cleaned.csv kappa_sample.csv 4 50 extended_validation_sample.csv [SEED]");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --code-validation-sample extended_validation_sample.csv anna_extended_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv coworker_labels.csv kappa_results.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_labels.csv coworker_labels.csv consensus_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --combine-detector-validation detector_validation_reanalyzed.csv extended_detector_validation.csv combined_detector_validation.csv combined_detector_metrics.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv");

@@ -160,6 +160,53 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample_re
 
 Re-analysis preserves the original PR sample, row order, and `Sample ID` values, so changes in precision, recall, false positives, or false negatives are attributable to detector rule changes rather than a different set of pull requests.
 
+Extended validation sample:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar \
+  --sample-for-extended-validation \
+  pr_dataset_output_policy_cleaned.csv \
+  kappa_sample.csv \
+  4 \
+  50 \
+  extended_validation_sample.csv
+```
+
+This command samples from the completed PR-level study dataset instead of calling GitHub. It excludes repositories already represented in the original kappa sample, excludes already sampled `Sample ID` values, uses the same successful analysed PR eligibility fields present in the dataset, and uses the fixed default seed `20260724` unless an explicit seed is supplied as a final argument. If the first four selected repositories do not bring the combined original-plus-extended sample to the required `342` rows, the command continues through the same seeded repository order and adds another repository.
+
+Manual labelling for the extended sample reuses the existing coder schema:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --code-validation-sample extended_validation_sample.csv anna_extended_labels.csv
+java -jar target/pr-analyzer-maven-1.0.0.jar --code-validation-sample extended_validation_sample.csv minseo_extended_labels.csv
+```
+
+Then calculate inter-rater reliability and create consensus for the extended sample:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_extended_labels.csv minseo_extended_labels.csv extended_kappa_results.csv
+java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_extended_labels.csv minseo_extended_labels.csv extended_consensus_labels.csv
+```
+
+Resolve any `Needs Resolution` rows in `extended_consensus_labels.csv`, then validate the detector against the completed extended consensus:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector extended_validation_sample.csv extended_consensus_labels.csv extended_detector_validation.csv
+```
+
+Combine the original and extended detector-validation outputs by summing row-level TP/TN/FP/FN counts:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar \
+  --combine-detector-validation \
+  detector_validation_reanalyzed.csv \
+  extended_detector_validation.csv \
+  combined_detector_validation.csv \
+  combined_detector_metrics.csv
+```
+
+Do not average accuracy, precision, recall, specificity, or F1 from separate samples. The combiner deduplicates by `Sample ID`, fails on conflicting duplicate labels or detector outcomes, retains provenance (`Original` or `Extended`), reports usable sample sizes, and writes Wilson 95% confidence intervals for combined binomial metrics. If detector rules have changed since the original labels were collected, re-run the current detector against the original fixed sample first with `--reanalyze-kappa-sample` and use the resulting `detector_validation_reanalyzed.csv` so all metrics compare manual labels against the same detector version.
+
 ## Output Files
 
 ### `pr_dataset_output.csv`

@@ -620,6 +620,91 @@ public class AiDisclosureDetectorHarness {
         require(validationText.contains("\"Summary\",\"Precision\",\"0.5000\""), "detector precision");
         require(validationText.contains("\"owner/repo#3\",\"owner/repo\",\"3\",\"https://github.com/owner/repo/pull/3\",\"No\",\"Yes\",\"False Negative\""), "false negative detail");
 
+        Path extendedPopulation = Files.createTempFile("extended-population", ".csv");
+        Files.writeString(extendedPopulation, extendedPopulationCsv(), StandardCharsets.UTF_8);
+        Path existingKappaSample = Files.createTempFile("existing-kappa-sample", ".csv");
+        Files.writeString(existingKappaSample, existingKappaSampleCsv(), StandardCharsets.UTF_8);
+        Path extendedSample = tempMissingPath("extended-validation-sample", ".csv");
+        ExtendedValidationWorkflow.SampleResult extendedSampleResult = ExtendedValidationWorkflow.sample(
+                extendedPopulation,
+                existingKappaSample,
+                4,
+                50,
+                extendedSample,
+                12345L
+        );
+        Path repeatedExtendedSample = tempMissingPath("extended-validation-sample-repeat", ".csv");
+        ExtendedValidationWorkflow.SampleResult repeatedExtendedSampleResult = ExtendedValidationWorkflow.sample(
+                extendedPopulation,
+                existingKappaSample,
+                4,
+                50,
+                repeatedExtendedSample,
+                12345L
+        );
+        require(extendedSampleResult.selectedRepositories().equals(repeatedExtendedSampleResult.selectedRepositories()), "extended sample selection should be deterministic for fixed seed");
+        require(extendedSampleResult.selectedRepositories().size() == 5, "shortfall should add a fallback repository to reach required combined sample size");
+        require(!extendedSampleResult.selectedRepositories().contains("homebrew/brew"), "extended sample excludes repository already in kappa sample");
+        List<Map<String, String>> extendedSampleRows = CsvTools.readRows(extendedSample);
+        require(extendedSampleRows.size() > 4 * 47, "extended sample should include fallback repository rows");
+        require(extendedSampleRows.stream().noneMatch(row -> row.get("Sample ID").equals("repo/alpha#100")), "extended sample excludes previously sampled PR");
+        require(extendedSampleRows.stream().noneMatch(row -> row.get("Repo").equals("homebrew/brew")), "extended sample excludes existing sample repo");
+        require(extendedSampleRows.stream().filter(row -> row.get("Repo").equals(extendedSampleResult.selectedRepositories().get(0))).count() <= 50, "each selected repository contributes at most 50 PRs");
+        require(extendedSampleResult.combinedRows() >= 342, "combined sample should reach required size when fallback rows are available");
+        require(extendedSampleRows.stream().noneMatch(row -> row.get("Status").equals("Fetch Failed")), "sampling excludes failed analysis rows");
+
+        Path originalValidationForCombine = Files.createTempFile("original-validation-combine", ".csv");
+        Files.writeString(originalValidationForCombine, validationOutputCsv("owner/repo", List.of(
+                "True Positive", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative"
+        )), StandardCharsets.UTF_8);
+        Path extendedValidationForCombine = Files.createTempFile("extended-validation-combine", ".csv");
+        Files.writeString(extendedValidationForCombine, validationOutputCsv("other/repo", List.of(
+                "False Positive", "False Positive", "False Negative", "False Negative", "False Negative", "False Negative", "False Negative", "False Negative", "False Negative", "False Negative",
+                "True Positive", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative", "True Negative"
+        )), StandardCharsets.UTF_8);
+        Path combinedValidationRows = tempMissingPath("combined-validation-rows", ".csv");
+        Path combinedMetrics = tempMissingPath("combined-validation-metrics", ".csv");
+        ExtendedValidationWorkflow.CombineResult combineResult = ExtendedValidationWorkflow.combine(
+                originalValidationForCombine,
+                extendedValidationForCombine,
+                combinedValidationRows,
+                combinedMetrics
+        );
+        require(combineResult.original().n() == 10, "original combine usable rows");
+        require(combineResult.extended().n() == 20, "extended combine usable rows");
+        require(combineResult.combined().tp() == 2, "combined true positives");
+        require(combineResult.combined().tn() == 18, "combined true negatives");
+        require(combineResult.combined().fp() == 2, "combined false positives");
+        require(combineResult.combined().fn() == 8, "combined false negatives");
+        String combinedMetricsText = Files.readString(combinedMetrics, StandardCharsets.UTF_8);
+        require(combinedMetricsText.contains("\"Combined\",\"Accuracy\",\"0.6667\""), "combined accuracy should be calculated from counts");
+        require(!combinedMetricsText.contains("\"Combined\",\"Accuracy\",\"0.7000\""), "combined metrics must not average unequal sample accuracies");
+        require(combinedMetricsText.contains("\"Combined\",\"Negative predictive value\",\"0.6923\""), "combined NPV");
+        require(combinedMetricsText.contains("\"Combined\",\"Accuracy\",\"0.6667\",\""), "combined Wilson CI should be present for accuracy");
+        require(combinedMetricsText.contains("\"Validation Sample\",\"Meets requested sample size\",\"No\""), "small fixture should not meet requested sample size");
+
+        Path zeroOriginalValidation = Files.createTempFile("zero-original-validation", ".csv");
+        Files.writeString(zeroOriginalValidation, validationOutputCsv("zero/repo", List.of("True Negative", "True Negative")), StandardCharsets.UTF_8);
+        Path zeroExtendedValidation = Files.createTempFile("zero-extended-validation", ".csv");
+        Files.writeString(zeroExtendedValidation, validationOutputCsv("zero/other", List.of("True Negative")), StandardCharsets.UTF_8);
+        Path zeroCombinedRows = tempMissingPath("zero-combined-rows", ".csv");
+        Path zeroMetrics = tempMissingPath("zero-combined-metrics", ".csv");
+        ExtendedValidationWorkflow.combine(zeroOriginalValidation, zeroExtendedValidation, zeroCombinedRows, zeroMetrics);
+        String zeroMetricsText = Files.readString(zeroMetrics, StandardCharsets.UTF_8);
+        require(zeroMetricsText.contains("\"Combined\",\"Precision\",\"N/A\""), "zero denominator precision should be N/A");
+        require(zeroMetricsText.contains("\"Combined\",\"Recall\",\"N/A\""), "zero denominator recall should be N/A");
+
+        Path conflictOriginal = Files.createTempFile("conflict-original-validation", ".csv");
+        Files.writeString(conflictOriginal, validationOutputCsv("conflict/repo", List.of("True Positive")), StandardCharsets.UTF_8);
+        Path conflictExtended = Files.createTempFile("conflict-extended-validation", ".csv");
+        Files.writeString(conflictExtended, validationOutputCsv("conflict/repo", List.of("False Positive")), StandardCharsets.UTF_8);
+        try {
+            ExtendedValidationWorkflow.combine(conflictOriginal, conflictExtended, tempMissingPath("conflict-combined", ".csv"), tempMissingPath("conflict-metrics", ".csv"));
+            throw new AssertionError("combine should reject conflicting duplicate Sample IDs");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("Conflicting duplicate"), "conflicting duplicate message");
+        }
+
         Path unresolvedConsensus = Files.createTempFile("unresolved-consensus", ".csv");
         Files.writeString(unresolvedConsensus, unresolvedConsensusCsv(), StandardCharsets.UTF_8);
         try {
@@ -945,6 +1030,84 @@ public class AiDisclosureDetectorHarness {
                 + "owner/repo#2,owner/repo,2,https://github.com/owner/repo/pull/2,t,a,,,,Closed,,No,\n"
                 + "owner/repo#3,owner/repo,3,https://github.com/owner/repo/pull/3,t,a,,,,Closed,,No,\n"
                 + "owner/repo#4,owner/repo,4,https://github.com/owner/repo/pull/4,t,a,,,,Closed,script saw yes,Yes,\n";
+    }
+
+    private static String existingKappaSampleCsv() {
+        StringBuilder csv = new StringBuilder("Sample ID,Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Status,Disclosure Text detected by script,Script AI Disclosure Present,Notes\n");
+        appendExistingSampleRows(csv, "homebrew/brew", 1, 50);
+        appendExistingSampleRows(csv, "sympy/sympy", 1, 50);
+        appendExistingSampleRows(csv, "kubernetes/kubernetes", 1, 49);
+        csv.append("repo/alpha#100,kubernetes/kubernetes,50,https://github.com/repo/alpha/pull/100,t,a,,,,Closed,,No,\n");
+        return csv.toString();
+    }
+
+    private static void appendExistingSampleRows(StringBuilder csv, String repo, int start, int count) {
+        for (int i = 0; i < count; i++) {
+            int pr = start + i;
+            csv.append(repo).append('#').append(pr).append(',')
+                    .append(repo).append(',')
+                    .append(pr).append(',')
+                    .append("https://github.com/").append(repo).append("/pull/").append(pr)
+                    .append(",t,a,,,,Closed,,No,\n");
+        }
+    }
+
+    private static String extendedPopulationCsv() {
+        StringBuilder csv = new StringBuilder("Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Bot,Status,AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text\n");
+        appendPrDatasetRows(csv, "homebrew/brew", 1, 60, "Merged", "No");
+        appendPrDatasetRows(csv, "repo/alpha", 100, 47, "Merged", "No");
+        appendPrDatasetRows(csv, "repo/beta", 200, 47, "Merged", "Yes");
+        appendPrDatasetRows(csv, "repo/gamma", 300, 47, "Closed", "No");
+        appendPrDatasetRows(csv, "repo/delta", 400, 47, "Merged", "No");
+        appendPrDatasetRows(csv, "repo/epsilon", 500, 47, "Merged", "No");
+        csv.append("repo/epsilon,999,https://github.com/repo/epsilon/pull/999,failed,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Fetch Failed,MANUAL_REVIEW_REQUIRED,,None,\n");
+        return csv.toString();
+    }
+
+    private static void appendPrDatasetRows(StringBuilder csv, String repo, int start, int count, String status, String disclosure) {
+        for (int i = 0; i < count; i++) {
+            int pr = start - i;
+            csv.append(repo).append(',')
+                    .append(pr).append(',')
+                    .append("https://github.com/").append(repo).append("/pull/").append(pr).append(',')
+                    .append("title ").append(pr).append(',')
+                    .append("author,")
+                    .append("2026-01-01T00:00:00Z,")
+                    .append(String.format(java.util.Locale.ROOT, "2026-04-%02dT00:00:00Z", (i % 28) + 1)).append(',')
+                    .append(',')
+                    .append("No,")
+                    .append(status).append(',')
+                    .append("MANUAL_REVIEW_REQUIRED,")
+                    .append(disclosure).append(',')
+                    .append(disclosure.equals("Yes") ? "MANUAL_REVIEW_REQUIRED,evidence" : "None,")
+                    .append('\n');
+        }
+    }
+
+    private static String validationOutputCsv(String repo, List<String> outcomes) {
+        StringBuilder csv = new StringBuilder();
+        csv.append("Section,Metric,Value\n");
+        csv.append("Summary,Total matched rows,").append(outcomes.size()).append('\n');
+        csv.append('\n');
+        csv.append("Detailed Results\n");
+        csv.append("Sample ID,Repo,PR #,PR URL,Script Disclosure Present,Consensus Disclosure Present,Detector Outcome,Script Detected Text,Consensus Classification,Consensus Notes\n");
+        for (int i = 0; i < outcomes.size(); i++) {
+            int pr = i + 1;
+            String outcome = outcomes.get(i);
+            String script = outcome.equals("True Positive") || outcome.equals("False Positive") ? "Yes" : "No";
+            String consensus = outcome.equals("True Positive") || outcome.equals("False Negative") ? "Yes" : "No";
+            csv.append(repo).append('#').append(pr).append(',')
+                    .append(repo).append(',')
+                    .append(pr).append(',')
+                    .append("https://github.com/").append(repo).append("/pull/").append(pr).append(',')
+                    .append(script).append(',')
+                    .append(consensus).append(',')
+                    .append(outcome).append(',')
+                    .append(script.equals("Yes") ? "evidence" : "").append(',')
+                    .append(consensus.equals("Yes") ? "Positive" : "None").append(',')
+                    .append("note\n");
+        }
+        return csv.toString();
     }
 
     private static String resolvedConsensusCsv() {

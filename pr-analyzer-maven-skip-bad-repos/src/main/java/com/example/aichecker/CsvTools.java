@@ -45,6 +45,10 @@ public class CsvTools {
         return new ArrayList<>(records.get(0));
     }
 
+    public static List<List<String>> readRecords(Path path) throws IOException {
+        return parseRecords(readCsvText(path));
+    }
+
     public static String csv(String value) {
         String safe = value == null ? "" : value;
         return "\"" + safe.replace("\"", "\"\"") + "\"";
