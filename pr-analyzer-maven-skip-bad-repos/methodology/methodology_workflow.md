@@ -126,7 +126,7 @@ Preliminary script-generated calculation:
 - `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset for that repository. Eligibility uses GitHub `closed_at` and an inclusive rolling four-calendar-month cutoff calculated from the UTC collection timestamp. The analyzer filters by closed state, present `closed_at`, cutoff, and bot status before applying the requested per-repository limit, then orders returned rows locally by `closed_at` descending and PR number descending.
 - `Bot PRs Excluded`: closed PRs skipped by the script's bot heuristic while collecting the human PR sample.
 - `AI Disclosure Present Count`: rows where disclosure-like text was detected.
-- `Compliance Rate = AI Disclosure Present Count / Eligible PRs Reviewed`.
+- `Disclosure Compliance Rate = AI Disclosure Present Count / Eligible PRs Reviewed`.
 - `Positive Disclosure Count`, `Negative Disclosure Count`, and `Ambiguous Disclosure Count` are preliminary detector categories until manually validated.
 - `Manual Review Required Count` is set to the number of eligible PRs reviewed because final compliance rates require validation.
 

@@ -97,7 +97,7 @@ public class CsvWriter {
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             writer.write("Repo,Eligible PRs Reviewed,Bot PRs Excluded,AI Disclosure Present Count,"
                     + "Positive Disclosure Count,Negative Disclosure Count,Ambiguous Disclosure Count,"
-                    + "No Disclosure Count,Manual Review Required Count,Compliance Rate");
+                    + "No Disclosure Count,Manual Review Required Count,Disclosure Compliance Rate");
             writer.newLine();
             for (Map.Entry<String, List<PrReportRow>> entry : rowsByRepo.entrySet()) {
                 String repo = entry.getKey();
