@@ -56,7 +56,7 @@ The reliability sample should be drawn from repositories included in the study. 
 The implemented sample command reuses the existing PR collection logic:
 
 - It reads repositories from `repos.txt`.
-- It collects latest closed human PRs per repository.
+- It collects the latest eligible closed human PRs per repository, where latest is determined locally by `closed_at` descending after eligibility filtering.
 - It excludes bots according to the current project bot heuristic.
 - It uses deterministic ordering from the GitHub API collection path rather than random sampling.
 - It assigns stable sample IDs as `Repo#PR`, for example `apache/airflow#12345`.
@@ -299,7 +299,7 @@ java -jar target/pr-analyzer-maven-1.0.0.jar \
 
 ## Assumptions Made
 
-- The reliability sample is deterministic and based on latest closed human PRs collected by the existing analyzer.
+- The reliability sample uses the same shared `closed_at` eligibility rule as dataset collection. Repository selection is random unless `KAPPA_SAMPLE_SEED` is set; PR rows are filtered before limiting and ordered locally by closure time.
 - Bot PRs are excluded according to the current project methodology and implementation.
 - Both researchers use the same `kappa_sample.csv`.
 - Consensus labels, not script labels, become the gold standard.

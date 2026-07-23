@@ -113,7 +113,7 @@ Repository list maintenance:
 java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt --replace
 ```
 
-The numeric argument is the number of latest closed human PRs to collect per repository before date filtering. For each repository, the requested number of latest closed, human-authored pull requests is collected first. A four-calendar-month eligibility cutoff is then applied using each pull request's closure timestamp (`closed_at`). Pull requests closed before the cutoff are excluded and are not replaced, so the final number analysed can be lower than the requested count.
+The numeric argument is the maximum number of eligible PRs to return per repository. A PR is eligible when it is closed, has `closed_at`, was closed on or after the rolling four-calendar-month cutoff, and is not bot-authored. The cutoff is calculated in UTC from the collection timestamp as collection instant minus four calendar months, and the boundary is inclusive (`closed_at >= cutoff`). The GitHub API returns closed PRs ordered by update time, so the analyzer may fetch multiple pages, filters by `closed_at` and bot status before applying the requested limit, then orders results locally by `closed_at` descending and PR number descending. Fewer than the requested number may be returned if a repository does not contain enough eligible PRs in the window.
 
 Inter-rater reliability modes:
 
@@ -130,7 +130,7 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.cs
 java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv minseo_labels.csv kappa_results.csv
 ```
 
-The kappa sample command is deterministic: it reuses the same latest-closed-human-PR ordering and four-calendar-month `closed_at` eligibility window as the existing repository collection logic, with the numeric argument interpreted as pre-cutoff PRs per repository. `Sample ID` is stable as `Repo#PR`. The interactive coding command refuses to overwrite an existing labels file.
+The kappa sample command reuses the same four-calendar-month `closed_at` eligibility rule and local closure-time ordering as the repository collection logic. Repository selection is random unless `KAPPA_SAMPLE_SEED` is set; the selected PR rows are deterministic for the fetched GitHub data and collection timestamp. `Sample ID` is stable as `Repo#PR`. The interactive coding command refuses to overwrite an existing labels file.
 
 Human consensus and detector validation modes:
 
@@ -231,7 +231,7 @@ The older/audit output. It is preserved for debugging and includes extra technic
 ## Methodology Notes
 
 - Bot PRs are excluded from the generated PR dataset by the current implementation. `Bot PRs Excluded` records how many closed PRs were skipped during collection.
-- The compliance denominator is eligible human PRs reviewed. For each repository, the requested number of latest closed, human-authored pull requests is collected first. A four-calendar-month eligibility cutoff is then applied using each pull request's closure timestamp (`closed_at`). Pull requests closed before the cutoff are excluded and are not replaced, so the final number analysed can be lower than the requested count.
+- The compliance denominator is eligible human PRs reviewed. Eligibility uses GitHub `closed_at`, not `created_at`, `updated_at`, or `merged_at`; both merged and unmerged closed PRs are eligible. Filtering by bot status and the inclusive four-calendar-month `closed_at` cutoff occurs before the requested limit is applied, then rows are ordered locally by closure time. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands operate on specifically named/sample PRs and do not reapply dataset-selection eligibility.
 - AI disclosure detection is not fully reliable without human validation.
 - GitHub page chrome, navigation text, Copilot marketing text, and filenames such as `CLAUDE.md` should not be counted as contributor disclosure.
 - Manual review is required before final compliance rates are reported.

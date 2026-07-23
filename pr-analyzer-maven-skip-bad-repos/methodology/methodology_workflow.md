@@ -123,7 +123,7 @@ Important PR coding rules:
 
 Preliminary script-generated calculation:
 
-- `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset for that repository. For each repository, the requested number of latest closed, human-authored pull requests is collected first. A four-calendar-month eligibility cutoff is then applied using each pull request's closure timestamp (`closed_at`). Pull requests closed before the cutoff are excluded and are not replaced, so the final number analysed can be lower than the requested count.
+- `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset for that repository. Eligibility uses GitHub `closed_at` and an inclusive rolling four-calendar-month cutoff calculated from the UTC collection timestamp. The analyzer filters by closed state, present `closed_at`, cutoff, and bot status before applying the requested per-repository limit, then orders returned rows locally by `closed_at` descending and PR number descending.
 - `Bot PRs Excluded`: closed PRs skipped by the script's bot heuristic while collecting the human PR sample.
 - `AI Disclosure Present Count`: rows where disclosure-like text was detected.
 - `Compliance Rate = AI Disclosure Present Count / Eligible PRs Reviewed`.

@@ -20,7 +20,7 @@ Eligible PRs should match the study's sampling frame before compliance is calcul
 Coding rules:
 
 - Include PRs from repositories selected for the study.
-- Include PRs in the intended study window. For each repository, the requested number of latest closed, human-authored pull requests is collected first. A four-calendar-month eligibility cutoff is then applied using each pull request's closure timestamp (`closed_at`). Pull requests closed before the cutoff are excluded and are not replaced, so the final number analysed can be lower than the requested count.
+- Include PRs in the intended study window. Eligibility uses each pull request's GitHub closure timestamp (`closed_at`) and an inclusive rolling four-calendar-month cutoff calculated from the UTC collection timestamp. Bot filtering and `closed_at` eligibility are applied before the requested per-repository limit, and eligible rows are ordered locally by `closed_at` descending with PR number descending as a tie-breaker. Fewer than the requested number may be returned when a repository has too few eligible PRs.
 - Include PRs with human contributors unless the research design explicitly includes bots.
 - Exclude or separately report bot PRs according to the bot handling rules below.
 - Record whether the PR was merged or closed unmerged.

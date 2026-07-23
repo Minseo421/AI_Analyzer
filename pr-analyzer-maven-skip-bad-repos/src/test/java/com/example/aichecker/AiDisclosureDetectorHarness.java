@@ -195,10 +195,16 @@ public class AiDisclosureDetectorHarness {
             Path policyImportOutput = tempMissingPath("policy-tracker-repos", ".txt");
             RepoListImporter.ImportResult policyImport = RepoListImporter.importFromCsv(policyTracker, policyImportOutput, false);
             List<String> policyRepos = Files.readAllLines(policyImportOutput, StandardCharsets.UTF_8);
-            require(policyImport.validRepositoriesWritten() == 40, "policy tracker should produce 41 repos");
-            require(policyRepos.size() == 41, "policy tracker output row count");
+            int expectedPolicyRepoCount = (int) CsvTools.readRows(policyTracker).stream()
+                    .map(row -> row.getOrDefault("Repository Link", "").trim())
+                    .filter(value -> !value.isBlank())
+                    .map(RepoListImporter::normalizeRepository)
+                    .distinct()
+                    .count();
+            require(policyImport.validRepositoriesWritten() == expectedPolicyRepoCount, "policy tracker repo count should match authoritative CSV links");
+            require(policyRepos.size() == expectedPolicyRepoCount, "policy tracker output row count");
             require("apache/airflow".equals(policyRepos.get(0)), "policy tracker first repo");
-            require("sympy/sympy".equals(policyRepos.get(40)), "policy tracker last repo");
+            require("sympy/sympy".equals(policyRepos.get(policyRepos.size() - 1)), "policy tracker last repo");
         }
 
         DisclosureResult negative = detector.detect("generative AI tooling used to co-author this PR? No", "");
@@ -575,25 +581,30 @@ public class AiDisclosureDetectorHarness {
 
         FakeGitHubClient cutoffClient = new FakeGitHubClient();
         cutoffClient.addPage("window/repo", 1, List.of(
-                pr("window/repo", 1, "2026-03-21T23:59:59Z", "human", "User"),
-                pr("window/repo", 2, "2026-03-22T00:00:00Z", "human", "User"),
-                pr("window/repo", 3, "2026-03-22T00:00:01Z", "human", "User"),
-                pr("window/repo", 4, "2026-03-20T00:00:00Z", "bot-user", "Bot"),
-                pr("window/repo", 5, "2026-03-23T00:00:00Z", "human", "User"),
-                pr("window/repo", 6, "2026-03-24T00:00:00Z", "human", "User")
+                pr("window/repo", 10, "2026-03-23T11:59:59Z", "human", "User"),
+                pr("window/repo", 11, "2026-03-23T12:00:00Z", "human", "User"),
+                pr("window/repo", 12, "2026-03-24T00:00:00Z", "human", "User"),
+                prWithCreated("window/repo", 13, "2026-01-01T00:00:00Z", "2026-03-25T00:00:00Z", "human", "User", "closed", true),
+                pr("window/repo", 14, "2026-03-26T00:00:00Z", "bot-user", "Bot"),
+                prWithCreated("window/repo", 15, "2026-07-01T00:00:00Z", "", "human", "User", "open", false)
         ));
         cutoffClient.addPage("window/repo", 2, List.of(
-                pr("window/repo", 7, "2026-03-25T00:00:00Z", "human", "User")
+                pr("window/repo", 16, "2026-03-27T00:00:00Z", "human", "User"),
+                pr("window/repo", 12, "2026-03-24T00:00:00Z", "human", "User"),
+                pr("window/repo", 17, "2026-03-27T00:00:00Z", "human", "User")
         ));
-        PrAnalyzer cutoffAnalyzer = new PrAnalyzer(cutoffClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
+        PrAnalyzer cutoffAnalyzer = new PrAnalyzer(cutoffClient, Clock.fixed(Instant.parse("2026-07-23T12:00:00Z"), ZoneOffset.UTC));
         List<PrReportRow> cutoffRows = cutoffAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("window/repo"), 5);
-        require(cutoffRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(2, 3, 5, 6)), "cutoff should include exact/after rows and not replace excluded rows");
+        require(cutoffRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(17, 16, 13, 12, 11)), "cutoff should filter before limit and order by closed_at desc then PR number desc");
         PrAnalyzer.CollectionSummary cutoffSummary = cutoffAnalyzer.collectionSummary("window/repo");
         require(cutoffSummary.requestedCount() == 5, "cutoff requested count");
-        require(cutoffSummary.collectedBeforeDateFiltering() == 5, "cutoff should collect requested human rows before filtering");
+        require(cutoffSummary.fetchedPrsInspected() == 8, "cutoff should inspect replacements after ineligible rows");
         require(cutoffSummary.excludedOlderThanCutoff() == 1, "cutoff older exclusion count");
-        require(cutoffSummary.finalCount() == 4, "cutoff final count may be lower than requested");
-        require(cutoffClient.pages().equals(List.of("window/repo#page1")), "cutoff should not fetch replacements after filtering");
+        require(cutoffSummary.excludedNotClosed() == 1, "open PR should be excluded");
+        require(cutoffSummary.duplicatesSkipped() == 1, "duplicate PR should be skipped");
+        require(cutoffSummary.finalCount() == 5, "cutoff final count should include replacements");
+        require("2026-03-23T12:00:00Z".equals(cutoffSummary.closedAtCutoff()), "cutoff should be collection instant minus four calendar months");
+        require(cutoffClient.pages().equals(List.of("window/repo#page1", "window/repo#page2", "window/repo#page3")), "cutoff should continue until GitHub has no more pages");
 
         FakeGitHubClient paginationClient = new FakeGitHubClient();
         paginationClient.addPage("page/repo", 1, List.of(
@@ -606,10 +617,10 @@ public class AiDisclosureDetectorHarness {
         ));
         PrAnalyzer paginationAnalyzer = new PrAnalyzer(paginationClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
         List<PrReportRow> paginationRows = paginationAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("page/repo"), 3);
-        require(paginationRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(3, 4)), "pagination should continue until pre-cutoff requested count is exhausted");
-        require(paginationClient.pages().equals(List.of("page/repo#page1", "page/repo#page2")), "pagination should fetch second page");
+        require(paginationRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(4, 3)), "pagination should continue until eligible requested count is exhausted and then sort locally");
+        require(paginationClient.pages().equals(List.of("page/repo#page1", "page/repo#page2", "page/repo#page3")), "pagination should stop when GitHub has no more pages");
         require(paginationAnalyzer.collectionSummary("page/repo").excludedOlderThanCutoff() == 1, "pagination older exclusion count");
-        require(paginationAnalyzer.botPrsExcludedByRepository().get("page/repo") == 1, "bot PRs should not count toward initial requested count");
+        require(paginationAnalyzer.botPrsExcludedByRepository().get("page/repo") == 1, "bot PRs should not count toward requested eligible count");
 
         FakeGitHubClient calendarClient = new FakeGitHubClient();
         calendarClient.addPage("calendar/repo", 1, List.of(
@@ -903,16 +914,20 @@ public class AiDisclosureDetectorHarness {
     }
 
     private static PullRequestData pr(String repository, int number, String closedAt, String author, String userType) {
+        return prWithCreated(repository, number, "2026-01-01T00:00:00Z", closedAt, author, userType, "closed", true);
+    }
+
+    private static PullRequestData prWithCreated(String repository, int number, String createdAt, String closedAt, String author, String userType, String state, boolean closed) {
         return new PullRequestData(
                 repository,
                 number,
                 "https://github.com/" + repository + "/pull/" + number,
                 "Paged PR " + number,
-                "2026-01-01T00:00:00Z",
+                createdAt,
                 closedAt,
                 "",
-                "closed",
-                true,
+                state,
+                closed,
                 author,
                 userType,
                 false,

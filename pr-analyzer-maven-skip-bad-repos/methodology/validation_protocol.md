@@ -138,6 +138,7 @@ Methodology requirements:
 - Script-human comparison is separate from human-human inter-rater reliability.
 - Human consensus after disagreement resolution becomes the gold-standard dataset.
 - The tool should support consistent presentation and calculation; it does not replace human judgement.
+- Dataset-selection commands apply the rolling four-calendar-month eligibility rule with `closed_at` before limiting results. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands preserve their fixed sample/direct-fetch behavior and do not necessarily reapply dataset-selection eligibility.
 
 Cohen's Kappa is calculated as `(observed agreement - expected agreement) / (1 - expected agreement)` for:
 
