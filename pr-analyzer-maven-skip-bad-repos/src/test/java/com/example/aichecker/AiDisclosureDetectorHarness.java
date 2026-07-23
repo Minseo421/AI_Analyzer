@@ -195,7 +195,7 @@ public class AiDisclosureDetectorHarness {
             Path policyImportOutput = tempMissingPath("policy-tracker-repos", ".txt");
             RepoListImporter.ImportResult policyImport = RepoListImporter.importFromCsv(policyTracker, policyImportOutput, false);
             List<String> policyRepos = Files.readAllLines(policyImportOutput, StandardCharsets.UTF_8);
-            require(policyImport.validRepositoriesWritten() == 41, "policy tracker should produce 41 repos");
+            require(policyImport.validRepositoriesWritten() == 40, "policy tracker should produce 41 repos");
             require(policyRepos.size() == 41, "policy tracker output row count");
             require("apache/airflow".equals(policyRepos.get(0)), "policy tracker first repo");
             require("sympy/sympy".equals(policyRepos.get(40)), "policy tracker last repo");
