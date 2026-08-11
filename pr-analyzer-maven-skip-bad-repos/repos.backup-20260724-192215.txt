@@ -1,6 +1,7 @@
 apache/airflow
 apache/couchdb
 apache/arrow
+punkpeye/awesome-mcp-servers
 cilium/cilium
 cncf/landscape
 curl/curl

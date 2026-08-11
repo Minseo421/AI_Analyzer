@@ -31,6 +31,7 @@ ory/oathkeeper,3,3,3,0,3,0,0.0,0.00%,Ory Oathkeeper,https://github.com/ory/oathk
 pandas-dev/pandas,100,100,100,2,98,0,0.02,2.00%,Pandas,https://github.com/pandas-dev/pandas,3,3.0,Matched,Yes,
 pola-rs/polars,98,98,98,10,88,0,0.10204081632653100,10.20%,Polars,https://github.com/pola-rs/polars,3,3.0,Matched,Yes,
 processing/p5.js,99,99,99,0,99,0,0.0,0.00%,P5.js,https://github.com/processing/p5.js/,2,2.0,Matched,Yes,
+punkpeye/awesome-mcp-servers,100,100,100,1,99,0,0.01,1.00%,Awesome-mcp-servers,https://github.com/punkpeye/awesome-mcp-servers,,,Matched,No,Missing or invalid visibility score
 qgis/qgis,56,56,56,8,48,0,0.14285714285714300,14.29%,QGIS,https://github.com/qgis/qgis,3,3.0,Matched,Yes,
 qutip/qutip,72,72,72,0,72,0,0.0,0.00%,qutip,https://github.com/qutip/qutip,3,3.0,Matched,Yes,
 scipy/scipy,92,92,92,51,41,0,0.5543478260869570,55.43%,SciPy,https://github.com/scipy/scipy,3,3.0,Matched,Yes,

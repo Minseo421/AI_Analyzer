@@ -176,6 +176,13 @@ public class Main {
                 System.out.println("Duplicate rows reported: " + result.duplicates().size());
                 return;
             }
+            if (args.length >= 2 && args[0].equals("--validate-study-exclusions")) {
+                List<Path> paths = List.of(args).subList(1, args.length).stream().map(Path::of).toList();
+                StudyDatasetExclusionValidator.ValidationResult result = StudyDatasetExclusionValidator.validate(paths);
+                System.out.println("Excluded repository absent from checked files: " + StudyDatasetExclusionValidator.EXCLUDED_REPOSITORY);
+                System.out.println("Files checked: " + result.filesChecked());
+                return;
+            }
             if (args.length == 3 && args[0].equals("--reanalyze-kappa-sample")) {
                 Path sample = Path.of(args[1]);
                 Path output = Path.of(args[2]);
@@ -277,6 +284,7 @@ public class Main {
                 || mode.equals("--create-consensus")
                 || mode.equals("--validate-detector")
                 || mode.equals("--combine-detector-validation")
+                || mode.equals("--validate-study-exclusions")
                 || mode.equals("--reanalyze-kappa-sample")
                 || mode.equals("--analyze-specific-prs")
                 || mode.equals("--retry-failed-reanalysis")
@@ -298,6 +306,7 @@ public class Main {
             case "--create-consensus" -> "--create-consensus coder_a_labels.csv coder_b_labels.csv consensus_labels.csv";
             case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
             case "--combine-detector-validation" -> "--combine-detector-validation detector_validation_reanalyzed.csv extended_detector_validation.csv combined_detector_validation.csv combined_detector_metrics.csv";
+            case "--validate-study-exclusions" -> "--validate-study-exclusions repos.txt pr_dataset_output.csv repo_visibility_summary_updated.csv spearman_correlation_input_updated.csv";
             case "--reanalyze-kappa-sample" -> "--reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv";
             case "--analyze-specific-prs" -> "--analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv Repo#PR [Repo#PR...]";
             case "--retry-failed-reanalysis" -> "--retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv";
@@ -528,6 +537,7 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_labels.csv coworker_labels.csv consensus_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --combine-detector-validation detector_validation_reanalyzed.csv extended_detector_validation.csv combined_detector_validation.csv combined_detector_metrics.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-study-exclusions repos.txt pr_dataset_output.csv repo_visibility_summary_updated.csv spearman_correlation_input_updated.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv");

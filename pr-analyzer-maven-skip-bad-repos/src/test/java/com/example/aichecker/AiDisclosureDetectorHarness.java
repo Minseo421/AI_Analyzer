@@ -480,6 +480,21 @@ public class AiDisclosureDetectorHarness {
         require(visibilityCorrelationText.contains("Visibility Score vs Disclosure Rate"), "correlation output metric pair");
         require(visibilityCorrelationText.contains("\"3\""), "correlation output sample size");
 
+        require(StudyDatasetExclusionValidator.matchesExcludedRepository("https://github.com/punkpeye/awesome-mcp-servers"), "excluded repository URL should match exactly");
+        require(!StudyDatasetExclusionValidator.matchesExcludedRepository("https://github.com/punkpeye/awesome-map-servers"), "similarly named repository should not match");
+        require(!StudyDatasetExclusionValidator.matchesExcludedRepository("owner/awesome-mcp-servers"), "same repo name with different owner should not match");
+        Path excludedRepoCsv = Files.createTempFile("excluded-repo", ".csv");
+        Files.writeString(excludedRepoCsv, "Repo,Value\npunkpeye/awesome-mcp-servers,x\npunkpeye/awesome-map-servers,y\n", StandardCharsets.UTF_8);
+        try {
+            StudyDatasetExclusionValidator.validate(List.of(excludedRepoCsv));
+            throw new AssertionError("study exclusion validator should reject excluded repository");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("punkpeye/awesome-mcp-servers"), "excluded repository validation message");
+        }
+        Path similarRepoCsv = Files.createTempFile("similar-repo", ".csv");
+        Files.writeString(similarRepoCsv, "Repo,Value\npunkpeye/awesome-map-servers,x\nowner/awesome-mcp-servers,y\n", StandardCharsets.UTF_8);
+        require(StudyDatasetExclusionValidator.validate(List.of(similarRepoCsv)).filesChecked() == 1, "similarly named repositories should be preserved");
+
         DisclosureVisibilityCorrelationWorkflow.SpearmanResult constantSpearman = DisclosureVisibilityCorrelationWorkflow.SpearmanResult.calculate(List.of(
                 new DisclosureVisibilityCorrelationWorkflow.Observation("a/a", 1.0, 0.5),
                 new DisclosureVisibilityCorrelationWorkflow.Observation("b/b", 2.0, 0.5),
