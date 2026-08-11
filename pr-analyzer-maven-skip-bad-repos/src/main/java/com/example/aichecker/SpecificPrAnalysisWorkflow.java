@@ -184,6 +184,7 @@ public class SpecificPrAnalysisWorkflow {
         return switch (classification) {
             case "possible_positive" -> "Positive";
             case "possible_negative" -> "Negative";
+            case "possible_neutral" -> "Neutral";
             case "possible_ambiguous" -> "Ambiguous";
             default -> "None";
         };

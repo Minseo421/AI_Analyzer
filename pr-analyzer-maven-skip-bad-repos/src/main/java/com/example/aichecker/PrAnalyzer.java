@@ -51,8 +51,8 @@ public class PrAnalyzer {
         RepoUrl repoUrl = RepoUrl.parse(repository);
         PullRequestData apiData = gitHubClient.getPullRequest(repoUrl.owner(), repoUrl.repo(), number);
         HtmlData htmlData = fetchHtmlSafe(apiData.url());
-        DisclosureResult disclosure = detector.detect(apiData.body(), htmlData.text());
-        AiDisclosureDetector.DetectionDiagnostics diagnostics = detector.diagnosePrBody(apiData.body());
+        DisclosureResult disclosure = detector.detect(apiData.repository(), apiData.body(), htmlData.text());
+        AiDisclosureDetector.DetectionDiagnostics diagnostics = detector.diagnosePrBody(apiData.repository(), apiData.body());
         return new AnalysisDetail(toReportRow(apiData, htmlData, disclosure), apiData, htmlData, diagnostics);
     }
 
@@ -69,11 +69,12 @@ public class PrAnalyzer {
         int page = 1;
         int fetchedClosedPrs = 0;
         int excludedOlderThanCutoff = 0;
+        int excludedAfterAnalysisTimestamp = 0;
         int excludedMalformedClosedAt = 0;
         int excludedNotClosed = 0;
         int duplicatesSkipped = 0;
         System.out.println();
-        System.out.println("Latest eligible closed human PRs for " + repoUrl.fullName());
+        System.out.println("All eligible closed human PRs for " + repoUrl.fullName());
         System.out.println(PrReportRow.consoleHeader());
         while (true) {
             List<PullRequestData> prs = gitHubClient.getClosedPullRequestsPage(repoUrl.owner(), repoUrl.repo(), page);
@@ -96,6 +97,7 @@ public class PrAnalyzer {
                                 + " because closed_at is missing or invalid: " + (pr.closedAt() == null || pr.closedAt().isBlank() ? "(blank)" : pr.closedAt()));
                     }
                     case OLDER_THAN_CUTOFF -> excludedOlderThanCutoff++;
+                    case AFTER_ANALYSIS_TIMESTAMP -> excludedAfterAnalysisTimestamp++;
                 }
             }
             page++;
@@ -104,9 +106,6 @@ public class PrAnalyzer {
         eligible.sort(Comparator
                 .comparing((PullRequestData pr) -> Instant.parse(pr.closedAt())).reversed()
                 .thenComparing(Comparator.comparingInt(PullRequestData::number).reversed()));
-        if (eligible.size() > targetCount) {
-            eligible = eligible.subList(0, targetCount);
-        }
         for (PullRequestData pr : eligible) {
             String stableId = pr.repository() + "#" + pr.number();
             if (completed.contains(stableId)) {
@@ -117,7 +116,7 @@ public class PrAnalyzer {
             rows.add(row);
             System.out.println(row.toConsoleTableRow(rows.size()));
         }
-        CollectionSummary summary = new CollectionSummary(targetCount, fetchedClosedPrs, excludedOlderThanCutoff, excludedMalformedClosedAt, excludedNotClosed, duplicatesSkipped, rows.size(), runDateTime.toString(), closedAtCutoff.toString(), "closed_at", "four calendar months");
+        CollectionSummary summary = new CollectionSummary(targetCount, fetchedClosedPrs, excludedOlderThanCutoff, excludedAfterAnalysisTimestamp, excludedMalformedClosedAt, excludedNotClosed, duplicatesSkipped, rows.size(), runDateTime.toString(), closedAtCutoff.toString(), "closed_at", "four calendar months");
         collectionSummaries.put(repoUrl.fullName(), summary);
         System.out.println(PrReportRow.consoleFooter());
         printCollectionSummary(repoUrl.fullName(), summary);
@@ -171,7 +170,13 @@ public class PrAnalyzer {
         }
         try {
             Instant closedAt = Instant.parse(pr.closedAt());
-            return closedAt.isBefore(closedAtCutoff) ? Eligibility.OLDER_THAN_CUTOFF : Eligibility.ELIGIBLE;
+            if (closedAt.isBefore(closedAtCutoff)) {
+                return Eligibility.OLDER_THAN_CUTOFF;
+            }
+            if (closedAt.isAfter(runDateTime.toInstant())) {
+                return Eligibility.AFTER_ANALYSIS_TIMESTAMP;
+            }
+            return Eligibility.ELIGIBLE;
         } catch (DateTimeParseException e) {
             return Eligibility.MALFORMED_CLOSED_AT;
         }
@@ -180,11 +185,15 @@ public class PrAnalyzer {
     private static void printCollectionSummary(String repository, CollectionSummary summary) {
         System.out.println();
         System.out.println("Collection eligibility summary for " + repository);
-        System.out.println("Requested latest eligible closed human PRs: " + summary.requestedCount());
+        System.out.println("Analysis timestamp (UTC): " + summary.runDateTime());
+        System.out.println("Deprecated requested-count argument ignored: " + summary.requestedCount());
         System.out.println("Collection timestamp (UTC): " + summary.runDateTime());
         System.out.println("Eligibility cutoff (" + summary.eligibilityField() + ", " + summary.windowLength() + "): " + summary.closedAtCutoff());
         System.out.println("Fetched unique PRs inspected: " + summary.fetchedPrsInspected());
         System.out.println("Excluded as older than four calendar months: " + summary.excludedOlderThanCutoff());
+        if (summary.excludedAfterAnalysisTimestamp() > 0) {
+            System.out.println("Excluded because closed_at is after the analysis timestamp: " + summary.excludedAfterAnalysisTimestamp());
+        }
         if (summary.excludedMalformedClosedAt() > 0) {
             System.out.println("Excluded because closed_at was missing or invalid: " + summary.excludedMalformedClosedAt());
         }
@@ -195,9 +204,7 @@ public class PrAnalyzer {
             System.out.println("Duplicate PRs skipped across pages: " + summary.duplicatesSkipped());
         }
         System.out.println("Final PRs written: " + summary.finalCount());
-        if (summary.finalCount() < summary.requestedCount()) {
-            System.out.println("Fewer than requested were written because the repository did not provide enough eligible closed human PRs in the four-calendar-month window.");
-        }
+        System.out.println("No per-repository maximum applied; every eligible PR in the window is written.");
     }
 
     private void printDisclosureSummary(List<PrReportRow> rows) {
@@ -274,7 +281,7 @@ public class PrAnalyzer {
 
     private PrReportRow analyze(PullRequestData apiData) {
         HtmlData htmlData = fetchHtmlSafe(apiData.url());
-        DisclosureResult disclosure = detector.detect(apiData.body(), htmlData.text());
+        DisclosureResult disclosure = detector.detect(apiData.repository(), apiData.body(), htmlData.text());
         return toReportRow(apiData, htmlData, disclosure);
     }
 
@@ -324,6 +331,7 @@ public class PrAnalyzer {
             int requestedCount,
             int fetchedPrsInspected,
             int excludedOlderThanCutoff,
+            int excludedAfterAnalysisTimestamp,
             int excludedMalformedClosedAt,
             int excludedNotClosed,
             int duplicatesSkipped,
@@ -340,6 +348,7 @@ public class PrAnalyzer {
         NOT_CLOSED,
         BOT,
         MALFORMED_CLOSED_AT,
-        OLDER_THAN_CUTOFF
+        OLDER_THAN_CUTOFF,
+        AFTER_ANALYSIS_TIMESTAMP
     }
 }

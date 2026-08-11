@@ -347,6 +347,56 @@ public class AiDisclosureDetectorHarness {
         require(contradictoryCheckboxes.disclosed(), "contradictory checked boxes should be flagged");
         require("possible_ambiguous".equals(contradictoryCheckboxes.classification()), "contradictory checked boxes classification");
 
+        requirePositive(detector.detect("Apache/Airflow", "- [X] AI tool used", ""), "Airflow checked AI tool used");
+        require(!detector.detect("apache/airflow", "- [ ] AI tool used", "").disclosed(), "Airflow unchecked AI tool used");
+        require(!detector.detect("apache/airflow", "AI tool used", "").disclosed(), "Airflow bare template wording");
+        requirePositive(detector.detect("apache/airflow", "- [x]   AI   Tool Used  ", ""), "Airflow whitespace variation");
+
+        requireNegative(detector.detect("apache/couchdb", "- [x] This is my own work; I did not use AI to create this contribution.", ""), "CouchDB own work no AI");
+        require(!detector.detect("apache/couchdb", "- [ ] This is my own work; I did not use AI to create this contribution.", "").disclosed(), "CouchDB unchecked own work no AI");
+        require(!detector.detect("apache/couchdb", "This is my own work; I did not use AI to create this contribution.", "").disclosed(), "CouchDB bare template wording");
+
+        requirePositive(detector.detect("django/django", "- [x] AI was used to help prepare this PR\n- [ ] No AI was used", ""), "Django positive AI option");
+        requireNegative(detector.detect("django/django", "- [ ] AI was used to help prepare this PR\n- [X] No AI was used", ""), "Django negative no AI option");
+        require(!detector.detect("django/django", "- [ ] AI was used\n- [ ] No AI was used", "").disclosed(), "Django unchecked options");
+
+        requirePositive(detector.detect("OSGeo/gdal", "- [x] AI tools were used to prepare this pull request", ""), "GDAL checked AI checkbox");
+        require(!detector.detect("OSGeo/gdal", "- [ ] AI tools were used to prepare this pull request", "").disclosed(), "GDAL unchecked AI checkbox");
+
+        requireNeutral(detector.detect("Homebrew/brew", "- [x] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", ""), "Homebrew combined compliance statement");
+        require(!detector.detect("Homebrew/brew", "- [ ] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", "").disclosed(), "Homebrew unchecked compliance statement");
+        requirePositive(detector.detect("Homebrew/brew", "- [x] AI was used to generate or assist with generating this PR.", ""), "Homebrew historical positive statement");
+
+        requireNeutral(detector.detect("joomla/joomla-cms", "- [x] I read the Generative AI policy and my contribution is either not created with the help of AI or is compatible with the policy.", ""), "Joomla policy compliance statement");
+        require(!detector.detect("joomla/joomla-cms", "- [ ] I read the Generative AI policy and my contribution is either not created with the help of AI or is compatible with the policy.", "").disclosed(), "Joomla unchecked policy compliance statement");
+
+        requireNegative(detector.detect("cybertec-postgresql/pgwatch", "- [x] No AI/automation used", ""), "pgwatch no AI automation checkbox");
+        requirePositive(detector.detect("cybertec-postgresql/pgwatch", """
+                AI/automation tools used:
+                ChatGPT for initial test scaffolding
+                """, ""), "pgwatch completed AI automation field");
+        require(!detector.detect("cybertec-postgresql/pgwatch", "AI/automation tools used:\nPlease list any tools used", "").disclosed(), "pgwatch unchanged AI automation field");
+        require(!detector.detect("cybertec-postgresql/pgwatch", "AI/automation tools used:\n\n", "").disclosed(), "pgwatch blank AI automation field");
+
+        requirePositive(detector.detect("qgis/QGIS", "- [x] AI tools supported this PR", ""), "QGIS AI tools supported checkbox");
+        require(!detector.detect("qgis/QGIS", "- [ ] AI tools supported this PR", "").disclosed(), "QGIS unchecked AI tools supported checkbox");
+
+        requireNegative(detector.detect("qutip/qutip", "- [x] No AI used", ""), "QuTiP no AI used checkbox");
+        require(!detector.detect("qutip/qutip", "- [ ] No AI used", "").disclosed(), "QuTiP unchecked no AI used checkbox");
+
+        requireNegative(detector.detect("kornia/kornia", "- [x] 🟢 No AI used.", ""), "Kornia no AI used option");
+        requirePositive(detector.detect("kornia/kornia", """
+                - [X] 🟡 AI-assisted: I used AI for boilerplate/refactoring but have manually reviewed and
+                  tested every line.
+                """, ""), "Kornia wrapped AI assisted option");
+        requirePositive(detector.detect("kornia/kornia", "- [x] 🔴 AI-generated:", ""), "Kornia AI generated option");
+        requireAmbiguous(detector.detect("kornia/kornia", """
+                - [x] 🟢 No AI used.
+                - [x] 🔴 AI-generated:
+                """, ""), "Kornia contradictory selections");
+        requirePositive(detector.detect("kornia/kornia", "- [x] AI assisted I used AI for boilerplate refactoring but have manually reviewed and tested every line", ""), "Kornia punctuation and emoji variation");
+        require(!detector.detect("owner/repo", "- [x] I read the Generative AI policy and my contribution is either not created with the help of AI or is compatible with the policy.", "").disclosed(), "repository-specific Joomla rule should not leak");
+
         DisclosureResult commentedGeneratedBy = detector.detect("<!-- Generated-by: ChatGPT -->", "");
         require(!commentedGeneratedBy.disclosed(), "commented Generated-by should not count");
 
@@ -356,6 +406,71 @@ public class AiDisclosureDetectorHarness {
         DisclosureResult completedGeneratedBy = detector.detect("Generated-by: Claude", "");
         require(completedGeneratedBy.disclosed(), "completed Generated-by should count");
         require("possible_positive".equals(completedGeneratedBy.classification()), "completed Generated-by classification");
+
+        requirePositive(detector.detect("Assisted by: GitHub Copilot", ""), "Assisted by Copilot field");
+        requirePositive(detector.detect("AI assisted by: Claude", ""), "AI assisted by Claude field");
+        requirePositive(detector.detect("AI-assisted by: ChatGPT for test generation", ""), "AI-assisted by explanatory text");
+        requirePositive(detector.detect("""
+                **Assisted by:**
+                  Gemini for documentation examples
+                """, ""), "wrapped Assisted by field");
+        require(!detector.detect("Assisted by:", "").disclosed(), "empty Assisted by field");
+        require(!detector.detect("Assisted by: <tool name>", "").disclosed(), "placeholder Assisted by field");
+        require(!detector.detect("Assisted by: N/A", "").disclosed(), "N/A Assisted by field without AI context");
+        require(!detector.detect("Assisted by: none", "").disclosed(), "none Assisted by field without AI context");
+        requireNegative(detector.detect("AI assisted by: none", ""), "AI assisted by none negative field");
+        requireNegative(detector.detect("Assisted by: no AI assistance", ""), "Assisted by explicit no AI assistance");
+
+        requirePositive(detector.detect("Co-authored-by: Claude <claude@example.com>", ""), "Claude co-author trailer");
+        requirePositive(detector.detect("Co-authored-by: ChatGPT <chatgpt@example.com>", ""), "ChatGPT co-author trailer");
+        requirePositive(detector.detect("Co-authored-by: OpenAI Codex <codex@example.com>", ""), "Codex co-author trailer");
+        requirePositive(detector.detect("Co-authored-by: GitHub Copilot <copilot@example.com>", ""), "Copilot co-author trailer");
+        requirePositive(detector.detect("Co-authored-by: Gemini <gemini@example.com>", ""), "Gemini co-author trailer");
+        requirePositive(detector.detect("Co-authored by Devin", ""), "natural language AI co-author");
+        requirePositive(detector.detect("Co-authored by an AI assistant", ""), "AI assistant co-author");
+        require(!detector.detect("Co-authored-by: Jane Smith <jane@example.com>", "").disclosed(), "human co-author trailer");
+        require(!detector.detect("Co-authored by another contributor", "").disclosed(), "human natural language co-author");
+        require(!detector.detect("Co-authored-by:", "").disclosed(), "empty co-author field");
+        require(!detector.detect("Documentation explains when code is co-authored by a maintainer.", "").disclosed(), "co-author policy discussion");
+
+        requireNegative(detector.detect("No AI tools used", ""), "No AI tools used");
+        requireNegative(detector.detect("No AI tools were used.", ""), "No AI tools were used");
+        requireNegative(detector.detect("No AI used", ""), "No AI used");
+        requireNegative(detector.detect("NO AI USE", ""), "NO AI USE variation");
+        requireNegative(detector.detect("AI was not used", ""), "AI was not used");
+        requireNegative(detector.detect("I did not use AI", ""), "I did not use AI");
+        requireNegative(detector.detect("This contribution was completed without AI", ""), "completed without AI");
+        requireNegative(detector.detect("- [x] No AI/LLM tools used", ""), "checked no AI LLM tools");
+        require(!detector.detect("It is not true that no AI was used", "").disclosed(), "negated no AI statement");
+        require(!detector.detect("I cannot confirm that no AI tools were used", "").disclosed(), "uncertain no AI statement");
+        require(!detector.detect("Please state whether no AI tools were used.", "").disclosed(), "template instruction asking for no AI");
+
+        requireNegative(detector.detect("AI influence level: 0", ""), "AI influence level 0");
+        requireNegative(detector.detect("AIL: 0", ""), "AIL 0");
+        requirePositive(detector.detect("AIL: 1", ""), "AIL 1");
+        requirePositive(detector.detect("AIL: 2", ""), "AIL 2");
+        requirePositive(detector.detect("AI Influence Level: 3", ""), "AI influence level 3");
+        requirePositive(detector.detect("AIL 4", ""), "AIL 4");
+        requirePositive(detector.detect("AIL Level: 5", ""), "AIL level 5");
+        requirePositive(detector.detect("**AIL Level = 2**", ""), "AIL equals sign markdown");
+        require(!detector.detect("AI Influence Level:", "").disclosed(), "blank AI influence level");
+        require(!detector.detect("AIL: [insert score]", "").disclosed(), "AIL placeholder score");
+        require(!detector.detect("AIL: X", "").disclosed(), "AIL malformed score");
+        require(!detector.detect("AIL: 6", "").disclosed(), "AIL out of range 6");
+        require(!detector.detect("AIL: 10", "").disclosed(), "AIL 10 should not match as 1");
+        require(!detector.detect("AIL: 99", "").disclosed(), "AIL out of range 99");
+        require(!detector.detect("AIL: -1", "").disclosed(), "AIL negative value");
+        require(!detector.detect("AIL: 1.5", "").disclosed(), "AIL decimal value");
+        require(!detector.detect("Issue AIL-123 updates a label", "").disclosed(), "AIL embedded unrelated number");
+        require(!detector.detect("""
+                AIL 0 means no AI involvement.
+                AIL 1 means minimal AI assistance.
+                AIL 5 means AI-led work.
+                """, "").disclosed(), "AIL policy explanation should not count");
+        requireAmbiguous(detector.detect("""
+                AIL: 0
+                AIL: 3
+                """, ""), "conflicting AIL scores");
 
         requirePositive(detector.detect("I used ChatGPT to generate the initial implementation.", ""), "explicit ChatGPT statement");
         requirePositive(detector.detect("This PR was written with GitHub Copilot.", ""), "written with Copilot statement");
@@ -791,15 +906,15 @@ public class AiDisclosureDetectorHarness {
                 pr("window/repo", 17, "2026-03-27T00:00:00Z", "human", "User")
         ));
         PrAnalyzer cutoffAnalyzer = new PrAnalyzer(cutoffClient, Clock.fixed(Instant.parse("2026-07-23T12:00:00Z"), ZoneOffset.UTC));
-        List<PrReportRow> cutoffRows = cutoffAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("window/repo"), 5);
-        require(cutoffRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(17, 16, 13, 12, 11)), "cutoff should filter before limit and order by closed_at desc then PR number desc");
+        List<PrReportRow> cutoffRows = cutoffAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("window/repo"), 3);
+        require(cutoffRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(17, 16, 13, 12, 11)), "cutoff should filter without a repository cap and order by closed_at desc then PR number desc");
         PrAnalyzer.CollectionSummary cutoffSummary = cutoffAnalyzer.collectionSummary("window/repo");
-        require(cutoffSummary.requestedCount() == 5, "cutoff requested count");
+        require(cutoffSummary.requestedCount() == 3, "deprecated requested count should be retained only for compatibility");
         require(cutoffSummary.fetchedPrsInspected() == 8, "cutoff should inspect replacements after ineligible rows");
         require(cutoffSummary.excludedOlderThanCutoff() == 1, "cutoff older exclusion count");
         require(cutoffSummary.excludedNotClosed() == 1, "open PR should be excluded");
         require(cutoffSummary.duplicatesSkipped() == 1, "duplicate PR should be skipped");
-        require(cutoffSummary.finalCount() == 5, "cutoff final count should include replacements");
+        require(cutoffSummary.finalCount() == 5, "cutoff final count should include every eligible PR despite a smaller deprecated count argument");
         require("2026-03-23T12:00:00Z".equals(cutoffSummary.closedAtCutoff()), "cutoff should be collection instant minus four calendar months");
         require(cutoffClient.pages().equals(List.of("window/repo#page1", "window/repo#page2", "window/repo#page3")), "cutoff should continue until GitHub has no more pages");
 
@@ -810,13 +925,15 @@ public class AiDisclosureDetectorHarness {
         ));
         paginationClient.addPage("page/repo", 2, List.of(
                 pr("page/repo", 3, "2026-03-22T00:00:00Z", "human", "User"),
-                pr("page/repo", 4, "2026-03-22T00:00:01Z", "human", "User")
+                pr("page/repo", 4, "2026-03-22T00:00:01Z", "human", "User"),
+                pr("page/repo", 5, "2026-07-22T00:00:01Z", "human", "User")
         ));
         PrAnalyzer paginationAnalyzer = new PrAnalyzer(paginationClient, Clock.fixed(Instant.parse("2026-07-22T00:00:00Z"), ZoneOffset.UTC));
-        List<PrReportRow> paginationRows = paginationAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("page/repo"), 3);
-        require(paginationRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(4, 3)), "pagination should continue until eligible requested count is exhausted and then sort locally");
+        List<PrReportRow> paginationRows = paginationAnalyzer.analyzeLatestClosedHumanPrs(RepoUrl.parse("page/repo"), 1);
+        require(paginationRows.stream().map(PrReportRow::pullRequestNumber).toList().equals(List.of(4, 3)), "pagination should continue until GitHub has no more pages and then sort locally");
         require(paginationClient.pages().equals(List.of("page/repo#page1", "page/repo#page2", "page/repo#page3")), "pagination should stop when GitHub has no more pages");
         require(paginationAnalyzer.collectionSummary("page/repo").excludedOlderThanCutoff() == 1, "pagination older exclusion count");
+        require(paginationAnalyzer.collectionSummary("page/repo").excludedAfterAnalysisTimestamp() == 1, "future closed_at should be excluded by analysis timestamp upper bound");
         require(paginationAnalyzer.botPrsExcludedByRepository().get("page/repo") == 1, "bot PRs should not count toward requested eligible count");
 
         FakeGitHubClient calendarClient = new FakeGitHubClient();
@@ -1316,6 +1433,11 @@ public class AiDisclosureDetectorHarness {
     private static void requireNegative(DisclosureResult result, String message) {
         require(result.disclosed(), message + " should disclose");
         require("possible_negative".equals(result.classification()), message + " should be negative");
+    }
+
+    private static void requireNeutral(DisclosureResult result, String message) {
+        require(result.disclosed(), message + " should disclose");
+        require("possible_neutral".equals(result.classification()), message + " should be neutral");
     }
 
     private static void requireAmbiguous(DisclosureResult result, String message) {

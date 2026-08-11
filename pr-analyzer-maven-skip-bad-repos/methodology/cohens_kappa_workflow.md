@@ -299,7 +299,7 @@ java -jar target/pr-analyzer-maven-1.0.0.jar \
 
 ## Assumptions Made
 
-- The reliability sample uses the same shared `closed_at` eligibility rule as dataset collection. Repository selection is random unless `KAPPA_SAMPLE_SEED` is set; PR rows are filtered before limiting and ordered locally by closure time.
+- The reliability sample uses the same shared `closed_at` eligibility rule as dataset collection. Repository selection is random unless `KAPPA_SAMPLE_SEED` is set; PR rows are filtered by the closure-time window and ordered locally by closure time.
 - Bot PRs are excluded according to the current project methodology and implementation.
 - Both researchers use the same `kappa_sample.csv`.
 - Consensus labels, not script labels, become the gold standard.
