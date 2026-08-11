@@ -176,6 +176,15 @@ public class Main {
                 System.out.println("Duplicate rows reported: " + result.duplicates().size());
                 return;
             }
+            if (args.length >= 3 && args[0].equals("--export-false-negatives")) {
+                List<Path> validations = List.of(args).subList(1, args.length - 1).stream().map(Path::of).toList();
+                Path output = Path.of(args[args.length - 1]);
+                ConsensusWorkflow.FalseNegativeExportResult result = ConsensusWorkflow.exportFalseNegatives(validations, output);
+                System.out.println("False-negative PRs saved: " + output.toAbsolutePath());
+                System.out.println("Detailed validation rows read: " + result.detailedRowsRead());
+                System.out.println("False negatives written: " + result.falseNegativesWritten());
+                return;
+            }
             if (args.length >= 2 && args[0].equals("--validate-study-exclusions")) {
                 List<Path> paths = List.of(args).subList(1, args.length).stream().map(Path::of).toList();
                 StudyDatasetExclusionValidator.ValidationResult result = StudyDatasetExclusionValidator.validate(paths);
@@ -284,6 +293,7 @@ public class Main {
                 || mode.equals("--create-consensus")
                 || mode.equals("--validate-detector")
                 || mode.equals("--combine-detector-validation")
+                || mode.equals("--export-false-negatives")
                 || mode.equals("--validate-study-exclusions")
                 || mode.equals("--reanalyze-kappa-sample")
                 || mode.equals("--analyze-specific-prs")
@@ -306,6 +316,7 @@ public class Main {
             case "--create-consensus" -> "--create-consensus coder_a_labels.csv coder_b_labels.csv consensus_labels.csv";
             case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
             case "--combine-detector-validation" -> "--combine-detector-validation detector_validation_reanalyzed.csv extended_detector_validation.csv combined_detector_validation.csv combined_detector_metrics.csv";
+            case "--export-false-negatives" -> "--export-false-negatives detector_validation.csv [more_validation.csv...] false_negative_prs.csv";
             case "--validate-study-exclusions" -> "--validate-study-exclusions repos.txt pr_dataset_output.csv repo_visibility_summary_updated.csv spearman_correlation_input_updated.csv";
             case "--reanalyze-kappa-sample" -> "--reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv";
             case "--analyze-specific-prs" -> "--analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv Repo#PR [Repo#PR...]";
@@ -537,6 +548,7 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_labels.csv coworker_labels.csv consensus_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --combine-detector-validation detector_validation_reanalyzed.csv extended_detector_validation.csv combined_detector_validation.csv combined_detector_metrics.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --export-false-negatives detector_validation.csv [more_validation.csv...] false_negative_prs.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-study-exclusions repos.txt pr_dataset_output.csv repo_visibility_summary_updated.csv spearman_correlation_input_updated.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --reanalyze-kappa-sample kappa_sample.csv kappa_sample_reanalyzed.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");

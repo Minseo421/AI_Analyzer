@@ -453,6 +453,10 @@ public class AiDisclosureDetectorHarness {
         requirePositive(detector.detect("AIL 4", ""), "AIL 4");
         requirePositive(detector.detect("AIL Level: 5", ""), "AIL level 5");
         requirePositive(detector.detect("**AIL Level = 2**", ""), "AIL equals sign markdown");
+        DisclosureResult inlineAil = detector.detect("This PR was prepared with AIL:3.", "");
+        require(inlineAil.disclosed(), "inline AIL sentence should disclose");
+        require("possible_positive".equals(inlineAil.classification()), "inline AIL sentence should be positive");
+        require("This PR was prepared with AIL:3.".equals(inlineAil.evidence()), "inline AIL sentence evidence should preserve the full sentence");
         require(!detector.detect("AI Influence Level:", "").disclosed(), "blank AI influence level");
         require(!detector.detect("AIL: [insert score]", "").disclosed(), "AIL placeholder score");
         require(!detector.detect("AIL: X", "").disclosed(), "AIL malformed score");
@@ -475,6 +479,20 @@ public class AiDisclosureDetectorHarness {
         requirePositive(detector.detect("I used ChatGPT to generate the initial implementation.", ""), "explicit ChatGPT statement");
         requirePositive(detector.detect("This PR was written with GitHub Copilot.", ""), "written with Copilot statement");
         requirePositive(detector.detect("Claude helped generate the tests.", ""), "Claude helped statement");
+        requirePositive(detector.detect("Generated with [Claude Code](https://claude.ai/code)", ""), "generated with linked Claude Code");
+        requirePositive(detector.detect("""
+                ## LLM Note
+
+                GPT 5.3
+                """, ""), "LLM Note with model version answer");
+        requirePositive(detector.detect("""
+                LLM Note
+
+                GPT-5.6 helped draft the tests.
+                """, ""), "plain LLM Note heading with model version explanation");
+        requirePositive(detector.detect("Fable was used.", ""), "Fable was used statement");
+        requirePositive(detector.detect("AI tooling was used to assist in preparing this PR.", ""), "AI tooling was used statement");
+        requirePositive(detector.detect("AI helped with the implementation.", ""), "AI helped statement");
         requirePositive(detector.detect("""
                 #### AI Generation Disclosure
 
@@ -483,6 +501,11 @@ public class AiDisclosureDetectorHarness {
                 #### Release Notes
                 NO ENTRY
                 """, ""), "AI disclosure section with Codex answer");
+        requirePositive(detector.detect("""
+                AI generation disclosure
+
+                Claude Code
+                """, ""), "plain AI generation disclosure heading with tool answer");
         requirePositive(detector.detect("""
                 ## AI disclosure
 
@@ -494,6 +517,21 @@ public class AiDisclosureDetectorHarness {
         requireNegative(detector.detect("No generative AI tools were used for this PR.", ""), "explicit no AI statement");
         requireNegative(detector.detect("I did not use AI assistance.", ""), "explicit did not use AI statement");
         requireNegative(detector.detect("AI Generation Disclosure: No AI was used", ""), "inline heading no AI statement");
+        requireNegative(detector.detect("""
+                ## AI generation disclosure
+
+                All code written manually.
+                """, ""), "AI generation disclosure section with manual-only answer");
+        requireNegative(detector.detect("""
+                AI generation disclosure
+
+                written by myself without AI
+                """, ""), "plain AI generation disclosure section with myself no AI answer");
+        require(!detector.detect("""
+                Release notes
+
+                All code written manually.
+                """, "").disclosed(), "manual statement outside AI disclosure context");
         requireNegative(detector.detect("I did not use Codex or any other generative AI.", ""), "explicit no Codex statement");
         require(!detector.detect("""
                 <!--
@@ -512,7 +550,7 @@ public class AiDisclosureDetectorHarness {
         require(!detector.detect("Please disclose any AI use in this section.", "").disclosed(), "template instruction should not count");
         require(!detector.detect("This fixes an issue caused by Copilot.", "").disclosed(), "caused by Copilot is not a disclosure");
         require(!detector.detect("Update codex references in the historical manuscript notes.", "").disclosed(), "ordinary codex noun should not count");
-        requireAmbiguous(detector.detect("""
+        requirePositive(detector.detect("""
                 ## AI disclosure
 
                 Codex

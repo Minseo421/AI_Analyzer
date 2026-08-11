@@ -15,12 +15,14 @@ public class AiDisclosureDetector {
     private static final Pattern GENERATED_BY_PATTERN = Pattern.compile("(?im)^\\s*Generated-by:\\s*(\\S[^\\r\\n]*)$");
     private static final Pattern EMPTY_GENERATED_BY_PATTERN = Pattern.compile("(?i)^\\s*Generated-by:\\s*$");
     private static final Pattern REPO_NAME_PATTERN = Pattern.compile("(?i)^[^/\\s]+/[^/\\s]+$");
-    private static final String AI_TOOL = "(?:chatgpt|openai\\s+codex|github\\s+copilot|copilot|claude|gemini|cursor|codex|windsurf|devin|(?:generative\\s+)?ai|artificial\\s+intelligence|an?\\s+llm|llm)";
-    private static final String AI_TOOL_NAME = "(?:chatgpt|openai\\s+codex|github\\s+copilot|copilot|claude|gemini|cursor|codex|windsurf|devin|llm)";
+    private static final String MODEL_VERSION = "(?:gpt\\s*-?\\s*\\d+(?:\\.\\d+)?)";
+    private static final String AI_TOOL = "(?:chatgpt|" + MODEL_VERSION + "|openai\\s+codex|github\\s+copilot|copilot|claude(?:\\s+code)?|gemini|cursor|codex|windsurf|devin|fable|(?:generative\\s+)?ai|artificial\\s+intelligence|an?\\s+llm|llm)";
+    private static final String AI_TOOL_NAME = "(?:chatgpt|" + MODEL_VERSION + "|openai\\s+codex|github\\s+copilot|copilot|claude(?:\\s+code)?|gemini|cursor|codex|windsurf|devin|fable|llm)";
     private static final Pattern AI_IDENTITY_PATTERN = Pattern.compile("(?is)\\b(?:" + AI_TOOL + "|ai\\s+(?:assistant|agent|service|model|tool))\\b");
-    private static final Pattern TEMPLATE_AI_HEADING_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*(?:ai\\s+(?:generation\\s+)?(?:usage\\s+)?disclosure|ai\\s+(?:use|usage)|generative\\s+ai\\s+(?:use|usage|disclosure))\\s*:??\\s*$");
-    private static final Pattern AI_DISCLOSURE_HEADING_PATTERN = Pattern.compile("(?i)^\\s*#{1,6}\\s*(?:ai\\s+(?:generation\\s+)?(?:usage\\s+)?disclosure|ai\\s+(?:use|usage)|generative\\s+ai\\s+(?:use|usage|disclosure))\\s*:??\\s*$");
-    private static final Pattern AI_BOLD_FIELD_PATTERN = Pattern.compile("(?i)^\\s*\\*\\*(?:ai\\s+(?:generation\\s+)?(?:usage\\s+)?disclosure|ai\\s+(?:use|usage)|generative\\s+ai\\s+(?:use|usage|disclosure))\\s*:??\\*\\*\\s*(.*)$");
+    private static final String AI_DISCLOSURE_HEADING = "(?:ai\\s+(?:generation\\s+)?(?:usage\\s+)?disclosure|ai\\s+(?:use|usage)|generative\\s+ai\\s+(?:use|usage|disclosure)|llm\\s+note)";
+    private static final Pattern TEMPLATE_AI_HEADING_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*" + AI_DISCLOSURE_HEADING + "\\s*:??\\s*$");
+    private static final Pattern AI_DISCLOSURE_HEADING_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*" + AI_DISCLOSURE_HEADING + "\\s*:??\\s*$");
+    private static final Pattern AI_BOLD_FIELD_PATTERN = Pattern.compile("(?i)^\\s*\\*\\*" + AI_DISCLOSURE_HEADING + "\\s*:??\\*\\*\\s*(.*)$");
     private static final Pattern ANY_MARKDOWN_HEADING_PATTERN = Pattern.compile("^\\s*#{1,6}\\s+\\S.*$");
     private static final Pattern TEMPLATE_AI_QUESTION_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*(?:was|were|did)\\b[^\\r\\n?]{0,160}\\b(?:generative\\s+ai|ai|chatgpt|github\\s+copilot|copilot|claude|gemini|cursor|codex|windsurf|llm)\\b[^\\r\\n?]{0,160}\\?\\s*$");
     private static final Pattern AFFIRMATIVE_CHECKBOX_PATTERN = Pattern.compile("(?is)^(?:yes\\b|.*\\b(?:ai\\s+tooling|generative\\s+ai|ai|chatgpt|github\\s+copilot|copilot|claude|gemini|cursor|codex|windsurf|llm)\\b[^\\r\\n]{0,120}\\b(?:used|assisted|generated)\\b)");
@@ -34,9 +36,17 @@ public class AiDisclosureDetector {
             Pattern.compile("(?is)\\bai\\b[^\\r\\n.]{0,60}\\bwas\\s+not\\s+used\\b"),
             Pattern.compile("(?is)\\b(?:this\\s+)?(?:contribution|pr|pull\\s+request)\\b[^\\r\\n.]{0,80}\\b(?:completed|created|authored|written)\\s+without\\s+(?:ai|llm|ai\\s*/\\s*llm)\\b")
     );
+    private static final List<Pattern> CONTEXTUAL_NEGATIVE_DISCLOSURE_PATTERNS = List.of(
+            Pattern.compile("(?is)\\b(?:all\\s+)?code\\s+(?:was\\s+)?written\\s+manually\\b[^\\r\\n.]{0,120}"),
+            Pattern.compile("(?is)\\bwritten\\s+by\\s+myself\\b[^\\r\\n.]{0,120}(?:\\b(?:without|no)\\b[^\\r\\n.]{0,60}\\b(?:ai|llm|assistance|tools?)\\b)?"),
+            Pattern.compile("(?is)\\b(?:all\\s+)?(?:code|changes?)\\s+(?:were|was)?\\s*(?:written|authored|implemented)\\s+by\\s+(?:me|myself|hand)\\b[^\\r\\n.]{0,120}")
+    );
     private static final List<Pattern> POSITIVE_DISCLOSURE_PATTERNS = List.of(
             Pattern.compile("(?is)\\b(?:was\\s+)?" + AI_TOOL + "\\b[^\\r\\n?]{0,160}\\?\\s*(?:yes|y)\\b"),
             Pattern.compile("(?is)\\b(?:i\\s+)?used\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\b" + AI_TOOL + "\\b[^\\r\\n.]{0,120}\\b(?:was|were)\\s+used\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\bai\\s+tooling\\s+(?:was|were)\\s+used\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\bai\\s+helped\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:this\\s+pr\\s+)?(?:was|is)\\s+written\\s+with\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b" + AI_TOOL_NAME + "\\s+helped\\s+(?:generate|write|draft|refactor|implement|create)\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\bgenerated\\s+(?:\\w+\\s+){0,4}with\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
@@ -122,6 +132,7 @@ public class AiDisclosureDetector {
     private static final Pattern ASSISTED_BY_FIELD_PATTERN = Pattern.compile("(?i)^\\s*(?:[-*+]\\s*)?(?:[*_`\\s]*)?(?:(AI)\\s*[-\\s]*)?assisted\\s+by\\s*:?\\s*(.*)$");
     private static final Pattern CO_AUTHORED_BY_PATTERN = Pattern.compile("(?i)^\\s*(?:[-*+]\\s*)?co\\s*-?\\s*authored\\s*-?\\s*by\\s*:?\\s*(.*)$");
     private static final Pattern AIL_PATTERN = Pattern.compile("(?i)^\\s*(?:[-*+]\\s*)?(?:[*_`#\\s]*)?(?:AI\\s+influence\\s+level|AIL)(?:\\s+level)?\\s*(?::|=)?\\s*([0-5])\\s*[.)!`*_\\s]*$");
+    private static final Pattern INLINE_AIL_PATTERN = Pattern.compile("(?i)\\b(?:AI\\s+influence\\s+level|AIL)(?:\\s+level)?\\s*(?::|=)\\s*([0-5])\\b(?!\\s*(?:\\.\\d|\\d))");
     private static final List<Pattern> PLACEHOLDER_RESPONSE_PATTERNS = List.of(
             Pattern.compile("(?is)^\\s*$"),
             Pattern.compile("(?is)^\\s*(?:n/?a|none|no|not\\s+applicable|null|nil|-+)\\s*[.!]??\\s*$"),
@@ -241,6 +252,9 @@ public class AiDisclosureDetector {
                 if ("possible_negative".equals(classification) && hasNegatedNegativeContext(text, matcher.start())) {
                     continue;
                 }
+                if ("possible_positive".equals(classification) && hasNegatedPositiveContext(text, matcher.start())) {
+                    continue;
+                }
                 return new DisclosureResult(true, cleanEvidence(matcher.group()), classification, source);
             }
         }
@@ -253,6 +267,11 @@ public class AiDisclosureDetector {
             if (pattern.matcher(prefix).find()) return true;
         }
         return false;
+    }
+
+    private static boolean hasNegatedPositiveContext(String text, int matchStart) {
+        String prefix = text.substring(Math.max(0, matchStart - 24), matchStart);
+        return prefix.matches("(?is).*\\b(?:no|not|without)\\s+$");
     }
 
     private static String removeAilPolicyExplanationLines(String text) {
@@ -276,7 +295,7 @@ public class AiDisclosureDetector {
     }
 
     private static PreparedText prepareText(String text) {
-        String visibleText = removeHtmlComments(text);
+        String visibleText = stripMarkdownLinks(removeHtmlComments(text));
         List<String> checkedCheckboxes = new ArrayList<>();
         List<String> uncheckedCheckboxes = new ArrayList<>();
         String textWithoutCheckboxes = removeTemplateResponseLines(visibleText, checkedCheckboxes, uncheckedCheckboxes);
@@ -286,6 +305,11 @@ public class AiDisclosureDetector {
     static String removeHtmlComments(String text) {
         if (isBlank(text)) return "";
         return HTML_COMMENT_PATTERN.matcher(text).replaceAll(" ");
+    }
+
+    private static String stripMarkdownLinks(String text) {
+        return text.replaceAll("!\\[([^]]*)]\\([^)]*\\)", "$1")
+                .replaceAll("\\[([^]]+)]\\([^)]*\\)", "$1");
     }
 
     private static String removeTemplateResponseLines(String text, List<String> checkedCheckboxes, List<String> uncheckedCheckboxes) {
@@ -342,6 +366,9 @@ public class AiDisclosureDetector {
                 continue;
             }
             DisclosureResult negative = findDisclosure(cleaned, NEGATIVE_DISCLOSURE_PATTERNS, "possible_negative", source);
+            if (!negative.disclosed()) {
+                negative = findDisclosure(cleaned, CONTEXTUAL_NEGATIVE_DISCLOSURE_PATTERNS, "possible_negative", source);
+            }
             if (negative.disclosed()) {
                 negatives.add(negative);
                 continue;
@@ -353,7 +380,8 @@ public class AiDisclosureDetector {
             }
             DisclosureResult contextualPositive = findDisclosure(cleaned, List.of(
                     Pattern.compile("(?is)\\b(?:yes\\b[^\\r\\n.]{0,120})?" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,120}\\b(?:used|assisted|generated|wrote|write|drafted|created|refactored|implemented)\\b[^\\r\\n.]{0,120}"),
-                    Pattern.compile("(?is)\\b(?:used|with|generated\\s+by|assisted\\s+by)\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}")
+                    Pattern.compile("(?is)\\b(?:used|with|generated\\s+by|assisted\\s+by)\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}"),
+                    Pattern.compile("(?is)^\\s*" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}$")
             ), "possible_positive", source);
             if (contextualPositive.disclosed()) {
                 positives.add(contextualPositive);
@@ -513,7 +541,10 @@ public class AiDisclosureDetector {
         for (String line : text.split("\\R", -1)) {
             Matcher matcher = AIL_PATTERN.matcher(line);
             if (!matcher.matches()) {
-                continue;
+                matcher = INLINE_AIL_PATTERN.matcher(line);
+                if (!matcher.find()) {
+                    continue;
+                }
             }
             int score = Integer.parseInt(matcher.group(1));
             if (score == 0) {

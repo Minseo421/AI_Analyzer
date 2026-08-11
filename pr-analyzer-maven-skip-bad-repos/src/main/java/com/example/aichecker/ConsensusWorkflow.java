@@ -128,6 +128,74 @@ public class ConsensusWorkflow {
         return result;
     }
 
+    public static FalseNegativeExportResult exportFalseNegatives(Path validationPath, Path outputPath) throws IOException {
+        return exportFalseNegatives(List.of(validationPath), outputPath);
+    }
+
+    public static FalseNegativeExportResult exportFalseNegatives(List<Path> validationPaths, Path outputPath) throws IOException {
+        refuseOverwrite(outputPath, "False-negative export file");
+        int totalDetailedRows = 0;
+        int falseNegatives = 0;
+        Set<String> seenPrs = new java.util.LinkedHashSet<>();
+        try (BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8)) {
+            writer.write(String.join(",",
+                    CsvTools.csv("Validation Source"),
+                    CsvTools.csv("Sample ID"),
+                    CsvTools.csv("Repo"),
+                    CsvTools.csv("PR #"),
+                    CsvTools.csv("PR URL"),
+                    CsvTools.csv("Detector Disclosure Present"),
+                    CsvTools.csv("Human Disclosure Present"),
+                    CsvTools.csv("Detector Outcome"),
+                    CsvTools.csv("Detector Evidence"),
+                    CsvTools.csv("Human Classification"),
+                    CsvTools.csv("Notes")
+            ));
+            writer.newLine();
+            for (Path validationPath : validationPaths) {
+                List<List<String>> records = CsvTools.readRecords(validationPath);
+                int headerIndex = findDetailedResultsHeader(records, validationPath);
+                List<String> header = records.get(headerIndex);
+                int outcomeIndex = header.indexOf("Detector Outcome");
+                if (outcomeIndex < 0) {
+                    throw new IllegalArgumentException("Missing Detector Outcome column in detailed results from " + validationPath);
+                }
+                for (int i = headerIndex + 1; i < records.size(); i++) {
+                    List<String> record = records.get(i);
+                    if (record.size() == 1 && record.get(0).isBlank()) {
+                        continue;
+                    }
+                    totalDetailedRows++;
+                    String outcome = value(record, outcomeIndex).trim();
+                    if (!outcome.equalsIgnoreCase("False Negative")) {
+                        continue;
+                    }
+                    FalseNegativeRow row = falseNegativeRow(validationPath, header, record);
+                    String key = !row.sampleId().isBlank() ? row.sampleId() : row.prUrl();
+                    if (!seenPrs.add(key)) {
+                        continue;
+                    }
+                    falseNegatives++;
+                    writer.write(String.join(",",
+                            CsvTools.csv(row.validationSource()),
+                            CsvTools.csv(row.sampleId()),
+                            CsvTools.csv(row.repo()),
+                            CsvTools.csv(row.prNumber()),
+                            CsvTools.csv(row.prUrl()),
+                            CsvTools.csv(row.detectorPresent()),
+                            CsvTools.csv(row.humanPresent()),
+                            CsvTools.csv(row.outcome()),
+                            CsvTools.csv(row.detectorEvidence()),
+                            CsvTools.csv(row.humanClassification()),
+                            CsvTools.csv(row.notes())
+                    ));
+                    writer.newLine();
+                }
+            }
+        }
+        return new FalseNegativeExportResult(totalDetailedRows, falseNegatives);
+    }
+
     private static void writeDetectorValidation(Path outputPath, List<ValidationRow> rows, DetectorValidationResult result) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8)) {
             writer.write("Section,Metric,Value");
@@ -167,6 +235,41 @@ public class ConsensusWorkflow {
                 writer.newLine();
             }
         }
+    }
+
+    private static int findDetailedResultsHeader(List<List<String>> records, Path path) {
+        for (int i = 0; i < records.size(); i++) {
+            List<String> record = records.get(i);
+            if (record.contains("Sample ID") && record.contains("Detector Outcome")) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("No detailed detector-validation results table found in " + path);
+    }
+
+    private static FalseNegativeRow falseNegativeRow(Path validationPath, List<String> header, List<String> record) {
+        return new FalseNegativeRow(
+                validationPath.getFileName().toString(),
+                column(header, record, "Sample ID"),
+                column(header, record, "Repo"),
+                column(header, record, "PR #"),
+                column(header, record, "PR URL"),
+                firstNonBlank(column(header, record, "Script Disclosure Present"), column(header, record, "Detector Disclosure Present")),
+                firstNonBlank(column(header, record, "Consensus Disclosure Present"), column(header, record, "Manual Disclosure Present")),
+                column(header, record, "Detector Outcome"),
+                firstNonBlank(column(header, record, "Script Detected Text"), column(header, record, "Detector Rule or Reason")),
+                firstNonBlank(column(header, record, "Consensus Classification"), column(header, record, "Manual Classification")),
+                firstNonBlank(column(header, record, "Consensus Notes"), column(header, record, "Provenance"))
+        );
+    }
+
+    private static String column(List<String> header, List<String> record, String name) {
+        int index = header.indexOf(name);
+        return index < 0 ? "" : value(record, index);
+    }
+
+    private static String value(List<String> record, int index) {
+        return index < record.size() ? record.get(index) : "";
     }
 
     private static void writeMetric(BufferedWriter writer, String section, String metric, int value) throws IOException {
@@ -299,6 +402,21 @@ public class ConsensusWorkflow {
     ) {
     }
 
+    private record FalseNegativeRow(
+            String validationSource,
+            String sampleId,
+            String repo,
+            String prNumber,
+            String prUrl,
+            String detectorPresent,
+            String humanPresent,
+            String outcome,
+            String detectorEvidence,
+            String humanClassification,
+            String notes
+    ) {
+    }
+
     public record ConsensusResult(int matchedRows, int fullAgreements, int disagreements, List<String> onlyInCoderA, List<String> onlyInCoderB) {
         public ConsensusResult {
             onlyInCoderA = List.copyOf(onlyInCoderA);
@@ -344,5 +462,8 @@ public class ConsensusWorkflow {
         public double falseNegativeRate() {
             return divide(falseNegatives, falseNegatives + truePositives);
         }
+    }
+
+    public record FalseNegativeExportResult(int detailedRowsRead, int falseNegativesWritten) {
     }
 }
