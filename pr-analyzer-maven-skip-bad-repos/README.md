@@ -209,6 +209,32 @@ Do not average accuracy, precision, recall, specificity, or F1 from separate sam
 
 ## Output Files
 
+### CSV output overview
+
+The filenames shown below are the standard names used in the examples. Most commands allow a different output filename, but the file's purpose and structure remain the same.
+
+| CSV file | Produced by | Purpose |
+| --- | --- | --- |
+| `pr_dataset_output.csv` | `--latest-pr-dataset` or `--repos-pr-dataset` | Main PR-level research dataset: one row per eligible PR, including metadata, detected disclosure status, classification, and evidence text. |
+| `repo_compliance_summary.csv` | Dataset commands when an optional summary path is supplied | Repository-level totals and preliminary disclosure rates calculated from the generated PR dataset. |
+| `report.csv` | `--latest` or `--repos` | Older technical/debug output containing additional audit fields; not the main research dataset. |
+| `kappa_sample.csv` | `--sample-for-kappa` | Fixed PR sample given to both researchers for independent coding and initial inter-rater reliability analysis. |
+| `anna_labels.csv`, `minseo_labels.csv` | `--code-kappa-sample` | Each researcher's independent manual labels for the original kappa sample. |
+| `kappa_results.csv` | `--calculate-kappa` | Humanâ€“human agreement results, including matched rows, raw agreement, Cohen's Kappa, confusion matrices, and disagreements. |
+| `consensus_labels.csv` | `--create-consensus` | Agreed human labels for the original sample; unresolved disagreements must be completed manually before detector validation. |
+| `detector_validation.csv` | `--validate-detector` | Row-level comparison of the original detector results with the human consensus labels, plus detector performance metrics. |
+| `kappa_sample_reanalyzed.csv` | `--reanalyze-kappa-sample` | The same fixed original sample reprocessed using the current detector rules, without selecting new PRs. |
+| `detector_validation_reanalyzed.csv` | `--validate-detector` using the reanalysed sample | Comparison of the current detector rules with the original human consensus labels. |
+| `extended_validation_sample.csv` | `--sample-for-extended-validation` | Additional fixed validation sample drawn from the completed PR-level dataset, excluding original kappa repositories and PRs. |
+| `anna_extended_labels.csv`, `minseo_extended_labels.csv` | `--code-validation-sample` | Each researcher's independent manual labels for the extended validation sample. |
+| `extended_kappa_results.csv` | `--calculate-kappa` on the extended labels | Humanâ€“human agreement results for the extended validation sample. |
+| `extended_consensus_labels.csv` | `--create-consensus` on the extended labels | Agreed human labels for the extended sample, with any disagreements marked for manual resolution. |
+| `extended_detector_validation.csv` | `--validate-detector` on the extended sample | Row-level comparison of detector results with the extended human consensus labels. |
+| `combined_detector_validation.csv` | `--combine-detector-validation` | Deduplicated row-level validation data combining the original and extended samples, with sample provenance retained. |
+| `combined_detector_metrics.csv` | `--combine-detector-validation` | Overall detector accuracy, precision, recall, specificity, F1, confusion-matrix totals, and Wilson 95% confidence intervals calculated from the combined rows. |
+
+Files such as `test.csv`, `airflow_pr_dataset_output.csv`, and `airflow_repo_compliance_summary.csv` are custom filenames used by pilot commands; they follow the same formats as `pr_dataset_output.csv` and `repo_compliance_summary.csv` above.
+
 ### `pr_dataset_output.csv`
 
 One row per reviewed PR. The header matches `pr_dataset.csv`.
