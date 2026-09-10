@@ -158,10 +158,16 @@ public class Main {
                 System.out.println("Meets required size if all labelled: " + (result.combinedRows() >= result.requiredRows() ? "Yes" : "No"));
                 return;
             }
-            if (args.length == 3 && args[0].equals("--code-validation-sample")) {
+            if ((args.length == 3 || args.length == 5) && args[0].equals("--code-validation-sample")) {
                 Path sampleInput = Path.of(args[1]);
                 Path labelsOutput = Path.of(args[2]);
-                KappaWorkflow.codeSample(sampleInput, labelsOutput);
+                if (args.length == 5) {
+                    int startRow = Integer.parseInt(args[3]);
+                    int endRow = Integer.parseInt(args[4]);
+                    KappaWorkflow.codeSample(sampleInput, labelsOutput, startRow, endRow);
+                } else {
+                    KappaWorkflow.codeSample(sampleInput, labelsOutput);
+                }
                 System.out.println("Validation coder labels saved: " + labelsOutput.toAbsolutePath());
                 return;
             }
@@ -348,7 +354,7 @@ public class Main {
             case "--sample-all-repos-validation" -> "--sample-all-repos-validation repos.txt existing_validation.csv ROWS_PER_REPOSITORY output.csv START_DATE END_DATE SEED";
             case "--code-kappa-sample" -> "--code-kappa-sample kappa_sample.csv coder_labels.csv";
             case "--sample-for-extended-validation" -> "--sample-for-extended-validation pr_dataset_output_policy_cleaned.csv kappa_sample.csv REPOSITORIES ROWS_PER_REPOSITORY extended_validation_sample.csv [SEED]";
-            case "--code-validation-sample" -> "--code-validation-sample extended_validation_sample.csv coder_labels.csv";
+            case "--code-validation-sample" -> "--code-validation-sample validation_sample.csv coder_labels.csv [START_ROW END_ROW]";
             case "--calculate-kappa" -> "--calculate-kappa coder_a_labels.csv coder_b_labels.csv kappa_results.csv";
             case "--create-consensus" -> "--create-consensus coder_a_labels.csv coder_b_labels.csv consensus_labels.csv";
             case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
@@ -590,7 +596,8 @@ public class Main {
         System.out.println("      Collects PR metadata in the fixed UTC closed_at window, shuffles candidates with the fixed seed, then checks eligibility in that order until the per-repository target is reached.");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv anna_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-extended-validation pr_dataset_output_policy_cleaned.csv kappa_sample.csv 4 50 extended_validation_sample.csv [SEED]");
-        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --code-validation-sample extended_validation_sample.csv anna_extended_labels.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --code-validation-sample validation_sample.csv coder_labels.csv [START_ROW END_ROW]");
+        System.out.println("      Resumes from an existing labels file by skipping already-coded Sample IDs. START_ROW and END_ROW are 1-based and inclusive.");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv coworker_labels.csv kappa_results.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_labels.csv coworker_labels.csv consensus_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");

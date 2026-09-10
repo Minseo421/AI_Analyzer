@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -81,15 +82,75 @@ public class KappaWorkflow {
     }
 
     public static void codeSample(Path samplePath, Path labelsPath) throws IOException {
-        if (Files.exists(labelsPath)) {
-            throw new IOException("Labels file already exists: " + labelsPath + ". Choose a new output path to avoid overwriting coder work.");
-        }
         List<Map<String, String>> sampleRows = CsvTools.readRows(samplePath);
-        try (BufferedWriter writer = Files.newBufferedWriter(labelsPath, StandardCharsets.UTF_8);
+        codeSample(samplePath, labelsPath, 1, sampleRows.size());
+    }
+
+    public static void codeSample(Path samplePath, Path labelsPath, int startRow, int endRow) throws IOException {
+        List<Map<String, String>> sampleRows = CsvTools.readRows(samplePath);
+        if (sampleRows.isEmpty()) {
+            throw new IllegalArgumentException("Validation sample contains no data rows: " + samplePath);
+        }
+        if (startRow < 1 || endRow < startRow) {
+            throw new IllegalArgumentException("Invalid review range: " + startRow + "-" + endRow + ". Use 1-based inclusive row numbers.");
+        }
+        if (endRow > sampleRows.size()) {
+            throw new IllegalArgumentException("Review end row " + endRow + " exceeds sample size " + sampleRows.size() + ".");
+        }
+
+        Set<String> sampleIds = new LinkedHashSet<>();
+        for (Map<String, String> row : sampleRows) {
+            String id = row.getOrDefault("Sample ID", "").trim();
+            if (id.isBlank()) {
+                throw new IllegalArgumentException("Missing Sample ID in validation sample: " + samplePath);
+            }
+            if (!sampleIds.add(id)) {
+                throw new IllegalArgumentException("Duplicate Sample ID in validation sample: " + id);
+            }
+        }
+
+        Set<String> completedIds = loadCompletedSampleIds(labelsPath, sampleIds);
+        int completedInRange = 0;
+        for (int i = startRow - 1; i < endRow; i++) {
+            String id = sampleRows.get(i).getOrDefault("Sample ID", "").trim();
+            if (completedIds.contains(id)) {
+                completedInRange++;
+            }
+        }
+
+        int assignedRows = endRow - startRow + 1;
+        System.out.println("Manual review range: rows " + startRow + "-" + endRow + " of " + sampleRows.size());
+        System.out.println("Labels output: " + labelsPath.toAbsolutePath());
+        if (Files.exists(labelsPath) && Files.size(labelsPath) > 0) {
+            System.out.println("Resuming existing labels file; completed Sample IDs will be skipped.");
+        }
+        System.out.println("Already completed in this range: " + completedInRange + "/" + assignedRows);
+        System.out.println("Remaining: " + (assignedRows - completedInRange));
+
+        boolean writeHeader = !Files.exists(labelsPath) || Files.size(labelsPath) == 0;
+        try (BufferedWriter writer = Files.newBufferedWriter(
+                    labelsPath,
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND);
              Scanner scanner = new Scanner(System.in)) {
-            writer.write("Sample ID,Repo,PR #,PR URL,Disclosure Present,Disclosure Classification,Notes");
-            writer.newLine();
-            for (Map<String, String> row : sampleRows) {
+            if (writeHeader) {
+                writer.write("Sample ID,Repo,PR #,PR URL,Disclosure Present,Disclosure Classification,Notes");
+                writer.newLine();
+                writer.flush();
+            }
+
+            int completedNow = completedInRange;
+            for (int i = startRow - 1; i < endRow; i++) {
+                Map<String, String> row = sampleRows.get(i);
+                String sampleId = row.getOrDefault("Sample ID", "").trim();
+                if (completedIds.contains(sampleId)) {
+                    continue;
+                }
+
+                System.out.println();
+                System.out.println("Review progress: " + (completedNow + 1) + "/" + assignedRows
+                        + " (sample row " + (i + 1) + "/" + sampleRows.size() + ")");
                 printCodingPrompt(row);
                 String present = promptChoice(scanner, "Disclosure Present", PRESENT_VALUES);
                 if (present.equalsIgnoreCase("SKIP")) {
@@ -102,7 +163,7 @@ public class KappaWorkflow {
                 System.out.print("Notes optional, press Enter for blank: ");
                 String notes = scanner.nextLine().trim();
                 writer.write(String.join(",",
-                        CsvTools.csv(row.get("Sample ID")),
+                        CsvTools.csv(sampleId),
                         CsvTools.csv(row.get("Repo")),
                         CsvTools.csv(row.get("PR #")),
                         CsvTools.csv(row.get("PR URL")),
@@ -112,8 +173,34 @@ public class KappaWorkflow {
                 ));
                 writer.newLine();
                 writer.flush();
+                completedIds.add(sampleId);
+                completedNow++;
+            }
+
+            System.out.println();
+            System.out.println("Manual review complete for assigned range: " + completedNow + "/" + assignedRows);
+        }
+    }
+
+    private static Set<String> loadCompletedSampleIds(Path labelsPath, Set<String> sampleIds) throws IOException {
+        Set<String> completed = new LinkedHashSet<>();
+        if (!Files.exists(labelsPath) || Files.size(labelsPath) == 0) {
+            return completed;
+        }
+        List<Map<String, String>> existingRows = CsvTools.readRows(labelsPath);
+        for (Map<String, String> row : existingRows) {
+            String id = row.getOrDefault("Sample ID", "").trim();
+            if (id.isBlank()) {
+                throw new IllegalArgumentException("Missing Sample ID in existing labels file: " + labelsPath);
+            }
+            if (!sampleIds.contains(id)) {
+                throw new IllegalArgumentException("Existing labels file contains a Sample ID not present in the validation sample: " + id);
+            }
+            if (!completed.add(id)) {
+                throw new IllegalArgumentException("Duplicate Sample ID in existing labels file: " + id);
             }
         }
+        return completed;
     }
 
     public static void calculateKappa(Path coderAPath, Path coderBPath, Path outputPath) throws IOException {
