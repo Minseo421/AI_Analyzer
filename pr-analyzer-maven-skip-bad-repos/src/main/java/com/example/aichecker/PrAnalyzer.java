@@ -1,14 +1,17 @@
 package com.example.aichecker;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
@@ -124,6 +127,113 @@ public class PrAnalyzer {
         return rows;
     }
 
+    public List<PrReportRow> analyzeSeededValidationSample(
+            RepoUrl repoUrl,
+            int targetCount,
+            Set<String> excludedPrIds,
+            LocalDate startDate,
+            LocalDate endDate,
+            long seed
+    ) throws Exception {
+        if (targetCount <= 0) {
+            throw new IllegalArgumentException("Validation sample size per repository must be positive.");
+        }
+        if (startDate == null || endDate == null || endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("Sampling start/end dates are invalid.");
+        }
+
+        Instant startInclusive = startDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant endExclusive = endDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Set<String> excluded = excludedPrIds == null ? Set.of() : excludedPrIds;
+        Set<String> seenPrs = new LinkedHashSet<>();
+        List<PullRequestSummary> candidates = new ArrayList<>();
+        int page = 1;
+
+        System.out.println();
+        System.out.println("Seeded validation sample for " + repoUrl.fullName() + " (target " + targetCount + ")");
+        System.out.println("Fixed closed_at window (UTC): " + startDate + " through " + endDate + " inclusive");
+        System.out.println("Sampling seed: " + seed);
+        System.out.println("Phase 1: collecting PR numbers/basic metadata only...");
+
+        while (true) {
+            List<PullRequestSummary> prs = gitHubClient.getClosedPullRequestSummariesPage(repoUrl.owner(), repoUrl.repo(), page);
+            if (prs.isEmpty()) {
+                break;
+            }
+
+            for (PullRequestSummary pr : prs) {
+                String stableId = pr.repository() + "#" + pr.number();
+                if (!seenPrs.add(stableId) || excluded.contains(stableId)) {
+                    continue;
+                }
+                Instant closedAt = parseInstantOrNull(pr.closedAt());
+                if (closedAt != null && !closedAt.isBefore(startInclusive) && closedAt.isBefore(endExclusive)) {
+                    candidates.add(pr);
+                }
+            }
+
+            // GitHub returns this endpoint ordered by updated_at descending. Once the
+            // oldest item on the page was updated before the sampling window began,
+            // later pages cannot contain a PR closed inside the window because
+            // closed_at cannot be later than updated_at.
+            PullRequestSummary last = prs.get(prs.size() - 1);
+            Instant lastUpdatedAt = parseInstantOrNull(last.updatedAt());
+            if (lastUpdatedAt != null && lastUpdatedAt.isBefore(startInclusive)) {
+                break;
+            }
+            if (prs.size() < 100) {
+                break;
+            }
+            page++;
+        }
+
+        // Make the input order deterministic first, then perform a reproducible
+        // pseudo-random shuffle. This avoids depending on API pagination order.
+        candidates.sort(Comparator.comparingInt(PullRequestSummary::number));
+        Collections.shuffle(candidates, new Random(seed));
+
+        System.out.println("Candidate PRs in fixed window after existing-sample exclusions: " + candidates.size());
+        System.out.println("Phase 2: checking eligibility in seeded shuffled order...");
+
+        List<PrReportRow> rows = new ArrayList<>();
+        int eligibilityChecks = 0;
+        System.out.println(PrReportRow.consoleHeader());
+        for (PullRequestSummary candidate : candidates) {
+            if (rows.size() >= targetCount) {
+                break;
+            }
+
+            // Fetch detailed data only for candidates reached in the shuffled order.
+            PullRequestData pr = gitHubClient.getPullRequest(repoUrl.owner(), repoUrl.repo(), candidate.number());
+            eligibilityChecks++;
+            if (eligibility(pr, startInclusive, endExclusive) != Eligibility.ELIGIBLE) {
+                continue;
+            }
+
+            PrReportRow row = analyze(pr);
+            rows.add(row);
+            System.out.println(row.toConsoleTableRow(rows.size()));
+        }
+        System.out.println(PrReportRow.consoleFooter());
+        System.out.println("Detailed PRs checked for eligibility: " + eligibilityChecks);
+        System.out.println("Validation rows selected for " + repoUrl.fullName() + ": " + rows.size() + "/" + targetCount);
+        if (rows.size() < targetCount) {
+            System.out.println("NOTE: Fewer than " + targetCount + " non-excluded eligible PRs were available in the fixed window.");
+        }
+        return rows;
+    }
+
+    private static Instant parseInstantOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Instant.parse(value);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
     public List<PrReportRow> analyzeMultipleRepos(List<RepoUrl> repoUrls, int targetCountPerRepo) {
         skippedRepos.clear();
         botPrsExcluded.clear();
@@ -156,6 +266,30 @@ public class PrAnalyzer {
 
     public CollectionSummary collectionSummary(String repository) {
         return collectionSummaries.get(repository);
+    }
+
+    private Eligibility eligibility(PullRequestData pr, Instant startInclusive, Instant endExclusive) {
+        if (!pr.closed()) {
+            return Eligibility.NOT_CLOSED;
+        }
+        if (!BotDetector.isHuman(pr.author(), pr.userType())) {
+            return Eligibility.BOT;
+        }
+        if (pr.closedAt() == null || pr.closedAt().isBlank()) {
+            return Eligibility.MALFORMED_CLOSED_AT;
+        }
+        try {
+            Instant closedAt = Instant.parse(pr.closedAt());
+            if (closedAt.isBefore(startInclusive)) {
+                return Eligibility.OLDER_THAN_CUTOFF;
+            }
+            if (!closedAt.isBefore(endExclusive)) {
+                return Eligibility.AFTER_ANALYSIS_TIMESTAMP;
+            }
+            return Eligibility.ELIGIBLE;
+        } catch (DateTimeParseException e) {
+            return Eligibility.MALFORMED_CLOSED_AT;
+        }
     }
 
     private Eligibility eligibility(PullRequestData pr) {

@@ -68,6 +68,18 @@ public class GitHubClient {
         return result;
     }
 
+    public List<PullRequestSummary> getClosedPullRequestSummariesPage(String owner, String repo, int page) throws IOException, InterruptedException {
+        String url = "https://api.github.com/repos/" + enc(owner) + "/" + enc(repo)
+                + "/pulls?state=closed&sort=updated&direction=desc&per_page=100&page=" + page;
+        String json = sendGet(url);
+        List<String> objects = JsonTools.splitTopLevelObjects(json);
+        List<PullRequestSummary> result = new ArrayList<>();
+        for (String object : objects) {
+            result.add(parsePullRequestSummary(owner + "/" + repo, object));
+        }
+        return result;
+    }
+
     public String fetchHtml(String url) throws IOException, InterruptedException {
         return sendGet(url, "text/html");
     }
@@ -356,6 +368,31 @@ public class GitHubClient {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(name + " must be a positive integer number of seconds.");
         }
+    }
+
+    private PullRequestSummary parsePullRequestSummary(String repository, String json) {
+        int number = JsonTools.intValue(json, "number", -1);
+        String url = JsonTools.stringValue(json, "html_url", "");
+        String title = JsonTools.stringValue(json, "title", "");
+        String state = JsonTools.stringValue(json, "state", "");
+        String createdAt = JsonTools.nullableStringValue(json, "created_at");
+        String closedAt = JsonTools.nullableStringValue(json, "closed_at");
+        String updatedAt = JsonTools.nullableStringValue(json, "updated_at");
+        String userObject = JsonTools.objectValue(json, "user");
+        String author = JsonTools.stringValue(userObject, "login", "");
+        String userType = JsonTools.stringValue(userObject, "type", "");
+        return new PullRequestSummary(
+                repository,
+                number,
+                url,
+                title,
+                createdAt == null ? "" : createdAt,
+                closedAt == null ? "" : closedAt,
+                updatedAt == null ? "" : updatedAt,
+                state,
+                author,
+                userType
+        );
     }
 
     private PullRequestData parsePullRequestObject(String repository, String json) {

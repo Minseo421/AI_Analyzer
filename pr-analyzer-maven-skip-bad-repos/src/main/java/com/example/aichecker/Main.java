@@ -3,6 +3,8 @@ package com.example.aichecker;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,6 +75,39 @@ public class Main {
                     }
                 }
                 printSavedSummary(output, rows);
+                return;
+            }
+            if (args.length == 8 && args[0].equals("--sample-all-repos-validation")) {
+                Path repoListFile = Path.of(args[1]);
+                Path existingValidation = Path.of(args[2]);
+                int rowsPerRepository = Integer.parseInt(args[3]);
+                Path output = Path.of(args[4]);
+                LocalDate startDate = parseIsoDate(args[5], "START_DATE");
+                LocalDate endDate = parseIsoDate(args[6], "END_DATE");
+                long seed = Long.parseLong(args[7]);
+                List<RepoUrl> repoUrls = readRepoList(repoListFile);
+                AllRepoValidationWorkflow.Result result = AllRepoValidationWorkflow.sample(
+                        repoUrls,
+                        existingValidation,
+                        rowsPerRepository,
+                        output,
+                        startDate,
+                        endDate,
+                        seed
+                );
+                System.out.println();
+                System.out.println("All-repository validation sample saved: " + output.toAbsolutePath());
+                System.out.println("Fixed closed_at window (UTC): " + result.startDate() + " through " + result.endDate() + " inclusive");
+                System.out.println("Sampling seed: " + result.seed());
+                System.out.println("Repositories requested: " + repoUrls.size());
+                System.out.println("Repositories represented: " + result.rowsByRepository().size());
+                for (Map.Entry<String, Integer> entry : result.rowsByRepository().entrySet()) {
+                    System.out.println("- " + entry.getKey() + ": " + entry.getValue());
+                }
+                System.out.println("Total validation rows: " + result.totalRows());
+                if (!result.skippedRepositories().isEmpty()) {
+                    System.out.println("Skipped repositories: " + String.join(", ", result.skippedRepositories()));
+                }
                 return;
             }
             if (args.length == 4 && args[0].equals("--sample-for-kappa")) {
@@ -286,6 +321,7 @@ public class Main {
                 || mode.equals("--repos")
                 || mode.equals("--repos-pr-dataset")
                 || mode.equals("--sample-for-kappa")
+                || mode.equals("--sample-all-repos-validation")
                 || mode.equals("--code-kappa-sample")
                 || mode.equals("--sample-for-extended-validation")
                 || mode.equals("--code-validation-sample")
@@ -309,6 +345,7 @@ public class Main {
             case "--repos" -> "--repos repos.txt COUNT report.csv";
             case "--repos-pr-dataset" -> "--repos-pr-dataset repos.txt COUNT pr_dataset_output.csv [repo_compliance_summary.csv]";
             case "--sample-for-kappa" -> "--sample-for-kappa repos.txt COUNT_PER_REPO kappa_sample.csv";
+            case "--sample-all-repos-validation" -> "--sample-all-repos-validation repos.txt existing_validation.csv ROWS_PER_REPOSITORY output.csv START_DATE END_DATE SEED";
             case "--code-kappa-sample" -> "--code-kappa-sample kappa_sample.csv coder_labels.csv";
             case "--sample-for-extended-validation" -> "--sample-for-extended-validation pr_dataset_output_policy_cleaned.csv kappa_sample.csv REPOSITORIES ROWS_PER_REPOSITORY extended_validation_sample.csv [SEED]";
             case "--code-validation-sample" -> "--code-validation-sample extended_validation_sample.csv coder_labels.csv";
@@ -325,6 +362,14 @@ public class Main {
             case "--visibility-correlation" -> "--visibility-correlation pr_dataset_output.csv policy_tracker.csv repo_visibility_summary.csv visibility_correlation.csv [cleaned_pr_dataset.csv retry_exclusion_report.csv]";
             default -> "";
         };
+    }
+
+    private static LocalDate parseIsoDate(String value, String argumentName) {
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(argumentName + " must use YYYY-MM-DD format: " + value);
+        }
     }
 
     private static void printSavedSummary(Path output, List<PrReportRow> rows) {
@@ -541,6 +586,8 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos repos.txt 100 report.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr_dataset_output.csv [repo_compliance_summary.csv]");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-kappa repos.txt 50 kappa_sample.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-all-repos-validation repos.txt combined_human_labels.csv 20 all_repo_validation_sample_seeded.csv 2026-04-01 2026-07-31 42");
+        System.out.println("      Collects PR metadata in the fixed UTC closed_at window, shuffles candidates with the fixed seed, then checks eligibility in that order until the per-repository target is reached.");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.csv anna_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-extended-validation pr_dataset_output_policy_cleaned.csv kappa_sample.csv 4 50 extended_validation_sample.csv [SEED]");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --code-validation-sample extended_validation_sample.csv anna_extended_labels.csv");
