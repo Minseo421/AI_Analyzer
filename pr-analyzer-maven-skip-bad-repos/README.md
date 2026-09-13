@@ -194,6 +194,12 @@ Resolve any `Needs Resolution` rows in `extended_consensus_labels.csv`, then val
 java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector extended_validation_sample.csv extended_consensus_labels.csv extended_detector_validation.csv
 ```
 
+For a single manually labelled validation file that already has `Disclosure Present` and `Disclosure Classification` columns, validate the detector directly against those labels:
+
+```bash
+java -jar target/pr-analyzer-maven-1.0.0.jar --validate-manual-labels all_repo_validation_sample_seeded.csv all_manual_seeded_labels.csv all_seeded_detector_validation.csv
+```
+
 Combine the original and extended detector-validation outputs by summing row-level TP/TN/FP/FN counts:
 
 ```bash

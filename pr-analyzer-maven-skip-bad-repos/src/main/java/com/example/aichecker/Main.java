@@ -197,6 +197,15 @@ public class Main {
                 printDetectorValidationSummary(result);
                 return;
             }
+            if (args.length == 4 && args[0].equals("--validate-manual-labels")) {
+                Path sample = Path.of(args[1]);
+                Path manualLabels = Path.of(args[2]);
+                Path output = Path.of(args[3]);
+                ConsensusWorkflow.DetectorValidationResult result = ConsensusWorkflow.validateDetectorAgainstManualLabels(sample, manualLabels, output);
+                System.out.println("Detector validation saved: " + output.toAbsolutePath());
+                printDetectorValidationSummary(result);
+                return;
+            }
             if (args.length == 5 && args[0].equals("--combine-detector-validation")) {
                 Path originalValidation = Path.of(args[1]);
                 Path extendedValidation = Path.of(args[2]);
@@ -334,6 +343,7 @@ public class Main {
                 || mode.equals("--calculate-kappa")
                 || mode.equals("--create-consensus")
                 || mode.equals("--validate-detector")
+                || mode.equals("--validate-manual-labels")
                 || mode.equals("--combine-detector-validation")
                 || mode.equals("--export-false-negatives")
                 || mode.equals("--validate-study-exclusions")
@@ -358,6 +368,7 @@ public class Main {
             case "--calculate-kappa" -> "--calculate-kappa coder_a_labels.csv coder_b_labels.csv kappa_results.csv";
             case "--create-consensus" -> "--create-consensus coder_a_labels.csv coder_b_labels.csv consensus_labels.csv";
             case "--validate-detector" -> "--validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv";
+            case "--validate-manual-labels" -> "--validate-manual-labels validation_sample.csv manual_labels.csv detector_validation.csv";
             case "--combine-detector-validation" -> "--combine-detector-validation detector_validation_reanalyzed.csv extended_detector_validation.csv combined_detector_validation.csv combined_detector_metrics.csv";
             case "--export-false-negatives" -> "--export-false-negatives detector_validation.csv [more_validation.csv...] false_negative_prs.csv";
             case "--validate-study-exclusions" -> "--validate-study-exclusions repos.txt pr_dataset_output.csv repo_visibility_summary_updated.csv spearman_correlation_input_updated.csv";
@@ -601,6 +612,7 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv coworker_labels.csv kappa_results.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --create-consensus anna_labels.csv coworker_labels.csv consensus_labels.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-detector kappa_sample.csv consensus_labels.csv detector_validation.csv");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-manual-labels validation_sample.csv manual_labels.csv detector_validation.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --combine-detector-validation detector_validation_reanalyzed.csv extended_detector_validation.csv combined_detector_validation.csv combined_detector_metrics.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --export-false-negatives detector_validation.csv [more_validation.csv...] false_negative_prs.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --validate-study-exclusions repos.txt pr_dataset_output.csv repo_visibility_summary_updated.csv spearman_correlation_input_updated.csv");

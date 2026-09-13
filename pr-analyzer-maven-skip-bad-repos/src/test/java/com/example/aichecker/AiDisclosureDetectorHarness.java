@@ -788,6 +788,19 @@ public class AiDisclosureDetectorHarness {
         require(validationText.contains("\"Summary\",\"Precision\",\"0.5000\""), "detector precision");
         require(validationText.contains("\"owner/repo#3\",\"owner/repo\",\"3\",\"https://github.com/owner/repo/pull/3\",\"No\",\"Yes\",\"False Negative\""), "false negative detail");
 
+        Path manualValidation = tempMissingPath("manual-detector-validation", ".csv");
+        Path manualLabels = Files.createTempFile("manual-labels", ".csv");
+        Files.writeString(manualLabels, labelsCsv("Yes", "Positive", "No", "None", "Yes", "Positive", "No", "None"), StandardCharsets.UTF_8);
+        ConsensusWorkflow.DetectorValidationResult manualValidationResult = ConsensusWorkflow.validateDetectorAgainstManualLabels(detectorSample, manualLabels, manualValidation);
+        require(manualValidationResult.totalMatchedRows() == 4, "manual validation matched rows");
+        require(manualValidationResult.truePositives() == 1, "manual true positives");
+        require(manualValidationResult.trueNegatives() == 1, "manual true negatives");
+        require(manualValidationResult.falsePositives() == 1, "manual false positives");
+        require(manualValidationResult.falseNegatives() == 1, "manual false negatives");
+        String manualValidationText = Files.readString(manualValidation, StandardCharsets.UTF_8);
+        require(manualValidationText.contains("\"Summary\",\"F1 score\",\"0.5000\""), "manual validation f1");
+        require(manualValidationText.contains("\"owner/repo#4\",\"owner/repo\",\"4\",\"https://github.com/owner/repo/pull/4\",\"Yes\",\"No\",\"False Positive\""), "manual false positive detail");
+
         Path extendedPopulation = Files.createTempFile("extended-population", ".csv");
         Files.writeString(extendedPopulation, extendedPopulationCsv(), StandardCharsets.UTF_8);
         Path existingKappaSample = Files.createTempFile("existing-kappa-sample", ".csv");

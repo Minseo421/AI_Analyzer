@@ -85,9 +85,42 @@ public class ConsensusWorkflow {
         refuseOverwrite(outputPath, "Detector validation file");
         Map<String, Map<String, String>> sampleById = indexBySampleId(CsvTools.readRows(samplePath), samplePath);
         Map<String, Map<String, String>> consensusById = indexBySampleId(CsvTools.readRows(consensusPath), consensusPath);
+        return validateDetectorRows(samplePath, consensusPath, outputPath, sampleById, consensusById, true);
+    }
+
+    public static DetectorValidationResult validateDetectorAgainstManualLabels(Path samplePath, Path manualLabelsPath, Path outputPath) throws IOException {
+        refuseOverwrite(outputPath, "Detector validation file");
+        Map<String, Map<String, String>> sampleById = indexBySampleId(CsvTools.readRows(samplePath), samplePath);
+        Map<String, Map<String, String>> manualById = indexBySampleId(CsvTools.readRows(manualLabelsPath), manualLabelsPath);
+        Map<String, Map<String, String>> consensusById = new LinkedHashMap<>();
+        for (Map.Entry<String, Map<String, String>> entry : manualById.entrySet()) {
+            String id = entry.getKey();
+            Map<String, String> manual = entry.getValue();
+            validateCoderRow(manual, manualLabelsPath);
+            Map<String, String> consensus = new LinkedHashMap<>();
+            consensus.put("Sample ID", id);
+            consensus.put("Repo", manual.getOrDefault("Repo", ""));
+            consensus.put("PR #", manual.getOrDefault("PR #", ""));
+            consensus.put("PR URL", manual.getOrDefault("PR URL", ""));
+            consensus.put("Consensus Disclosure Present", manual.getOrDefault("Disclosure Present", ""));
+            consensus.put("Consensus Disclosure Classification", manual.getOrDefault("Disclosure Classification", ""));
+            consensus.put("Consensus Notes", manual.getOrDefault("Notes", ""));
+            consensusById.put(id, consensus);
+        }
+        return validateDetectorRows(samplePath, manualLabelsPath, outputPath, sampleById, consensusById, false);
+    }
+
+    private static DetectorValidationResult validateDetectorRows(
+            Path samplePath,
+            Path labelsPath,
+            Path outputPath,
+            Map<String, Map<String, String>> sampleById,
+            Map<String, Map<String, String>> consensusById,
+            boolean requireConsensusStatus
+    ) throws IOException {
         List<String> matchedIds = matchedIds(sampleById, consensusById);
         if (matchedIds.isEmpty()) {
-            throw new IllegalArgumentException("No matching Sample ID values found between sample and consensus files.");
+            throw new IllegalArgumentException("No matching Sample ID values found between sample and label files.");
         }
 
         List<ValidationRow> rows = new ArrayList<>();
@@ -100,9 +133,11 @@ public class ConsensusWorkflow {
             Map<String, String> consensus = consensusById.get(id);
             validateSampleReanalysisStatus(sample, samplePath, id);
             String scriptPresent = normalizeRequired(sample.get("Script AI Disclosure Present"), PRESENT_VALUES, "Script AI Disclosure Present", samplePath, id);
-            String consensusPresent = normalizeRequired(consensus.get("Consensus Disclosure Present"), PRESENT_VALUES, "Consensus Disclosure Present", consensusPath, id);
-            String consensusClassification = normalizeRequired(consensus.get("Consensus Disclosure Classification"), CLASSIFICATION_VALUES, "Consensus Disclosure Classification", consensusPath, id);
-            validateConsensusStatus(consensus, consensusPath, id);
+            String consensusPresent = normalizeRequired(consensus.get("Consensus Disclosure Present"), PRESENT_VALUES, "Consensus Disclosure Present", labelsPath, id);
+            String consensusClassification = normalizeRequired(consensus.get("Consensus Disclosure Classification"), CLASSIFICATION_VALUES, "Consensus Disclosure Classification", labelsPath, id);
+            if (requireConsensusStatus) {
+                validateConsensusStatus(consensus, labelsPath, id);
+            }
 
             String outcome;
             if (scriptPresent.equals("Yes") && consensusPresent.equals("Yes")) {
