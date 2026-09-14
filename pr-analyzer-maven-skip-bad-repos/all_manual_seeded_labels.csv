@@ -59,7 +59,7 @@ Sample ID,Repo,PR #,PR URL,Disclosure Present,Disclosure Classification,Notes
 "apache/arrow#50317","apache/arrow","50317","https://github.com/apache/arrow/pull/50317","No","None",""
 "apache/arrow#50525","apache/arrow","50525","https://github.com/apache/arrow/pull/50525","No","None",""
 "apache/arrow#45272","apache/arrow","45272","https://github.com/apache/arrow/pull/45272","No","None",""
-"cilium/cilium#47717","cilium/cilium","47717","https://github.com/cilium/cilium/pull/47717","No","None",""
+"cilium/cilium#47717","cilium/cilium","47717","https://github.com/cilium/cilium/pull/47717","Yes","Negative","AIL:0"
 "cilium/cilium#48013","cilium/cilium","48013","https://github.com/cilium/cilium/pull/48013","No","None",""
 "cilium/cilium#46332","cilium/cilium","46332","https://github.com/cilium/cilium/pull/46332","No","None",""
 "cilium/cilium#45834","cilium/cilium","45834","https://github.com/cilium/cilium/pull/45834","No","None",""
