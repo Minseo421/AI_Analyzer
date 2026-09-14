@@ -328,7 +328,7 @@ Sample ID,Repo,PR #,PR URL,Disclosure Present,Disclosure Classification,Notes
 "kiali/kiali#9957","kiali/kiali","9957","https://github.com/kiali/kiali/pull/9957","Yes","Positive",""
 "kiali/kiali#9654","kiali/kiali","9654","https://github.com/kiali/kiali/pull/9654","No","None",""
 "kiali/kiali#10258","kiali/kiali","10258","https://github.com/kiali/kiali/pull/10258","No","None",""
-"kiali/kiali#9750","kiali/kiali","9750","https://github.com/kiali/kiali/pull/9750","No","None",""
+"kiali/kiali#9750","kiali/kiali","9750","https://github.com/kiali/kiali/pull/9750","Yes","Positive",""
 "kiali/kiali#9853","kiali/kiali","9853","https://github.com/kiali/kiali/pull/9853","Yes","Positive",""
 "kiali/kiali#9962","kiali/kiali","9962","https://github.com/kiali/kiali/pull/9962","Yes","Positive",""
 "kiali/kiali#9808","kiali/kiali","9808","https://github.com/kiali/kiali/pull/9808","No","None",""
