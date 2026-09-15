@@ -25,7 +25,6 @@ napari/napari,100,100,100,3,97,0,0.03,3.00%,napari,https://github.com/napari/nap
 netbsd/src,4,4,4,0,4,0,0.0,0.00%,NetBSD,https://github.com/NetBSD/src,1,1.0,Matched,Yes,
 numpy/numpy,99,99,99,45,54,0,0.45454545454545500,45.45%,NumPy,https://github.com/numpy/numpy,3,3.0,Matched,Yes,
 ocaml/ocaml,94,94,94,0,94,0,0.0,0.00%,Ocaml,https://github.com/ocaml/ocaml,2,2.0,Matched,Yes,
-open-telemetry/opentelemetry-collector,99,99,99,4,95,0,0.04040404040404040,4.04%,OpenTelemetry Collector,https://github.com/open-telemetry/opentelemetry-collector,2,2.0,Matched,Yes,
 openedx/openedx-platform,98,98,98,0,98,0,0.0,0.00%,OpenEDX platform,https://github.com/openedx/openedx-platform,1,1.0,Matched,Yes,
 ory/oathkeeper,3,3,3,0,3,0,0.0,0.00%,Ory Oathkeeper,https://github.com/ory/oathkeeper,2 (link to contributing,2.0,Matched,Yes,
 pandas-dev/pandas,100,100,100,2,98,0,0.02,2.00%,Pandas,https://github.com/pandas-dev/pandas,3,3.0,Matched,Yes,

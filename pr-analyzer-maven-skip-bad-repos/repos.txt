@@ -22,7 +22,6 @@ NetBSD/src
 numpy/numpy
 napari/napari
 ocaml/ocaml
-open-telemetry/opentelemetry-collector
 ory/oathkeeper
 openedx/openedx-platform
 pandas-dev/pandas

@@ -361,7 +361,9 @@ public class AiDisclosureDetectorHarness {
         require(!detector.detect("django/django", "- [ ] AI was used\n- [ ] No AI was used", "").disclosed(), "Django unchecked options");
 
         requirePositive(detector.detect("OSGeo/gdal", "- [x] AI tools were used to prepare this pull request", ""), "GDAL checked AI checkbox");
-        require(!detector.detect("OSGeo/gdal", "- [ ] AI tools were used to prepare this pull request", "").disclosed(), "GDAL unchecked AI checkbox");
+        requireNegative(detector.detect("OSGeo/gdal", "- [ ] AI tools were used to prepare this pull request", ""), "GDAL unchecked AI checkbox");
+        requirePositive(detector.detect("- [x] AI tool(s) supported my development of this PR", ""), "generic checked AI tool checkbox");
+        requireNegative(detector.detect("- [ ] AI tool(s) supported my development of this PR", ""), "generic unchecked AI tool checkbox");
 
         requireNeutral(detector.detect("Homebrew/brew", "- [x] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", ""), "Homebrew combined compliance statement");
         require(!detector.detect("Homebrew/brew", "- [ ] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", "").disclosed(), "Homebrew unchecked compliance statement");
@@ -526,6 +528,12 @@ public class AiDisclosureDetectorHarness {
         requirePositive(detector.detect("I manually wrote one test function and had GPT via Copilot generate the rest", ""), "GPT via Copilot generated tests");
         requirePositive(detector.detect("I have written the docstrings using AI", ""), "docstrings using AI");
         requirePositive(detector.detect("bug found by Claude Fable 5", ""), "bug found by Claude Fable");
+        requirePositive(detector.detect("""
+                AI assistance
+                -------------
+
+                Codex (`gpt-5.6-sol`) assisted with code analysis, implementation, test planning, validation, and drafting this description.
+                """, ""), "AI assistance heading with Codex assisted with tasks");
         requirePositive(detector.detect("Claude Opus: to find a combination", ""), "Claude Opus task note");
         requirePositive(detector.detect("Claude Code with Opus was used to plan, implement, and test", ""), "Claude Code used to plan implement test");
         requirePositive(detector.detect("Reviewd by Codex: no actionable findings", ""), "misspelled reviewed by Codex");

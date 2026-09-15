@@ -20,7 +20,7 @@ public class AiDisclosureDetector {
     private static final String AI_TOOL = "(?:chatgpt|" + MODEL_VERSION + "|gpt|openai\\s+codex|github\\s+copilot|copilot|" + CLAUDE_NAME + "|gemini|cursor|openclaw|codex|windsurf|devin|fable|(?:generative\\s+)?ai|artificial\\s+intelligence|an?\\s+llm|llm|ai\\s+(?:assistant|agent|tooling|tools?))";
     private static final String AI_TOOL_NAME = "(?:chatgpt|" + MODEL_VERSION + "|gpt|openai\\s+codex|github\\s+copilot|copilot|" + CLAUDE_NAME + "|gemini|cursor|openclaw|codex|windsurf|devin|fable|llm|ai\\s+(?:assistant|agent|tooling|tools?))";
     private static final Pattern AI_IDENTITY_PATTERN = Pattern.compile("(?is)\\b(?:" + AI_TOOL + "|ai\\s+(?:assistant|agent|service|model|tool))\\b");
-    private static final String AI_DISCLOSURE_HEADING = "(?:ai\\s+(?:generation\\s+)?(?:usage\\s+)?disclosure|ai\\s+disclaimer|ai\\s+tool\\s+usage|ai\\s+contribution|ai\\s+(?:use|usage)|generative\\s+ai\\s+(?:use|usage|disclosure)|llm\\s+note)";
+    private static final String AI_DISCLOSURE_HEADING = "(?:ai\\s+(?:generation\\s+)?(?:usage\\s+)?disclosure|ai\\s+disclaimer|ai\\s+tool\\s+usage|ai\\s+contribution|ai\\s+assistance|ai\\s+(?:use|usage)|generative\\s+ai\\s+(?:use|usage|disclosure)|llm\\s+note)";
     private static final Pattern TEMPLATE_AI_HEADING_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*" + AI_DISCLOSURE_HEADING + "\\s*:??\\s*$");
     private static final Pattern AI_DISCLOSURE_HEADING_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*" + AI_DISCLOSURE_HEADING + "\\s*:??\\s*$");
     private static final Pattern AI_INLINE_FIELD_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*" + AI_DISCLOSURE_HEADING + "\\s*:\\s*(\\S.*)$");
@@ -66,6 +66,7 @@ public class AiDisclosureDetector {
             Pattern.compile("(?is)\\b(?:i\\s+)?did\\s+use\\s+(?:an?\\s+)?(?:" + AI_TOOL + "|agent)\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:i\\s+)?asked\\s+" + AI_TOOL_NAME + "\\s+to\\s+(?:look|reproduce|investigate|debug|review|plan|implement|write|generate|find)\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:i\\s+)?had\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,80}\\b(?:generate|write|draft|create|review|refactor|implement)\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\b" + AI_TOOL_NAME + "\\b[^\\r\\n]{0,120}\\bassisted\\s+with\\s+(?:code\\s+analysis|implementation|test\\s+planning|validation|drafting|debugging|review|refactoring|documentation|tests?)\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,120}\\b(?:helped|assisted)\\s+(?:me\\s+)?(?:make|write|draft|debug|investigate|reproduce|plan|implement|generate|review|refactor|find)\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:bug|issue|combination)\\s+found\\s+by\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:approach|solution|fix|implementation|idea)\\b[^\\r\\n.]{0,80}\\bsuggested\\s+by\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}"),
@@ -247,7 +248,7 @@ public class AiDisclosureDetector {
             return new DisclosureResult(false, "No visible contributor text found", "none", source);
         }
 
-        DisclosureResult checkboxResult = detectCheckedCheckboxes(prepared.checkedCheckboxes(), source);
+        DisclosureResult checkboxResult = detectTemplateCheckboxes(prepared.checkedCheckboxes(), prepared.uncheckedCheckboxes(), source);
         if (checkboxResult.disclosed()) {
             return checkboxResult;
         }
@@ -521,19 +522,30 @@ public class AiDisclosureDetector {
         return fields;
     }
 
-    private static DisclosureResult detectCheckedCheckboxes(List<String> checkedCheckboxes, String source) {
+    private static DisclosureResult detectTemplateCheckboxes(List<String> checkedCheckboxes, List<String> uncheckedCheckboxes, String source) {
         List<String> positive = new ArrayList<>();
         List<String> negative = new ArrayList<>();
         for (String checkbox : checkedCheckboxes) {
             String label = checkbox.replaceFirst("(?is)^\\[x]\\s*", "").trim();
             if (isNegativeCheckbox(label)) {
                 negative.add(checkbox);
+            } else if (isAiToolDisclosureCheckbox(label)) {
+                positive.add(checkbox);
             } else if (isAffirmativeCheckbox(label)) {
                 positive.add(checkbox);
             }
         }
+        for (String checkbox : uncheckedCheckboxes) {
+            String label = checkbox.replaceFirst("(?is)^\\[ ]\\s*", "").trim();
+            if (isAiToolDisclosureCheckbox(label)) {
+                negative.add(checkbox);
+            }
+        }
         if (!positive.isEmpty() && !negative.isEmpty()) {
-            return new DisclosureResult(true, cleanEvidence(String.join("; ", checkedCheckboxes)), "possible_ambiguous", source);
+            List<String> all = new ArrayList<>();
+            all.addAll(positive);
+            all.addAll(negative);
+            return new DisclosureResult(true, cleanEvidence(String.join("; ", all)), "possible_ambiguous", source);
         }
         if (!negative.isEmpty()) {
             return new DisclosureResult(true, cleanEvidence(negative.get(0)), "possible_negative", source);
@@ -541,7 +553,7 @@ public class AiDisclosureDetector {
         if (!positive.isEmpty()) {
             return new DisclosureResult(true, cleanEvidence(positive.get(0)), "possible_positive", source);
         }
-        return new DisclosureResult(false, "No checked AI disclosure checkbox found", "none", source);
+        return new DisclosureResult(false, "No completed AI disclosure checkbox found", "none", source);
     }
 
     private static DisclosureResult detectRepositoryRules(String repository, String text, String source) {
@@ -893,6 +905,12 @@ public class AiDisclosureDetector {
 
     private static boolean isNegativeCheckbox(String label) {
         return NEGATIVE_CHECKBOX_PATTERN.matcher(label).find();
+    }
+
+    private static boolean isAiToolDisclosureCheckbox(String label) {
+        String normalized = normalizeCheckboxLabel(label);
+        return containsWordsInOrder(normalized, normalizeCheckboxLabel("ai tool"))
+                || containsWordsInOrder(normalized, normalizeCheckboxLabel("ai tools"));
     }
 
     private static String removeGitHubChrome(String text) {
