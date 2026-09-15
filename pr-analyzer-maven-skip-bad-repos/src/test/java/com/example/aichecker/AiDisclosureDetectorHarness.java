@@ -382,6 +382,18 @@ public class AiDisclosureDetectorHarness {
 
         requirePositive(detector.detect("qgis/QGIS", "- [x] AI tools supported this PR", ""), "QGIS AI tools supported checkbox");
         requireNegative(detector.detect("qgis/QGIS", "- [ ] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR. See our policy about AI tool use.", ""), "QGIS unchecked AI tools supported checkbox");
+        requireNegative(detector.detect("qgis/QGIS", """
+                ## AI tool usage
+
+                - [ ] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR.
+                """, ""), "QGIS full unchecked AI tools template");
+        requirePositive(detector.detect("qgis/QGIS", """
+                ## AI tool usage
+
+                - [X] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR.
+
+                Amazon Kiro was used to review the changes.
+                """, ""), "QGIS full checked AI tools template");
         DisclosureResult qgisContradiction = detector.detect("qgis/QGIS", """
                 - [ ] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR. See our policy about AI tool use.
 
@@ -392,12 +404,31 @@ public class AiDisclosureDetectorHarness {
 
         requirePositive(detector.detect("MDAnalysis/mdanalysis", "LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: yes", ""), "MDAnalysis yes answer");
         requireNegative(detector.detect("MDAnalysis/mdanalysis", "LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: **no**", ""), "MDAnalysis no answer");
+        requireNegative(detector.detect("MDAnalysis/mdanalysis", "LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: ~~yes~~ NO (oops, typo)", ""), "MDAnalysis struck yes then no");
         require(!detector.detect("MDAnalysis/mdanalysis", "LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: yes / no", "").disclosed(), "MDAnalysis unresolved yes no");
         requirePositive(detector.detect("MDAnalysis/mdanalysis", """
                 LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: yes / no
 
                 I used Claude for the tests.
                 """, ""), "MDAnalysis unresolved template with explicit AI use");
+        requirePositive(detector.detect("MDAnalysis/mdanalysis", """
+                LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: <strike>no</strike>
+
+                I guess this is a "yes" now because I used the copilot AI overview and implemented changes based on what was suggested.
+                """, ""), "MDAnalysis later Copilot acknowledgement overrides struck no");
+
+        requireNegative(detector.detect("searxng/searxng", "- [X] **I hereby confirm that this PR conforms with the [AI Policy].**", ""), "SearXNG checked policy confirmation");
+        requireNegative(detector.detect("searxng/searxng", """
+                - [X] **I hereby confirm that this PR conforms with the [AI Policy].**
+
+                I have not used AI tools for this PR.
+                """, ""), "SearXNG checked policy plus no AI statement");
+        requireNegative(detector.detect("searxng/searxng", "- [x] I have not used any AI tools in the course of creating this PR.", ""), "SearXNG older no AI option");
+        requirePositive(detector.detect("searxng/searxng", """
+                - [X] **I hereby confirm that this PR conforms with the [AI Policy].**
+
+                I used Claude to draft the tests.
+                """, ""), "SearXNG checked policy plus explicit AI use");
 
         requireNegative(detector.detect("qutip/qutip", "- [x] No AI used", ""), "QuTiP no AI used checkbox");
         require(!detector.detect("qutip/qutip", "- [ ] No AI used", "").disclosed(), "QuTiP unchecked no AI used checkbox");
@@ -523,7 +554,9 @@ public class AiDisclosureDetectorHarness {
         requirePositive(detector.detect("I did use an agent", ""), "did use an agent");
         requirePositive(detector.detect("AI was used", ""), "AI was used");
         requirePositive(detector.detect("GitHub Copilot helped me make the title of this PR", ""), "Copilot helped make PR title");
+        requirePositive(detector.detect("Github Copilot helped me making title of this PR, gpt-5.6-terra helped checking code quality.", ""), "Copilot and GPT Terra helped title and code quality");
         requirePositive(detector.detect("I asked Codex to reproduce", ""), "asked Codex to reproduce");
+        requirePositive(detector.detect("I asked reviews from Claude Sonnet, Google Jules/Gemini, and OpenAI Codex Cloud.", ""), "asked reviews from multiple AI tools");
         requirePositive(detector.detect("I asked ChatGPT to investigate", ""), "asked ChatGPT to investigate");
         requirePositive(detector.detect("I manually wrote one test function and had GPT via Copilot generate the rest", ""), "GPT via Copilot generated tests");
         requirePositive(detector.detect("I have written the docstrings using AI", ""), "docstrings using AI");
@@ -535,7 +568,7 @@ public class AiDisclosureDetectorHarness {
                 Codex (`gpt-5.6-sol`) assisted with code analysis, implementation, test planning, validation, and drafting this description.
                 """, ""), "AI assistance heading with Codex assisted with tasks");
         requirePositive(detector.detect("Claude Opus: to find a combination", ""), "Claude Opus task note");
-        requirePositive(detector.detect("Claude Code with Opus was used to plan, implement, and test", ""), "Claude Code used to plan implement test");
+        requirePositive(detector.detect("Claude Code with Opus 4.7 was used to plan, implement, test, and document the change.", ""), "Claude Code used to plan implement test");
         requirePositive(detector.detect("Reviewd by Codex: no actionable findings", ""), "misspelled reviewed by Codex");
         requirePositive(detector.detect("""
                 ## LLM Note
@@ -571,6 +604,11 @@ public class AiDisclosureDetectorHarness {
         requirePositive(detector.detect("""
                 AI disclaimer: I used Claude to write the checks
                 """, ""), "AI disclaimer inline positive");
+        requirePositive(detector.detect("_AI disclaimer_: I used `Claude\\:Sonnet5` to write the checks.", ""), "AI disclaimer with escaped Claude Sonnet");
+        requirePositive(detector.detect("> Prepared with AI assistance; a human reviewed the final patch.", ""), "quoted AI assistance disclosure");
+        requirePositive(detector.detect("AI (Gemini 3.1 Pro) was used to prepare the first draft.", ""), "AI with Gemini model used");
+        requirePositive(detector.detect("All AI, since this is relatively trivial stuff.", ""), "All AI statement");
+        requirePositive(detector.detect("This PR was developed with AI assistance for code drafting and analysis.", ""), "developed with AI assistance");
         requirePositive(detector.detect("""
                 AI Disclosure: Used for grammar checks
                 """, ""), "AI heading grammar checks");
@@ -608,9 +646,9 @@ public class AiDisclosureDetectorHarness {
                 Example: Generated documentation with ChatGPT
                 -->
                 """, "").disclosed(), "HTML comment example should not count");
-        require(!detector.detect("""
+        requirePositive(detector.detect("""
                 > Generated documentation with ChatGPT.
-                """, "").disclosed(), "quoted contributor text should not count");
+                """, ""), "quoted contributor disclosure should count");
         require(!detector.detect("""
                 ## AI Generation Disclosure
 
@@ -625,6 +663,7 @@ public class AiDisclosureDetectorHarness {
         require(!detector.detect("The maintainer said email is available after failure detail is fixed.", "").disclosed(), "ordinary ai substrings should not count");
         require(!detector.detect("- [x] No documentation changes for guide.joomla.org needed", "").disclosed(), "Joomla documentation checkbox false positive");
         require(!detector.detect("I hereby confirm that this PR conforms with the AI Policy", "").disclosed(), "AI policy acknowledgement alone");
+        requireNegative(detector.detect(":robot: This PR was written by hand", ""), "robot written by hand");
         require(!detector.detect("If I used AI to develop this pull request, I prompted it to follow AGENTS.md.", "").disclosed(), "hypothetical AI use statement");
         require(!detector.detect("LLMs or other AI-powered tools were used: yes / no", "").disclosed(), "unresolved yes no generic template");
         requirePositive(detector.detect("""

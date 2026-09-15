@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -228,6 +229,8 @@ public class KappaWorkflow {
 
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8)) {
             writer.write("Section,Metric,Value");
+            writer.newLine();
+            writer.write(String.join(",", CsvTools.csv("Summary"), CsvTools.csv("Analysed timestamp"), CsvTools.csv(Instant.now().toString())));
             writer.newLine();
             writeMetricSummary(writer, "Disclosure Present", present);
             writeMetricSummary(writer, "Disclosure Classification", classification);

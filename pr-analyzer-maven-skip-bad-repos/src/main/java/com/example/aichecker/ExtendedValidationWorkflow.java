@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -265,6 +266,7 @@ public class ExtendedValidationWorkflow {
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             writer.write("Section,Metric,Value,CI Lower,CI Upper");
             writer.newLine();
+            writeMetric(writer, "Summary", "Analysed timestamp", Instant.now().toString(), "", "");
             writeMatrixMetrics(writer, "Original", original, false);
             writeMatrixMetrics(writer, "Extended", extended, false);
             writeMatrixMetrics(writer, "Combined", combined, true);

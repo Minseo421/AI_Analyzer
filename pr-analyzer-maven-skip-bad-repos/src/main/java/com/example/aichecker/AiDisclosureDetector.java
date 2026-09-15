@@ -16,9 +16,9 @@ public class AiDisclosureDetector {
     private static final Pattern EMPTY_GENERATED_BY_PATTERN = Pattern.compile("(?i)^\\s*Generated-by:\\s*$");
     private static final Pattern REPO_NAME_PATTERN = Pattern.compile("(?i)^[^/\\s]+/[^/\\s]+$");
     private static final String MODEL_VERSION = "(?:gpt\\s*-?\\s*\\d+(?:\\.\\d+)?(?:\\s*-?\\s*(?:sol|luna|terra|astra))?)";
-    private static final String CLAUDE_NAME = "claude(?:\\s+(?:code|sonnet|opus|fable))?";
-    private static final String AI_TOOL = "(?:chatgpt|" + MODEL_VERSION + "|gpt|openai\\s+codex|github\\s+copilot|copilot|" + CLAUDE_NAME + "|gemini|cursor|openclaw|codex|windsurf|devin|fable|(?:generative\\s+)?ai|artificial\\s+intelligence|an?\\s+llm|llm|ai\\s+(?:assistant|agent|tooling|tools?))";
-    private static final String AI_TOOL_NAME = "(?:chatgpt|" + MODEL_VERSION + "|gpt|openai\\s+codex|github\\s+copilot|copilot|" + CLAUDE_NAME + "|gemini|cursor|openclaw|codex|windsurf|devin|fable|llm|ai\\s+(?:assistant|agent|tooling|tools?))";
+    private static final String CLAUDE_NAME = "claude(?:\\s*\\\\?:?\\s*(?:code|sonnet|opus|fable)(?:\\s*\\d+(?:\\.\\d+)?)?(?:\\s+high)?)?";
+    private static final String AI_TOOL = "(?:chatgpt|" + MODEL_VERSION + "|gpt|openai\\s+codex(?:\\s+cloud)?|github\\s+copilot|copilot|" + CLAUDE_NAME + "|google\\s+jules|jules|gemini(?:\\s+\\d+(?:\\.\\d+)?\\s+pro)?|cursor|openclaw|codex(?:\\s+cloud)?|windsurf|devin|fable|(?:generative\\s+)?ai|artificial\\s+intelligence|an?\\s+llm|llm|ai\\s+(?:assistant|agent|tooling|tools?))";
+    private static final String AI_TOOL_NAME = "(?:chatgpt|" + MODEL_VERSION + "|gpt|openai\\s+codex(?:\\s+cloud)?|github\\s+copilot|copilot|" + CLAUDE_NAME + "|google\\s+jules|jules|gemini(?:\\s+\\d+(?:\\.\\d+)?\\s+pro)?|cursor|openclaw|codex(?:\\s+cloud)?|windsurf|devin|fable|llm|ai\\s+(?:assistant|agent|tooling|tools?))";
     private static final Pattern AI_IDENTITY_PATTERN = Pattern.compile("(?is)\\b(?:" + AI_TOOL + "|ai\\s+(?:assistant|agent|service|model|tool))\\b");
     private static final String AI_DISCLOSURE_HEADING = "(?:ai\\s+(?:generation\\s+)?(?:usage\\s+)?disclosure|ai\\s+disclaimer|ai\\s+tool\\s+usage|ai\\s+contribution|ai\\s+assistance|ai\\s+(?:use|usage)|generative\\s+ai\\s+(?:use|usage|disclosure)|llm\\s+note)";
     private static final Pattern TEMPLATE_AI_HEADING_PATTERN = Pattern.compile("(?i)^\\s*#{0,6}\\s*" + AI_DISCLOSURE_HEADING + "\\s*:??\\s*$");
@@ -34,6 +34,7 @@ public class AiDisclosureDetector {
             Pattern.compile("(?is)\\bno\\s+(?:generative\\s+)?ai\\b[^\\r\\n.]{0,80}\\b(?:used|generated|assistance|tooling)?\\b"),
             Pattern.compile("(?is)\\bi\\s+did\\s+not\\s+use\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,120}"),
             Pattern.compile("(?is)\\bnot\\s+ai[-\\s]+generated\\b"),
+            Pattern.compile("(?is):robot:\\s*(?:this\\s+)?(?:pr|pull\\s+request)\\s+was\\s+written\\s+by\\s+hand\\b[^\\r\\n.]{0,120}"),
             Pattern.compile("(?is)\\bno\\s+generative\\s+ai\\b"),
             Pattern.compile("(?is)\\bai\\b[^\\r\\n.]{0,60}\\bwas\\s+not\\s+used\\b"),
             Pattern.compile("(?is)\\b(?:this\\s+)?(?:contribution|pr|pull\\s+request)\\b[^\\r\\n.]{0,80}\\b(?:completed|created|authored|written)\\s+without\\s+(?:ai|llm|ai\\s*/\\s*llm)\\b")
@@ -53,23 +54,29 @@ public class AiDisclosureDetector {
             Pattern.compile("(?is)\\b(?:i\\s+)?used\\s+(?:an?\\s+)?" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b" + AI_TOOL + "\\b[^\\r\\n.]{0,120}\\b(?:was|were)\\s+used\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\bai\\s+tooling\\s+(?:was|were)\\s+used\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\ball\\s+ai\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\bai\\s+helped\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\bai\\b[^\\r\\n.]{0,80}\\bwas\\s+used\\s+to\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\bclaude\\s+code\\s+with\\s+(?:opus|sonnet|fable)\\s*\\d*(?:\\.\\d+)?\\s+was\\s+used\\s+to\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:this\\s+pr\\s+)?(?:was|is)\\s+written\\s+with\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:this\\s+(?:change|pr|pull\\s+request)\\s+)?(?:was|is)\\s+(?:written|authored|implemented|created)\\s+with\\s+assistance\\s+(?:from|by)\\s+" + AI_TOOL + "\\b[^\\r\\n]{0,160}"),
             Pattern.compile("(?is)\\b(?:written|authored|prepared|completed|implemented|created)\\s+with\\s+assistance\\s+(?:from|by)\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:written|authored|prepared|completed|implemented|created)\\s+with\\s+(?:the\\s+)?(?:help|assistance)\\s+of\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:code|tests?|docs?|documentation|docstrings?|pr\\s+message|pull\\s+request\\s+description)\\b[^\\r\\n.]{0,80}\\b(?:was|were)\\s+(?:written|authored|prepared|completed|implemented|created)\\s+with\\s+(?:the\\s+)?(?:help|assistance)\\s+of\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:written|authored|prepared|completed|implemented|created)\\s+with\\s+(?:ai|llm)\\s+assistance\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\bdeveloped\\s+with\\s+(?:ai|llm)\\s+assistance\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:fix(?:es)?|code|tests?|docs?|docstrings?|pr\\s+message|pull\\s+request\\s+description)\\b[^\\r\\n.]{0,120}\\b(?:assisted\\s+by|written\\s+using|created\\s+using)\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:code|tests?|docs?|documentation|docstrings?|title|pr\\s+message|pull\\s+request\\s+description)\\b[^\\r\\n.]{0,120}\\b(?:written|generated|created|drafted)?\\s*using\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:i\\s+)?worked\\s+with\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:i\\s+)?did\\s+use\\s+(?:an?\\s+)?(?:" + AI_TOOL + "|agent)\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:i\\s+)?asked\\s+" + AI_TOOL_NAME + "\\s+to\\s+(?:look|reproduce|investigate|debug|review|plan|implement|write|generate|find)\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\b(?:i\\s+)?asked\\s+(?:for\\s+)?(?:multiple\\s+)?reviews\\s+from\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:i\\s+)?had\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,80}\\b(?:generate|write|draft|create|review|refactor|implement)\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b" + AI_TOOL_NAME + "\\b[^\\r\\n]{0,120}\\bassisted\\s+with\\s+(?:code\\s+analysis|implementation|test\\s+planning|validation|drafting|debugging|review|refactoring|documentation|tests?)\\b[^\\r\\n.]{0,160}"),
-            Pattern.compile("(?is)\\b" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,120}\\b(?:helped|assisted)\\s+(?:me\\s+)?(?:make|write|draft|debug|investigate|reproduce|plan|implement|generate|review|refactor|find)\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\b" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,120}\\b(?:helped|assisted)\\s+(?:me\\s+)?(?:make|making|write|draft|debug|investigate|reproduce|plan|implement|generate|review|checking|check|refactor|find)\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:bug|issue|combination)\\s+found\\s+by\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\b(?:approach|solution|fix|implementation|idea)\\b[^\\r\\n.]{0,80}\\bsuggested\\s+by\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}"),
+            Pattern.compile("(?is)\\bimplemented\\s+changes\\b[^\\r\\n.]{0,160}\\bbased\\s+on\\s+what\\s+was\\s+suggested\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)\\breviewe?d\\s+by\\s+" + AI_TOOL_NAME + "\\b[^\\r\\n.]{0,160}"),
             Pattern.compile("(?is)^\\s*(?:note\\s*:\\s*)?" + AI_TOOL_NAME + "\\b[^\\r\\n]{0,120}\\b(?:did|running|model|job|mostly)\\b[^\\r\\n.]{0,120}"),
             Pattern.compile("(?is)^\\s*" + AI_TOOL_NAME + "\\s*(?:\\\\?[:(]|-)\\s*[^\\r\\n]{0,120}\\b(?:" + MODEL_VERSION + "|opus|sonnet|fable)\\b[^\\r\\n.]{0,120}"),
@@ -280,7 +287,9 @@ public class AiDisclosureDetector {
             return contextual;
         }
 
-        String broadMatchText = removeAilPolicyExplanationLines(removeAiDisclosureFieldLabels(prepared.textWithoutCheckboxes()));
+        String broadMatchText = removeAilPolicyExplanationLines(removeAiDisclosureFieldLabels(prepared.textWithoutCheckboxes()))
+                .replace("\\:", ":")
+                .replaceAll("[`*_]+", "");
         if (isUnresolvedYesNoAiTemplate(broadMatchText)) {
             return new DisclosureResult(false, "Unresolved AI-use yes/no template", "none", source);
         }
@@ -392,7 +401,7 @@ public class AiDisclosureDetector {
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             if (line.stripLeading().startsWith(">")) {
-                continue;
+                line = line.replaceFirst("^\\s*>\\s?", "");
             }
             Matcher matcher = MARKDOWN_CHECKBOX_START_PATTERN.matcher(line);
             if (matcher.matches()) {
@@ -576,6 +585,15 @@ public class AiDisclosureDetector {
             }
         }
         if ("qgis/qgis".equals(canonicalRepository)) {
+            for (String checkbox : prepared.checkedCheckboxes()) {
+                String normalized = normalizeCheckboxLabel(checkbox.replaceFirst("(?is)^\\[x]\\s*", ""));
+                if (containsWordsInOrder(normalized, normalizeCheckboxLabel("ai supported development pr"))
+                        || containsWordsInOrder(normalized, normalizeCheckboxLabel("ai supported this pr"))) {
+                    if (!positives.contains(checkbox)) {
+                        positives.add(checkbox);
+                    }
+                }
+            }
             for (String checkbox : prepared.uncheckedCheckboxes()) {
                 String normalized = normalizeCheckboxLabel(checkbox.replaceFirst("(?is)^\\[ ]\\s*", ""));
                 if (containsWordsInOrder(normalized, normalizeCheckboxLabel("ai supported development pr"))
@@ -590,6 +608,21 @@ public class AiDisclosureDetector {
                 addByClassification(mdanalysisResult.classification(), mdanalysisResult.evidence(), positives, negatives, neutrals);
             }
         }
+        if ("searxng/searxng".equals(canonicalRepository)) {
+            DisclosureResult searxngResult = detectSearxngAiPolicyConfirmation(prepared, source);
+            if (searxngResult.disclosed()) {
+                addByClassification(searxngResult.classification(), searxngResult.evidence(), positives, negatives, neutrals);
+            }
+            for (String checkbox : prepared.checkedCheckboxes()) {
+                String normalized = normalizeCheckboxLabel(checkbox.replaceFirst("(?is)^\\[x]\\s*", ""));
+                if (containsWordsInOrder(normalized, normalizeCheckboxLabel("not used ai tools creating pr"))
+                        || containsWordsInOrder(normalized, normalizeCheckboxLabel("not used any ai tools"))) {
+                    if (!negatives.contains(checkbox)) {
+                        negatives.add(checkbox);
+                    }
+                }
+            }
+        }
         if ("cybertec-postgresql/pgwatch".equals(canonicalRepository)) {
             DisclosureResult fieldResult = detectPgwatchAiAutomationField(prepared.textWithoutCheckboxes(), source);
             if (fieldResult.disclosed()) {
@@ -599,10 +632,20 @@ public class AiDisclosureDetector {
         return repositoryRuleResult(positives, negatives, neutrals, source);
     }
 
+    private static DisclosureResult detectSearxngAiPolicyConfirmation(PreparedText prepared, String source) {
+        for (String checkbox : prepared.checkedCheckboxes()) {
+            String normalized = normalizeCheckboxLabel(checkbox.replaceFirst("(?is)^\\[x]\\s*", ""));
+            if (containsWordsInOrder(normalized, normalizeCheckboxLabel("hereby confirm pr conforms ai policy"))) {
+                return new DisclosureResult(true, cleanEvidence(checkbox), "possible_negative", source);
+            }
+        }
+        return new DisclosureResult(false, "No checked SearXNG AI policy confirmation found", "none", source);
+    }
+
     private static DisclosureResult detectMdanalysisAiQuestion(String text, String source) {
         List<String> lines = List.of(text.split("\\R", -1));
         for (int i = 0; i < lines.size(); i++) {
-            String line = stripMarkdown(lines.get(i));
+            String line = stripMarkdown(removeStrikethrough(lines.get(i)));
             String normalizedQuestion = normalizeCheckboxLabel(line);
             if (!containsWordsInOrder(normalizedQuestion, normalizeCheckboxLabel("llms ai powered tools used contribution"))) {
                 continue;
@@ -622,15 +665,15 @@ public class AiDisclosureDetector {
                 }
                 answer = next;
             }
-            String normalizedAnswer = normalizeCheckboxLabel(answer);
-            if (normalizedAnswer.matches("(?is)^yes$")) {
-                return new DisclosureResult(true, cleanEvidence(lines.get(i).trim() + " " + answer), "possible_positive", source);
-            }
-            if (normalizedAnswer.matches("(?is)^no$")) {
-                return new DisclosureResult(true, cleanEvidence(lines.get(i).trim() + " " + answer), "possible_negative", source);
-            }
+            String normalizedAnswer = normalizeCheckboxLabel(removeStrikethrough(answer));
             if (normalizedAnswer.matches("(?is).*\\byes\\b.*\\bno\\b.*|.*\\bno\\b.*\\byes\\b.*")) {
                 return new DisclosureResult(false, "Unresolved MDAnalysis AI-use template answer", "none", source);
+            }
+            if (normalizedAnswer.matches("(?is)^yes(?:\\s+.*)?$")) {
+                return new DisclosureResult(true, cleanEvidence(lines.get(i).trim() + " " + answer), "possible_positive", source);
+            }
+            if (normalizedAnswer.matches("(?is)^no(?:\\s+.*)?$")) {
+                return new DisclosureResult(true, cleanEvidence(lines.get(i).trim() + " " + answer), "possible_negative", source);
             }
         }
         return new DisclosureResult(false, "No completed MDAnalysis AI-use template answer found", "none", source);
@@ -782,7 +825,9 @@ public class AiDisclosureDetector {
         String canonicalRepository = canonicalRepository(repository);
         if (canonicalRepository == null || isBlank(text)) return text;
         List<RepositoryCheckboxRule> rules = REPOSITORY_CHECKBOX_RULES.getOrDefault(canonicalRepository, List.of());
-        if (rules.isEmpty() && !"mdanalysis/mdanalysis".equals(canonicalRepository)) return text;
+        if (rules.isEmpty() && !List.of("mdanalysis/mdanalysis", "searxng/searxng", "qgis/qgis").contains(canonicalRepository)) {
+            return text;
+        }
         List<String> kept = new ArrayList<>();
         for (String line : text.split("\\R", -1)) {
             String normalized = normalizeCheckboxLabel(line);
@@ -792,10 +837,21 @@ public class AiDisclosureDetector {
             repositoryTemplateLine = repositoryTemplateLine
                     || ("mdanalysis/mdanalysis".equals(canonicalRepository)
                     && containsWordsInOrder(normalized, normalizeCheckboxLabel("llms ai powered tools used contribution")));
-            for (RepositoryCheckboxRule rule : rules) {
-                if (containsWordsInOrder(normalized, rule.normalizedNeedle())) {
-                    repositoryTemplateLine = true;
-                    break;
+            repositoryTemplateLine = repositoryTemplateLine
+                    || ("searxng/searxng".equals(canonicalRepository)
+                    && (containsWordsInOrder(normalized, normalizeCheckboxLabel("hereby confirm pr conforms ai policy"))
+                    || containsWordsInOrder(normalized, normalizeCheckboxLabel("not used ai tools creating pr"))
+                    || containsWordsInOrder(normalized, normalizeCheckboxLabel("not used any ai tools"))));
+            repositoryTemplateLine = repositoryTemplateLine
+                    || ("qgis/qgis".equals(canonicalRepository)
+                    && (containsWordsInOrder(normalized, normalizeCheckboxLabel("ai supported development pr"))
+                    || containsWordsInOrder(normalized, normalizeCheckboxLabel("ai supported this pr"))));
+            if (!"osgeo/gdal".equals(canonicalRepository)) {
+                for (RepositoryCheckboxRule rule : rules) {
+                    if (containsWordsInOrder(normalized, rule.normalizedNeedle())) {
+                        repositoryTemplateLine = true;
+                        break;
+                    }
                 }
             }
             if (!repositoryTemplateLine) {
@@ -867,7 +923,15 @@ public class AiDisclosureDetector {
     private static String stripMarkdown(String value) {
         return value.replaceAll("[`*_]+", "")
                 .replaceAll("^\\s*>\\s*", "")
+                .replace("\\:", ":")
                 .trim();
+    }
+
+    private static String removeStrikethrough(String value) {
+        return value.replaceAll("(?is)~~.*?~~", " ")
+                .replaceAll("(?is)<strike>.*?</strike>", " ")
+                .replaceAll("(?is)<s>.*?</s>", " ")
+                .replaceAll("(?is)<del>.*?</del>", " ");
     }
 
     private static DisclosureResult repositoryRuleResult(List<String> positives, List<String> negatives, List<String> neutrals, String source) {

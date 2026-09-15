@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -235,6 +236,7 @@ public class ConsensusWorkflow {
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8)) {
             writer.write("Section,Metric,Value");
             writer.newLine();
+            writeMetric(writer, "Summary", "Analysed timestamp", Instant.now().toString());
             writeMetric(writer, "Summary", "Total matched rows", result.totalMatchedRows());
             writeMetric(writer, "Summary", "True positives", result.truePositives());
             writeMetric(writer, "Summary", "True negatives", result.trueNegatives());
