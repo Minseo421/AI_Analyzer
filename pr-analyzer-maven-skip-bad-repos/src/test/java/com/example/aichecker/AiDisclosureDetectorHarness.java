@@ -501,6 +501,7 @@ public class AiDisclosureDetectorHarness {
         requirePositive(detector.detect("AI Influence Level: 3", ""), "AI influence level 3");
         requirePositive(detector.detect("AIL 4", ""), "AIL 4");
         requirePositive(detector.detect("AIL Level: 5", ""), "AIL level 5");
+        requirePositive(detector.detect("AI acknowledgement: AIL 2", ""), "inline AIL 2 with label");
         requirePositive(detector.detect("**AIL Level = 2**", ""), "AIL equals sign markdown");
         DisclosureResult inlineAil = detector.detect("This PR was prepared with AIL:3.", "");
         require(inlineAil.disclosed(), "inline AIL sentence should disclose");

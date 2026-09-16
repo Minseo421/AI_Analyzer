@@ -172,7 +172,7 @@ public class AiDisclosureDetector {
     private static final Pattern ASSISTED_BY_FIELD_PATTERN = Pattern.compile("(?i)^\\s*(?:[-*+]\\s*)?(?:[*_`\\s]*)?(?:(AI)\\s*[-\\s]*)?(?:assist(?:ed|ant))\\s*[-\\s]*by\\s*:?\\s*(.*)$");
     private static final Pattern CO_AUTHORED_BY_PATTERN = Pattern.compile("(?i)^\\s*(?:[-*+]\\s*)?co\\s*-?\\s*authored\\s*-?\\s*by\\s*:?\\s*(.*)$");
     private static final Pattern AIL_PATTERN = Pattern.compile("(?i)^\\s*(?:[-*+]\\s*)?(?:[*_`#\\s]*)?(?:AI\\s+influence\\s+level|AIL)(?:\\s+level)?\\s*(?::|=)?\\s*([0-5])\\s*[.)!`*_\\s]*$");
-    private static final Pattern INLINE_AIL_PATTERN = Pattern.compile("(?i)\\b(?:AI\\s+influence\\s+level|AIL)(?:\\s+level)?\\s*(?::|=)\\s*([0-5])\\b(?!\\s*(?:\\.\\d|\\d))");
+    private static final Pattern INLINE_AIL_PATTERN = Pattern.compile("(?i)\\b(?:AI\\s+influence\\s+level|AIL)(?:\\s+level)?\\s*(?::|=|\\s+)\\s*([0-5])\\b(?!\\s*(?:\\.\\d|\\d|means|indicates|represents|=))");
     private static final List<Pattern> PLACEHOLDER_RESPONSE_PATTERNS = List.of(
             Pattern.compile("(?is)^\\s*$"),
             Pattern.compile("(?is)^\\s*(?:n/?a|none|no|not\\s+applicable|null|nil|-+)\\s*[.!]??\\s*$"),
