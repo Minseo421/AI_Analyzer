@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +16,9 @@ import java.util.Set;
 
 public class CsvWriter {
     private static final String MANUAL_REVIEW_REQUIRED = "MANUAL_REVIEW_REQUIRED";
+    private static final String ANALYSIS_STARTED_LABEL = "# Analysis Started UTC";
+    private static final String ANALYSIS_COMPLETED_LABEL = "# Analysis Completed UTC";
+    private static final String ANALYSIS_COMPLETION_PENDING = "PENDING";
 
     public static void write(Path path, List<PrReportRow> rows) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
@@ -28,7 +32,13 @@ public class CsvWriter {
     }
 
     public static void writePrDataset(Path path, List<PrReportRow> rows) throws IOException {
+        String timestamp = Instant.now().toString();
+        writePrDataset(path, rows, timestamp, timestamp);
+    }
+
+    public static void writePrDataset(Path path, List<PrReportRow> rows, String analysisStartedUtc, String analysisCompletedUtc) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+            writeAnalysisMetadata(writer, analysisStartedUtc, analysisCompletedUtc);
             writePrDatasetHeader(writer);
             writer.newLine();
             for (PrReportRow row : rows) {
@@ -55,9 +65,14 @@ public class CsvWriter {
     }
 
     public static int appendPrDatasetRows(Path path, List<PrReportRow> rows) throws IOException {
+        return appendPrDatasetRows(path, rows, Instant.now().toString());
+    }
+
+    public static int appendPrDatasetRows(Path path, List<PrReportRow> rows, String analysisStartedUtc) throws IOException {
         boolean writeHeader = !Files.exists(path) || Files.size(path) == 0;
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             if (writeHeader) {
+                writeAnalysisMetadata(writer, analysisStartedUtc, ANALYSIS_COMPLETION_PENDING);
                 writePrDatasetHeader(writer);
                 writer.newLine();
             }
@@ -89,6 +104,11 @@ public class CsvWriter {
     }
 
     public static void writeRepoComplianceSummary(Path path, List<PrReportRow> rows, Map<String, Integer> botPrsExcluded) throws IOException {
+        String timestamp = Instant.now().toString();
+        writeRepoComplianceSummary(path, rows, botPrsExcluded, timestamp, timestamp);
+    }
+
+    public static void writeRepoComplianceSummary(Path path, List<PrReportRow> rows, Map<String, Integer> botPrsExcluded, String analysisStartedUtc, String analysisCompletedUtc) throws IOException {
         Map<String, List<PrReportRow>> rowsByRepo = new LinkedHashMap<>();
         for (PrReportRow row : rows) {
             rowsByRepo.computeIfAbsent(row.repository(), ignored -> new java.util.ArrayList<>()).add(row);
@@ -98,6 +118,7 @@ public class CsvWriter {
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+            writeAnalysisMetadata(writer, analysisStartedUtc, analysisCompletedUtc);
             writer.write("Repo,Eligible PRs Reviewed,Bot PRs Excluded,AI Disclosure Present Count,"
                     + "Positive Disclosure Count,Negative Disclosure Count,Ambiguous Disclosure Count,"
                     + "No Disclosure Count,Manual Review Required Count,Disclosure Compliance Rate");
@@ -128,6 +149,18 @@ public class CsvWriter {
                 ));
                 writer.newLine();
             }
+        }
+    }
+
+    public static void markAnalysisCompleted(Path path, String analysisCompletedUtc) throws IOException {
+        if (!Files.exists(path) || Files.size(path) == 0) {
+            return;
+        }
+        String content = Files.readString(path, StandardCharsets.UTF_8);
+        String pendingLine = csv(ANALYSIS_COMPLETED_LABEL) + "," + csv(ANALYSIS_COMPLETION_PENDING);
+        String completedLine = csv(ANALYSIS_COMPLETED_LABEL) + "," + csv(analysisCompletedUtc);
+        if (content.contains(pendingLine)) {
+            Files.writeString(path, content.replace(pendingLine, completedLine), StandardCharsets.UTF_8);
         }
     }
 
@@ -193,6 +226,14 @@ public class CsvWriter {
                 csv(disclosureClassification(row)),
                 csv(disclosureText(row))
         ));
+    }
+
+    private static void writeAnalysisMetadata(BufferedWriter writer, String analysisStartedUtc, String analysisCompletedUtc) throws IOException {
+        writer.write(csv(ANALYSIS_STARTED_LABEL) + "," + csv(analysisStartedUtc));
+        writer.newLine();
+        writer.write(csv(ANALYSIS_COMPLETED_LABEL) + "," + csv(analysisCompletedUtc));
+        writer.newLine();
+        writer.newLine();
     }
 
     private static void addCompletedId(Set<String> ids, String repository, String number) {

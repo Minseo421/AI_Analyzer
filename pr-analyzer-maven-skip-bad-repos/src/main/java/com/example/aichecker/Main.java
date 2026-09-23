@@ -3,6 +3,7 @@ package com.example.aichecker;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -38,10 +39,11 @@ public class Main {
                 Path output = Path.of(args[3]);
                 PrAnalyzer analyzer = new PrAnalyzer();
                 List<PrReportRow> rows = analyzer.analyzeLatestClosedHumanPrs(repoUrl, targetCount);
-                CsvWriter.writePrDataset(output, rows);
+                String analysisCompletedUtc = Instant.now().toString();
+                CsvWriter.writePrDataset(output, rows, analyzer.analysisTimestampUtc(), analysisCompletedUtc);
                 if (args.length == 5) {
                     Path summaryOutput = Path.of(args[4]);
-                    CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository());
+                    CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository(), analyzer.analysisTimestampUtc(), analysisCompletedUtc);
                     System.out.println("Repository compliance summary saved: " + summaryOutput.toAbsolutePath());
                 }
                 printSavedSummary(output, rows);
@@ -57,20 +59,30 @@ public class Main {
                 printSavedSummary(output, rows);
                 return;
             }
-            if ((args.length == 4 || args.length == 5) && args[0].equals("--repos-pr-dataset")) {
+            if ((args.length >= 3 && args.length <= 5) && args[0].equals("--repos-pr-dataset")) {
                 Path repoListFile = Path.of(args[1]);
-                int targetCountPerRepo = Integer.parseInt(args[2]);
-                Path output = Path.of(args[3]);
+                boolean legacyCountArgument = args.length >= 4 && isInteger(args[2]);
+                int targetCountPerRepo = legacyCountArgument ? Integer.parseInt(args[2]) : 0;
+                int outputIndex = legacyCountArgument ? 3 : 2;
+                int summaryIndex = legacyCountArgument ? 4 : 3;
+                if (args.length < outputIndex + 1 || args.length > summaryIndex + 1) {
+                    throw new IllegalArgumentException("Invalid arguments for --repos-pr-dataset. Expected: " + expectedUsage(args[0]));
+                }
+                Path output = Path.of(args[outputIndex]);
                 List<RepoUrl> repoUrls = readRepoList(repoListFile);
                 PrAnalyzer analyzer = new PrAnalyzer();
                 boolean resumedOutput = Files.exists(output) && Files.size(output) > 0;
                 List<PrReportRow> rows = analyzeMultipleReposIncrementally(repoUrls, targetCountPerRepo, output, analyzer, true);
-                if (args.length == 5) {
-                    Path summaryOutput = Path.of(args[4]);
+                String analysisCompletedUtc = Instant.now().toString();
+                if (!resumedOutput) {
+                    CsvWriter.markAnalysisCompleted(output, analysisCompletedUtc);
+                }
+                if (args.length == summaryIndex + 1) {
+                    Path summaryOutput = Path.of(args[summaryIndex]);
                     if (resumedOutput) {
                         System.out.println("Repository compliance summary not written during resume because existing completed rows are not re-analysed in memory. Regenerate the summary after the resumed dataset is complete.");
                     } else {
-                        CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository());
+                        CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository(), analyzer.analysisTimestampUtc(), analysisCompletedUtc);
                         System.out.println("Repository compliance summary saved: " + summaryOutput.toAbsolutePath());
                     }
                 }
@@ -359,7 +371,7 @@ public class Main {
             case "--latest" -> "--latest https://github.com/OWNER/REPO COUNT report.csv";
             case "--latest-pr-dataset" -> "--latest-pr-dataset https://github.com/OWNER/REPO COUNT pr_dataset_output.csv [repo_compliance_summary.csv]";
             case "--repos" -> "--repos repos.txt COUNT report.csv";
-            case "--repos-pr-dataset" -> "--repos-pr-dataset repos.txt COUNT pr_dataset_output.csv [repo_compliance_summary.csv]";
+            case "--repos-pr-dataset" -> "--repos-pr-dataset repos.txt pr_dataset_output.csv [repo_compliance_summary.csv]";
             case "--sample-for-kappa" -> "--sample-for-kappa repos.txt COUNT_PER_REPO kappa_sample.csv";
             case "--sample-all-repos-validation" -> "--sample-all-repos-validation repos.txt existing_validation.csv ROWS_PER_REPOSITORY output.csv START_DATE END_DATE SEED";
             case "--code-kappa-sample" -> "--code-kappa-sample kappa_sample.csv coder_labels.csv";
@@ -389,6 +401,16 @@ public class Main {
         }
     }
 
+    private static boolean isInteger(String value) {
+        if (value == null || value.isBlank()) return false;
+        try {
+            Integer.parseInt(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     private static void printSavedSummary(Path output, List<PrReportRow> rows) {
         long disclosed = rows.stream().filter(PrReportRow::aiDisclosure).count();
         double percentage = rows.isEmpty() ? 0.0 : (disclosed * 100.0 / rows.size());
@@ -407,7 +429,7 @@ public class Main {
             try {
                 List<PrReportRow> rows = analyzer.analyzeLatestClosedHumanPrs(repoUrl, targetCountPerRepo, completedIds);
                 if (prDataset) {
-                    CsvWriter.appendPrDatasetRows(output, rows);
+                    CsvWriter.appendPrDatasetRows(output, rows, analyzer.analysisTimestampUtc());
                 } else {
                     CsvWriter.appendReportRows(output, rows);
                 }
@@ -601,7 +623,8 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --latest-pr-dataset https://github.com/OWNER/REPO 100 pr_dataset_output.csv [repo_compliance_summary.csv]");
         System.out.println("      Uses the same closed_at four-calendar-month eligibility rule with no per-repository analysis limit.");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos repos.txt 100 report.csv");
-        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr_dataset_output.csv [repo_compliance_summary.csv]");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt pr_dataset_output.csv [repo_compliance_summary.csv]");
+        System.out.println("      Legacy form with COUNT is still accepted, but the numeric argument is ignored.");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-for-kappa repos.txt 50 kappa_sample.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --sample-all-repos-validation repos.txt combined_human_labels.csv 20 all_repo_validation_sample_seeded.csv 2026-04-01 2026-07-31 42");
         System.out.println("      Collects PR metadata in the fixed UTC closed_at window, shuffles candidates with the fixed seed, then checks eligibility in that order until the per-repository target is reached.");

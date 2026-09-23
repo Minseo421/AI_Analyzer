@@ -695,8 +695,11 @@ public class AiDisclosureDetectorHarness {
                 row("owner/repo", 3, false, "none")
         ), Map.of("owner/repo", 2));
         List<String> lines = Files.readAllLines(summary, StandardCharsets.UTF_8);
-        require(lines.size() == 2, "summary should contain header and one repo row");
-        require(lines.get(1).equals("\"owner/repo\",\"3\",\"2\",\"2\",\"1\",\"1\",\"0\",\"1\",\"3\",\"0.6667\""), "summary counts and compliance rate");
+        require(lines.size() == 5, "summary should contain metadata, header, and one repo row");
+        require(lines.get(0).startsWith("\"# Analysis Started UTC\","), "summary should record analysis start once");
+        require(lines.get(1).startsWith("\"# Analysis Completed UTC\","), "summary should record analysis completion once");
+        require(lines.get(4).equals("\"owner/repo\",\"3\",\"2\",\"2\",\"1\",\"1\",\"0\",\"1\",\"3\",\"0.6667\""), "summary counts and compliance rate");
+        require(CsvTools.readRows(summary).size() == 1, "metadata rows should not be treated as data rows");
 
         require(DisclosureVisibilityCorrelationWorkflow.canonicalRepo("https://github.com/Apache/Airflow/").orElseThrow().equals("apache/airflow"), "canonical GitHub URL with case and trailing slash");
         require(DisclosureVisibilityCorrelationWorkflow.canonicalRepo("github.com/Owner/Repo.git").orElseThrow().equals("owner/repo"), "canonical GitHub URL with git suffix");
@@ -1156,6 +1159,10 @@ public class AiDisclosureDetectorHarness {
 
         Path resumeOutput = tempMissingPath("resume-pr-dataset", ".csv");
         CsvWriter.appendPrDatasetRows(resumeOutput, List.of(row("resume/repo", 1, false, "none")));
+        CsvWriter.markAnalysisCompleted(resumeOutput, "2026-07-22T00:01:00Z");
+        List<String> resumeLines = Files.readAllLines(resumeOutput, StandardCharsets.UTF_8);
+        require(resumeLines.get(0).startsWith("\"# Analysis Started UTC\","), "PR dataset should record analysis start once");
+        require(resumeLines.get(1).equals("\"# Analysis Completed UTC\",\"2026-07-22T00:01:00Z\""), "PR dataset should record analysis completion once");
         Set<String> completedIds = CsvWriter.completedPrDatasetIds(resumeOutput);
         FakeGitHubClient resumeClient = new FakeGitHubClient();
         resumeClient.addPage("resume/repo", 1, List.of(

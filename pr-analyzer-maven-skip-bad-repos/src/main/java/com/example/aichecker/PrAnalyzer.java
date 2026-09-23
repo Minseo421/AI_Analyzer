@@ -264,6 +264,10 @@ public class PrAnalyzer {
         return new LinkedHashMap<>(collectionSummaries);
     }
 
+    public String analysisTimestampUtc() {
+        return runDateTime.toString();
+    }
+
     public CollectionSummary collectionSummary(String repository) {
         return collectionSummaries.get(repository);
     }

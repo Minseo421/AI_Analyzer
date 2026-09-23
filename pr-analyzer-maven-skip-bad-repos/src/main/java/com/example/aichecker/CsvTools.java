@@ -20,8 +20,12 @@ public class CsvTools {
         if (records.isEmpty()) {
             return rows;
         }
-        List<String> header = records.get(0);
-        for (int i = 1; i < records.size(); i++) {
+        int headerIndex = firstDataHeaderIndex(records);
+        if (headerIndex < 0) {
+            return rows;
+        }
+        List<String> header = records.get(headerIndex);
+        for (int i = headerIndex + 1; i < records.size(); i++) {
             List<String> record = records.get(i);
             if (record.size() == 1 && record.get(0).isBlank()) {
                 continue;
@@ -42,7 +46,11 @@ public class CsvTools {
         if (records.isEmpty()) {
             return List.of();
         }
-        return new ArrayList<>(records.get(0));
+        int headerIndex = firstDataHeaderIndex(records);
+        if (headerIndex < 0) {
+            return List.of();
+        }
+        return new ArrayList<>(records.get(headerIndex));
     }
 
     public static List<List<String>> readRecords(Path path) throws IOException {
@@ -52,6 +60,21 @@ public class CsvTools {
     public static String csv(String value) {
         String safe = value == null ? "" : value;
         return "\"" + safe.replace("\"", "\"\"") + "\"";
+    }
+
+    private static int firstDataHeaderIndex(List<List<String>> records) {
+        for (int i = 0; i < records.size(); i++) {
+            List<String> record = records.get(i);
+            if (record.isEmpty()) {
+                continue;
+            }
+            String first = record.get(0) == null ? "" : record.get(0).trim();
+            if (first.isBlank() || first.startsWith("#")) {
+                continue;
+            }
+            return i;
+        }
+        return -1;
     }
 
     private static String readCsvText(Path path) throws IOException {
