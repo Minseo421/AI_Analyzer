@@ -388,7 +388,7 @@ public class Main {
             case "--analyze-specific-prs" -> "--analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv Repo#PR [Repo#PR...]";
             case "--retry-failed-reanalysis" -> "--retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv";
             case "--repos-from-csv" -> "--repos-from-csv policy-tracker.csv repos.txt [--replace]";
-            case "--visibility-correlation" -> "--visibility-correlation pr_dataset_output.csv policy_tracker.csv repo_visibility_summary.csv visibility_correlation.csv [cleaned_pr_dataset.csv retry_exclusion_report.csv]";
+            case "--visibility-correlation" -> "--visibility-correlation repo_compliance_summary.csv policy_tracker.csv repo_visibility_summary.csv visibility_correlation.csv";
             default -> "";
         };
     }
@@ -643,7 +643,8 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt [--replace]");
-        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --visibility-correlation pr_dataset_output.csv policy_tracker.csv repo_visibility_summary.csv visibility_correlation.csv [cleaned_pr_dataset.csv retry_exclusion_report.csv]");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --visibility-correlation repo_compliance_summary.csv policy_tracker.csv repo_visibility_summary.csv visibility_correlation.csv");
+        System.out.println("      Also accepts pr_dataset_output.csv as the first input; optional cleaned/exclusion outputs apply only to PR-level input.");
         System.out.println();
         System.out.println("repos.txt can contain either GitHub URLs or OWNER/REPO names, one per line.");
     }

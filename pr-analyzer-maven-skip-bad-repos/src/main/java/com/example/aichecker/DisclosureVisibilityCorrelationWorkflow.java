@@ -26,12 +26,21 @@ public class DisclosureVisibilityCorrelationWorkflow {
     public static Result analyze(Path prDatasetPath, Path policyTrackerPath, Path summaryOutputPath, Path correlationOutputPath, Path cleanedDatasetOutputPath, Path exclusionReportOutputPath) throws IOException {
         List<Map<String, String>> prRows = CsvTools.readRows(prDatasetPath);
         List<Map<String, String>> policyRows = CsvTools.readRows(policyTrackerPath);
-        validatePrDataset(prRows, prDatasetPath);
         validatePolicyTracker(policyRows, policyTrackerPath);
 
         PolicyIndex policyIndex = indexPolicyRows(policyRows);
-        List<Map<String, String>> cleanedPrRows = cleanPrRows(prRows, policyIndex);
-        Map<String, SummaryRow> summaries = summarizePrRows(cleanedPrRows);
+        boolean repositorySummaryInput = isRepositoryComplianceSummary(prRows);
+        List<Map<String, String>> cleanedPrRows;
+        Map<String, SummaryRow> summaries;
+        if (repositorySummaryInput) {
+            validateRepositoryComplianceSummary(prRows, prDatasetPath);
+            cleanedPrRows = List.of();
+            summaries = summarizeRepositoryRows(prRows);
+        } else {
+            validatePrDataset(prRows, prDatasetPath);
+            cleanedPrRows = cleanPrRows(prRows, policyIndex);
+            summaries = summarizePrRows(cleanedPrRows);
+        }
         List<SummaryRow> outputRows = new ArrayList<>();
         for (SummaryRow row : summaries.values()) {
             outputRows.add(row.withPolicyMatch(policyIndex));
@@ -43,7 +52,7 @@ public class DisclosureVisibilityCorrelationWorkflow {
                 .map(row -> new Observation(row.repository(), row.visibilityScoreNumeric(), row.disclosureRate()))
                 .toList();
         SpearmanResult spearman = SpearmanResult.calculate(observations);
-        if (cleanedDatasetOutputPath != null) {
+        if (cleanedDatasetOutputPath != null && !repositorySummaryInput) {
             writeCleanedDataset(cleanedDatasetOutputPath, prRows, cleanedPrRows);
         }
         writeSummary(summaryOutputPath, outputRows);
@@ -59,8 +68,22 @@ public class DisclosureVisibilityCorrelationWorkflow {
         requireColumns(rows, path, List.of("Repo", "PR #", "Status", "AI Disclosure Present"));
     }
 
+    private static void validateRepositoryComplianceSummary(List<Map<String, String>> rows, Path path) {
+        requireColumns(rows, path, List.of("Repo", "Eligible PRs Reviewed", "AI Disclosure Present Count", "No Disclosure Count"));
+    }
+
     private static void validatePolicyTracker(List<Map<String, String>> rows, Path path) {
         requireColumns(rows, path, List.of("Repo", "Repository Link", "Visibility Score"));
+    }
+
+    private static boolean isRepositoryComplianceSummary(List<Map<String, String>> rows) {
+        if (rows.isEmpty()) {
+            return false;
+        }
+        Map<String, String> first = rows.get(0);
+        return first.containsKey("Eligible PRs Reviewed")
+                && first.containsKey("AI Disclosure Present Count")
+                && first.containsKey("No Disclosure Count");
     }
 
     private static void requireColumns(List<Map<String, String>> rows, Path path, List<String> required) {
@@ -104,6 +127,27 @@ public class DisclosureVisibilityCorrelationWorkflow {
         Map<String, SummaryRow> result = new LinkedHashMap<>();
         for (MutableSummary summary : byRepo.values()) {
             result.put(summary.repository, summary.toRow());
+        }
+        return result;
+    }
+
+    private static Map<String, SummaryRow> summarizeRepositoryRows(List<Map<String, String>> rows) {
+        Map<String, SummaryRow> result = new LinkedHashMap<>();
+        for (Map<String, String> row : rows) {
+            String repo = canonicalRepo(row.get("Repo")).orElse("");
+            if (repo.isBlank()) {
+                repo = clean(row.get("Repo")).toLowerCase(Locale.ROOT);
+            }
+            if (repo.isBlank()) {
+                continue;
+            }
+            int eligible = parseNonNegativeInt(row.get("Eligible PRs Reviewed"));
+            int withDisclosure = parseNonNegativeInt(row.get("AI Disclosure Present Count"));
+            int withoutDisclosure = parseNonNegativeInt(row.get("No Disclosure Count"));
+            if (withDisclosure + withoutDisclosure != eligible) {
+                withoutDisclosure = Math.max(0, eligible - withDisclosure);
+            }
+            result.put(repo, new SummaryRow(repo, eligible, eligible, eligible, withDisclosure, withoutDisclosure, 0, "", "", "", "", Double.NaN, "Unmatched", false, "No policy tracker match"));
         }
         return result;
     }
@@ -162,6 +206,14 @@ public class DisclosureVisibilityCorrelationWorkflow {
             return Integer.parseInt(clean(value));
         } catch (NumberFormatException e) {
             return Integer.MAX_VALUE;
+        }
+    }
+
+    private static int parseNonNegativeInt(String value) {
+        try {
+            return Math.max(0, Integer.parseInt(clean(value)));
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 

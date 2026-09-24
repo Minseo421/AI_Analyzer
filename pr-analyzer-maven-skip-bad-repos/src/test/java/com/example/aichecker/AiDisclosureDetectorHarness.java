@@ -753,6 +753,23 @@ public class AiDisclosureDetectorHarness {
         require(visibilityCorrelationText.contains("Visibility Score vs Disclosure Rate"), "correlation output metric pair");
         require(visibilityCorrelationText.contains("\"3\""), "correlation output sample size");
 
+        Path repoSummaryCorrelationInput = Files.createTempFile("repo-summary-correlation-input", ".csv");
+        Files.writeString(repoSummaryCorrelationInput, visibilityRepoSummaryCsv(), StandardCharsets.UTF_8);
+        Path repoSummaryOutput = tempMissingPath("repo-summary-visibility", ".csv");
+        Path repoSummaryCorrelation = tempMissingPath("repo-summary-correlation", ".csv");
+        DisclosureVisibilityCorrelationWorkflow.Result repoSummaryResult = DisclosureVisibilityCorrelationWorkflow.analyze(
+                repoSummaryCorrelationInput,
+                policyCorrelationInput,
+                repoSummaryOutput,
+                repoSummaryCorrelation
+        );
+        require(repoSummaryResult.cleanedPrRows() == 0, "repo summary input should not emit cleaned PR rows");
+        require(repoSummaryResult.spearmanResult().n() == 3, "repo summary correlation should use matched repository summaries");
+        require(Math.abs(repoSummaryResult.spearmanResult().rho() - 1.0) < 0.0000001, "repo summary Spearman coefficient");
+        Map<String, Map<String, String>> repoSummaryByRepo = indexByColumn(CsvTools.readRows(repoSummaryOutput), "Repository");
+        require("0.5".equals(repoSummaryByRepo.get("alpha/one").get("Disclosure Rate")), "repo summary disclosure rate");
+        require("0.00%".equals(repoSummaryByRepo.get("beta/two").get("Disclosure Rate Percentage")), "repo summary percentage");
+
         require(StudyDatasetExclusionValidator.matchesExcludedRepository("https://github.com/punkpeye/awesome-mcp-servers"), "excluded repository URL should match exactly");
         require(!StudyDatasetExclusionValidator.matchesExcludedRepository("https://github.com/punkpeye/awesome-map-servers"), "similarly named repository should not match");
         require(!StudyDatasetExclusionValidator.matchesExcludedRepository("owner/awesome-mcp-servers"), "same repo name with different owner should not match");
@@ -1512,6 +1529,18 @@ public class AiDisclosureDetectorHarness {
                 + "Zeta A,https://github.com/zeta/six,4,4\n"
                 + "Zeta B,https://github.com/Zeta/Six/,4,4\n"
                 + "Eta Display,https://github.com/eta/seven,,1\n";
+    }
+
+    private static String visibilityRepoSummaryCsv() {
+        return "\"# Analysis Started UTC\",\"2026-07-22T00:00:00Z\"\n"
+                + "\"# Analysis Completed UTC\",\"2026-07-22T00:01:00Z\"\n"
+                + "\n"
+                + "Repo,Eligible PRs Reviewed,Bot PRs Excluded,AI Disclosure Present Count,Positive Disclosure Count,Negative Disclosure Count,Ambiguous Disclosure Count,No Disclosure Count,Manual Review Required Count,Disclosure Compliance Rate\n"
+                + "Alpha/One,2,0,1,1,0,0,1,2,0.5000\n"
+                + "beta/two,1,0,0,0,0,0,1,1,0.0000\n"
+                + "gamma/three,1,0,1,1,0,0,0,1,1.0000\n"
+                + "delta/four,0,0,0,0,0,0,0,0,0.0000\n"
+                + "eta/seven,1,0,0,0,0,0,1,1,0.0000\n";
     }
 
     private static Path tempMissingPath(String prefix, String suffix) throws java.io.IOException {
