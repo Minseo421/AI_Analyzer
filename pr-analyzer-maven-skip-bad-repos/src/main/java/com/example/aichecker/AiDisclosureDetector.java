@@ -141,7 +141,7 @@ public class AiDisclosureDetector {
                     checkboxRule("possible_positive", "used ai")
             )),
             Map.entry("homebrew/brew", List.of(
-                    checkboxRule("possible_neutral", "did not use ai llm create pr or disclosed tool model"),
+                    checkboxRule("possible_negative", "did not use ai llm create pr or disclosed tool model"),
                     checkboxRule("possible_positive", "ai was used generate assist generating pr")
             )),
             Map.entry("joomla/joomla-cms", List.of(
@@ -164,6 +164,12 @@ public class AiDisclosureDetector {
                     checkboxRule("possible_positive", "ai generated")
             ))
     );
+    private static final Pattern HOMEBREW_DISCLOSURE_FIELD_PATTERN = Pattern.compile(
+            "(?i)^\\s*(?:#{1,6}\\s*)?(?:[-+]\\s*)?(?:" + AI_DISCLOSURE_HEADING
+                    + "|(?:ai\\s*/\\s*llm\\s+|ai\\s+)?tools?\\s*/\\s*models?(?:\\s+used)?|ai\\s+(?:tools?|models?)(?:\\s+used)?)\\s*(?::\\s*(.*))?$");
+    private static final Pattern HOMEBREW_INSTRUCTION_PATTERN = Pattern.compile(
+            "(?i)\\b(?:e\\.g|examples?|such as|if you|if used|please|disclose|enter|insert|specify|list|provide)\\b");
+
     private static final Pattern PGWATCH_AI_AUTOMATION_FIELD_PATTERN = Pattern.compile("(?im)^\\s*(?:#{1,6}\\s*)?AI\\s*/\\s*automation\\s+tools\\s+used\\s*:?\\s*(.*)$");
     private static final List<Pattern> PGWATCH_PLACEHOLDER_PATTERNS = List.of(
             Pattern.compile("(?is)^\\s*(?:none|n/a|not\\s+applicable|no|blank)?\\s*$"),
@@ -186,6 +192,13 @@ public class AiDisclosureDetector {
 
     public DisclosureResult detect(String repository, String prBody, String htmlText) {
         DisclosureResult repositoryBodyResult = detectRepositoryRules(repository, prBody, "PR body");
+        // Homebrew's acknowledgement is the gate, including when it is absent or unchecked.
+        // Only use the HTML fallback when the PR body itself is unavailable.
+        if ("homebrew/brew".equals(canonicalRepository(repository))) {
+            return isBlank(prBody)
+                    ? detectRepositoryRules(repository, removeGitHubChrome(htmlText), "HTML fallback")
+                    : repositoryBodyResult;
+        }
         DisclosureResult bodyResult = detectInText(removeUncheckedRepositoryTemplateText(repository, prBody), "PR body");
         if (bodyResult.disclosed()) {
             if (repositoryBodyResult.disclosed()
@@ -233,7 +246,7 @@ public class AiDisclosureDetector {
     public DetectionDiagnostics diagnosePrBody(String repository, String prBody) {
         PreparedText prepared = prepareText(prBody == null ? "" : prBody);
         DisclosureResult repositoryResult = detectRepositoryRules(repository, prBody, "PR body");
-        DisclosureResult result = repositoryResult.disclosed()
+        DisclosureResult result = repositoryResult.disclosed() || "homebrew/brew".equals(canonicalRepository(repository))
                 ? repositoryResult
                 : detectInText(removeUncheckedRepositoryTemplateText(repository, prBody), "PR body");
         return new DetectionDiagnostics(
@@ -579,7 +592,15 @@ public class AiDisclosureDetector {
             String normalized = normalizeCheckboxLabel(checkbox.replaceFirst("(?is)^\\[x]\\s*", ""));
             for (RepositoryCheckboxRule rule : rules) {
                 if (containsWordsInOrder(normalized, rule.normalizedNeedle())) {
-                    addByClassification(rule.classification(), checkbox, positives, negatives, neutrals);
+                    if ("homebrew/brew".equals(canonicalRepository)
+                            && "possible_negative".equals(rule.classification())) {
+                        String answer = homebrewDisclosedTool(prepared.visibleText());
+                        addByClassification(answer.isBlank() ? "possible_negative" : "possible_positive",
+                                answer.isBlank() ? checkbox : answer + "; " + checkbox,
+                                positives, negatives, neutrals);
+                    } else {
+                        addByClassification(rule.classification(), checkbox, positives, negatives, neutrals);
+                    }
                     break;
                 }
             }
@@ -887,6 +908,54 @@ public class AiDisclosureDetector {
             }
         }
         return new DisclosureResult(false, "No completed pgwatch AI/automation tools field found", "none", source);
+    }
+
+    private static String homebrewDisclosedTool(String text) {
+        boolean inDisclosureSection = false;
+        boolean hasDisclosureField = false;
+        List<String> answers = new ArrayList<>();
+        List<String> prose = new ArrayList<>();
+        // Keep headings for section boundaries, but discard checkbox labels and their continuations.
+        List<String> lines = List.of(text.split("\\R", -1));
+        for (int i = 0; i < lines.size(); i++) {
+            String raw = lines.get(i);
+            String line = stripMarkdown(raw);
+            if (MARKDOWN_CHECKBOX_START_PATTERN.matcher(raw.stripLeading().replaceFirst("^>\\s*", "")).matches()) {
+                inDisclosureSection = false;
+                while (i + 1 < lines.size() && isCheckboxContinuation(lines.get(i + 1))) i++;
+                continue;
+            }
+            Matcher field = HOMEBREW_DISCLOSURE_FIELD_PATTERN.matcher(line);
+            if (field.matches()) {
+                hasDisclosureField = true;
+                inDisclosureSection = true;
+                if (field.group(1) != null) answers.add(field.group(1));
+                continue;
+            }
+            if (ANY_MARKDOWN_HEADING_PATTERN.matcher(line).matches() || looksLikeFieldHeading(line)) {
+                inDisclosureSection = false;
+                continue;
+            }
+            if (inDisclosureSection) answers.add(line);
+            else prose.add(line);
+        }
+        for (String answer : hasDisclosureField ? answers : prose) {
+            if (isPlaceholderResponse(answer) || HOMEBREW_INSTRUCTION_PATTERN.matcher(answer).find()
+                    || isExplicitNoUseResponse(answer)
+                    || findDisclosure(answer, NEGATIVE_DISCLOSURE_PATTERNS, "possible_negative", "PR body").disclosed()) {
+                continue;
+            }
+            Matcher tool = Pattern.compile("(?i)\\b" + AI_TOOL_NAME + "\\b").matcher(answer);
+            while (tool.find()) {
+                // The shared vocabulary includes generic terms; this rule requires a named tool/model.
+                if (tool.group().matches("(?i)llm|ai\\s+(?:assistant|agent|tooling|tools?)")) continue;
+                if (hasDisclosureField
+                        || findDisclosure(answer, POSITIVE_DISCLOSURE_PATTERNS, "possible_positive", "PR body").disclosed()) {
+                    return cleanEvidence(answer);
+                }
+            }
+        }
+        return "";
     }
 
     private static boolean isMeaningfulPgwatchFieldAnswer(String answer) {

@@ -32,6 +32,11 @@ import javax.net.ssl.SSLParameters;
 public class AiDisclosureDetectorHarness {
     public static void main(String[] args) throws Exception {
         AiDisclosureDetector detector = new AiDisclosureDetector();
+        if (args.length == 1 && "--homebrew-only".equals(args[0])) {
+            verifyHomebrewDisclosure(detector);
+            System.out.println("Homebrew disclosure tests passed.");
+            return;
+        }
         String testToken = "ghp_test_token_should_not_log";
         HttpRequest authenticatedRequest = GitHubClient.buildGetRequest(URI.create("https://api.github.com/repos/owner/repo/pulls/1"), "application/vnd.github+json", testToken);
         require(authenticatedRequest.headers().firstValue("Authorization").orElse("").equals("Bearer " + testToken), "Authorization header should use GITHUB_TOKEN");
@@ -365,9 +370,7 @@ public class AiDisclosureDetectorHarness {
         requirePositive(detector.detect("- [x] AI tool(s) supported my development of this PR", ""), "generic checked AI tool checkbox");
         requireNegative(detector.detect("- [ ] AI tool(s) supported my development of this PR", ""), "generic unchecked AI tool checkbox");
 
-        requireNeutral(detector.detect("Homebrew/brew", "- [x] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", ""), "Homebrew combined compliance statement");
-        require(!detector.detect("Homebrew/brew", "- [ ] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", "").disclosed(), "Homebrew unchecked compliance statement");
-        requirePositive(detector.detect("Homebrew/brew", "- [x] AI was used to generate or assist with generating this PR.", ""), "Homebrew historical positive statement");
+        verifyHomebrewDisclosure(detector);
 
         requireNeutral(detector.detect("joomla/joomla-cms", "- [x] I read the Generative AI policy and my contribution is either not created with the help of AI or is compatible with the policy.", ""), "Joomla policy compliance statement");
         require(!detector.detect("joomla/joomla-cms", "- [ ] I read the Generative AI policy and my contribution is either not created with the help of AI or is compatible with the policy.", "").disclosed(), "Joomla unchecked policy compliance statement");
@@ -1327,6 +1330,56 @@ public class AiDisclosureDetectorHarness {
         require("Success".equals(retryFailedRows.get(3).get("Reanalysis Status")), "retry failed original success status unchanged");
 
         System.out.println("AiDisclosureDetectorHarness passed");
+    }
+
+    private static void verifyHomebrewDisclosure(AiDisclosureDetector detector) {
+        requireNegative(detector.detect("Homebrew/brew", "- [x] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", ""), "Homebrew combined compliance statement");
+        require(!detector.detect("Homebrew/brew", "- [ ] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", "").disclosed(), "Homebrew unchecked compliance statement");
+        requirePositive(detector.detect("Homebrew/brew", "- [x] AI was used to generate or assist with generating this PR.", ""), "Homebrew historical positive statement");
+
+        String homebrewCheckbox = "- [x] I did not use AI/LLM to create this PR, or I disclosed the tool/model below and reviewed its output; I did not attribute commits to AI and will answer maintainer questions and review comments myself without AI/LLM.";
+        for (String tool : List.of("Claude Opus", "ChatGPT", "GPT-4", "GitHub Copilot")) {
+            for (String marker : List.of("[x]", "[X]")) {
+                requirePositive(detector.detect("Homebrew/brew", homebrewCheckbox.replace("[x]", marker)
+                        + "\n\nAI tool/model: " + tool, ""), "Homebrew named tool " + tool + marker);
+            }
+        }
+        for (String answer : List.of("", "\n\nAI tool/model:", "\n\nAI tool/model: None",
+                "\n\n## AI disclosure\nAI/LLM tool/model",
+                "\n\n## AI disclosure\n<!-- Claude Opus -->",
+                "\n\n## AI disclosure\nPlease specify the tool/model, e.g. ChatGPT or GitHub Copilot.",
+                "\n\nAI tool/model: [insert Claude Opus here]",
+                "\n\nAI tool/model: LLM",
+                "\n\nAI tool/model: I did not use ChatGPT")) {
+            requireNegative(detector.detect("Homebrew/brew", homebrewCheckbox + answer, ""),
+                    "Homebrew no contributor tool: " + answer);
+        }
+        for (String checkbox : List.of(homebrewCheckbox.replace("[x]", "[ ]"), "",
+                homebrewCheckbox.replace("- [x] ", ""), homebrewCheckbox.replace("[x]", "[?]"))) {
+            for (String answer : List.of("", "\n\nAI disclosure: Claude Opus")) {
+                DisclosureResult result = detector.detect("Homebrew/brew", checkbox + answer, "");
+                require(!result.disclosed() && "none".equals(result.classification()), "Homebrew incomplete acknowledgement");
+                require(!detector.diagnosePrBody("Homebrew/brew", checkbox + answer).result().disclosed(),
+                        "Homebrew diagnostics incomplete acknowledgement");
+            }
+        }
+        requirePositive(detector.detect("Homebrew/brew", homebrewCheckbox.replace("- [x] I did not use AI/LLM",
+                "* [ X ] I  did not use **AI / LLM**").replace("or I disclosed", "or I\n  disclosed")
+                + "\n\n### AI disclosure\nClaude Opus", ""), "Homebrew Markdown and wrapped checkbox");
+        requirePositive(detector.detect("Homebrew/brew", homebrewCheckbox + "\n\n**AI tool/model:** `ChatGPT`", ""),
+                "Homebrew bold inline field");
+        requireNegative(detector.detect("Homebrew/brew", homebrewCheckbox
+                + "\n\n## AI disclosure\n\n## Testing\nI used ChatGPT to discuss something unrelated.", ""),
+                "Homebrew disclosure section boundary takes precedence over unrelated prose");
+        requirePositive(detector.detect("Homebrew/brew", homebrewCheckbox + "\n\nI used Claude Opus to write tests.", ""),
+                "Homebrew explicit prose disclosure without designated field");
+        requireNegative(detector.detect("Homebrew/brew", homebrewCheckbox + "\n\nUpdate ChatGPT documentation.", ""),
+                "Homebrew unrelated tool mention");
+        requirePositive(detector.detect("Homebrew/brew", "", homebrewCheckbox + "\nAI tool/model: ChatGPT"),
+                "Homebrew HTML fallback uses combined rule");
+        require(!detector.detect("Homebrew/brew", homebrewCheckbox.replace("[x]", "[ ]"),
+                homebrewCheckbox + "\nAI tool/model: ChatGPT").disclosed(), "Homebrew body gate takes precedence over fallback");
+
     }
 
     private static String labelsCsv(String present1, String classification1, String present2, String classification2) {
