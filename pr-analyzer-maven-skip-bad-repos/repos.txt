@@ -17,7 +17,6 @@ kornia/kornia
 apache/kvrocks
 llvm/llvm-project
 matplotlib/matplotlib
-mesa/mesa
 NetBSD/src
 numpy/numpy
 napari/napari
