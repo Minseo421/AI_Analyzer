@@ -2,7 +2,7 @@ apache/airflow
 apache/couchdb
 apache/arrow
 cilium/cilium
-cncf/landscape
+cloudnative-pg/cloudnative-pg
 curl/curl
 django/django
 easybuilders/easybuild
