@@ -54,7 +54,6 @@ QGIS,,https://github.com/qgis/qgis,13.9k,GPL-2.0,https://github.com/qgis/QGIS-En
 
  AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR. See our policy about AI tool use. Use of AI tools must be indicated. Failure to be honest might result in banning.",1,,,1,1,3,"Checkbox: AI tool(s) supported this PR, Look for ""Assisted-by:"" or explicit AI/tool-usage disclosure",
 SciPy,,https://github.com/scipy/scipy,14.7k,BSD-3-Clause,https://scipy.github.io/devdocs/dev/conduct/ai_policy.html,external documentation website ,3,AI Generation Disclosure,1,,1,1,1,4,"Disclose tool(s), how used, and AI-generated code/text; otherwise write ""No AI tools used""",
-STAC,,https://github.com/StacDev/stac,857,MIT,https://github.com/stac-utils/stac-utils.github.io/blob/main/docs/ai-contribution-policy.md,under another repository owned by the foundation,2,no,1,,,,1,2,Repository-policy mismatch � do not apply the geospatial STAC AI policy,recheck
 Polars,,https://github.com/pola-rs/polars,38.7k,MIT,https://github.com/pola-rs/polars/blob/8425c750b9c5d28c79428998fda2320d076d4178/AI_POLICY.md,directly in repository,3,"Note that if you used AI to generate code there are additional requirements you
 must fulfill for your PR to be reviewed. See the contribution guidelines for
 details, afterwards you can use the following template if you wish:

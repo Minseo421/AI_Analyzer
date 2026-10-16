@@ -27,7 +27,6 @@ pandas-dev/pandas
 cybertec-postgresql/pgwatch
 qgis/qgis
 scipy/scipy
-StacDev/stac
 pola-rs/polars
 processing/p5.js
 qutip/qutip
