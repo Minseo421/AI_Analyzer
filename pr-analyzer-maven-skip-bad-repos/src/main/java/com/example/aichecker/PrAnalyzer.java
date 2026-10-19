@@ -54,7 +54,7 @@ public class PrAnalyzer {
         RepoUrl repoUrl = RepoUrl.parse(repository);
         PullRequestData apiData = gitHubClient.getPullRequest(repoUrl.owner(), repoUrl.repo(), number);
         HtmlData htmlData = fetchHtmlSafe(apiData.url());
-        DisclosureResult disclosure = detector.detect(apiData.repository(), apiData.body(), htmlData.text());
+        DisclosureResult disclosure = detector.detect(apiData.repository(), apiData.body(), "");
         AiDisclosureDetector.DetectionDiagnostics diagnostics = detector.diagnosePrBody(apiData.repository(), apiData.body());
         return new AnalysisDetail(toReportRow(apiData, htmlData, disclosure), apiData, htmlData, diagnostics);
     }
@@ -348,14 +348,15 @@ public class PrAnalyzer {
     private void printDisclosureSummary(List<PrReportRow> rows) {
         List<String> disclosedPrs = new ArrayList<>();
         for (PrReportRow row : rows) {
-            if (row.aiDisclosure()) {
+            if (row.evidenceComplete() && row.aiDisclosure()) {
                 disclosedPrs.add("#" + row.pullRequestNumber());
             }
         }
-        long disclosed = rows.stream().filter(PrReportRow::aiDisclosure).count();
-        double percentage = rows.isEmpty() ? 0.0 : disclosed * 100.0 / rows.size();
+        long disclosed = rows.stream().filter(PrReportRow::evidenceComplete).filter(PrReportRow::aiDisclosure).count();
+        long complete = rows.stream().filter(PrReportRow::evidenceComplete).count();
+        double percentage = complete == 0 ? Double.NaN : disclosed * 100.0 / complete;
         System.out.println();
-        System.out.printf("Repository AI disclosure percentage: %.2f%% (%d/%d)%n", percentage, disclosed, rows.size());
+        System.out.printf("Automated PR-body disclosure percentage: %.2f%% (%d/%d)%n", percentage, disclosed, complete);
         System.out.println("AI disclosure PRs: " + (disclosedPrs.isEmpty() ? "None" : String.join(", ", disclosedPrs)));
         System.out.println("Detailed evidence is saved in the CSV file.");
         System.out.println();
@@ -365,7 +366,7 @@ public class PrAnalyzer {
         System.out.println();
         System.out.println("Combined repository summary");
         System.out.println("┌──────────────────────────────┬─────────────┬────────────┬────────────┐");
-        System.out.println("│ Repository                   │ Human PRs   │ Disclosed  │ Percentage │");
+        System.out.println("│ Repository                   │ Complete    │ Disclosed  │ Percentage │");
         System.out.println("├──────────────────────────────┼─────────────┼────────────┼────────────┤");
         List<String> repos = new ArrayList<>();
         for (PrReportRow row : rows) {
@@ -374,14 +375,14 @@ public class PrAnalyzer {
             }
         }
         for (String repo : repos) {
-            long total = rows.stream().filter(r -> r.repository().equals(repo)).count();
-            long disclosed = rows.stream().filter(r -> r.repository().equals(repo) && r.aiDisclosure()).count();
-            double percentage = total == 0 ? 0.0 : disclosed * 100.0 / total;
+            long total = rows.stream().filter(r -> r.repository().equals(repo) && r.evidenceComplete()).count();
+            long disclosed = rows.stream().filter(r -> r.repository().equals(repo) && r.evidenceComplete() && r.aiDisclosure()).count();
+            double percentage = total == 0 ? Double.NaN : disclosed * 100.0 / total;
             System.out.printf("│ %-28s │ %11d │ %10d │ %9.2f%% │%n", fit(repo, 28), total, disclosed, percentage);
         }
-        long total = rows.size();
-        long disclosed = rows.stream().filter(PrReportRow::aiDisclosure).count();
-        double percentage = total == 0 ? 0.0 : disclosed * 100.0 / total;
+        long total = rows.stream().filter(PrReportRow::evidenceComplete).count();
+        long disclosed = rows.stream().filter(PrReportRow::evidenceComplete).filter(PrReportRow::aiDisclosure).count();
+        double percentage = total == 0 ? Double.NaN : disclosed * 100.0 / total;
         System.out.println("├──────────────────────────────┼─────────────┼────────────┼────────────┤");
         System.out.printf("│ %-28s │ %11d │ %10d │ %9.2f%% │%n", "TOTAL", total, disclosed, percentage);
         System.out.println("└──────────────────────────────┴─────────────┴────────────┴────────────┘");
@@ -419,7 +420,7 @@ public class PrAnalyzer {
 
     private PrReportRow analyze(PullRequestData apiData) {
         HtmlData htmlData = fetchHtmlSafe(apiData.url());
-        DisclosureResult disclosure = detector.detect(apiData.repository(), apiData.body(), htmlData.text());
+        DisclosureResult disclosure = detector.detect(apiData.repository(), apiData.body(), "");
         return toReportRow(apiData, htmlData, disclosure);
     }
 
@@ -453,7 +454,7 @@ public class PrAnalyzer {
             String html = gitHubClient.fetchHtml(url);
             return new HtmlData(true, HtmlTools.toPlainText(html), "");
         } catch (Exception e) {
-            return new HtmlData(false, "", e.getMessage());
+            return new HtmlData(false, "", shortError(e.getMessage()));
         }
     }
 

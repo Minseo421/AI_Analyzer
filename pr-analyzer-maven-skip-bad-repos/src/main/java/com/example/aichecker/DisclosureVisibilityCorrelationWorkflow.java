@@ -65,11 +65,11 @@ public class DisclosureVisibilityCorrelationWorkflow {
     }
 
     private static void validatePrDataset(List<Map<String, String>> rows, Path path) {
-        requireColumns(rows, path, List.of("Repo", "PR #", "Status", "AI Disclosure Present"));
+        requireColumns(rows, path, List.of("Repo", "PR #", "Status", "AI Disclosure Present", "Evidence Completeness", "Source Coverage Rule"));
     }
 
     private static void validateRepositoryComplianceSummary(List<Map<String, String>> rows, Path path) {
-        requireColumns(rows, path, List.of("Repo", "Eligible PRs Reviewed", "AI Disclosure Present Count", "No Disclosure Count"));
+        requireColumns(rows, path, List.of("Repo", "Eligible PRs Reviewed", "AI Disclosure Present Count", "No Disclosure Count", "Complete Evidence Count", "Unknown Disclosure Count"));
     }
 
     private static void validatePolicyTracker(List<Map<String, String>> rows, Path path) {
@@ -144,10 +144,12 @@ public class DisclosureVisibilityCorrelationWorkflow {
             int eligible = parseNonNegativeInt(row.get("Eligible PRs Reviewed"));
             int withDisclosure = parseNonNegativeInt(row.get("AI Disclosure Present Count"));
             int withoutDisclosure = parseNonNegativeInt(row.get("No Disclosure Count"));
-            if (withDisclosure + withoutDisclosure != eligible) {
-                withoutDisclosure = Math.max(0, eligible - withDisclosure);
+            int complete = parseNonNegativeInt(row.get("Complete Evidence Count"));
+            int unknown = parseNonNegativeInt(row.get("Unknown Disclosure Count"));
+            if (withDisclosure + withoutDisclosure != complete || complete + unknown != eligible) {
+                throw new IllegalArgumentException("Inconsistent disclosure/evidence counts for " + repo);
             }
-            result.put(repo, new SummaryRow(repo, eligible, eligible, eligible, withDisclosure, withoutDisclosure, 0, "", "", "", "", Double.NaN, "Unmatched", false, "No policy tracker match"));
+            result.put(repo, new SummaryRow(repo, eligible, complete, complete, withDisclosure, withoutDisclosure, unknown, "", "", "", "", Double.NaN, "Unmatched", false, "No policy tracker match"));
         }
         return result;
     }
@@ -156,7 +158,9 @@ public class DisclosureVisibilityCorrelationWorkflow {
         String status = clean(row.get("Status"));
         String disclosure = clean(row.get("AI Disclosure Present"));
         String bot = clean(row.get("Bot"));
-        return SUCCESS_STATUSES.stream().anyMatch(value -> value.equalsIgnoreCase(status))
+        return "Complete".equals(row.get("Evidence Completeness"))
+                && "PR_BODY_ONLY_V1".equals(row.get("Source Coverage Rule"))
+                && SUCCESS_STATUSES.stream().anyMatch(value -> value.equalsIgnoreCase(status))
                 && !clean(row.get("Closed Date")).isBlank()
                 && !bot.equalsIgnoreCase("Yes")
                 && (disclosure.equalsIgnoreCase("Yes") || disclosure.equalsIgnoreCase("No"));
@@ -241,7 +245,7 @@ public class DisclosureVisibilityCorrelationWorkflow {
 
     private static void writeSummary(Path path, List<SummaryRow> rows) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
-            writer.write("Repository,Total PR Rows,Eligible PRs,Successfully Analysed Eligible PRs,PRs With Disclosure,PRs Without Disclosure,Failed or Excluded PRs,Disclosure Rate,Disclosure Rate Percentage,Policy Tracker Repo,Repository Link,Visibility Score Original,Visibility Score Numeric,Match Status,Correlation Included,Exclusion Reason");
+            writer.write("Repository,Total PR Rows,Eligible PRs,Successfully Analysed Eligible PRs,PRs With Disclosure,PRs Without Disclosure,Failed or Excluded PRs,Automated Disclosure Rate,Automated Disclosure Rate Percentage,Policy Tracker Repo,Repository Link,Visibility Score Original,Visibility Score Numeric,Match Status,Correlation Included,Exclusion Reason");
             writer.newLine();
             for (SummaryRow row : rows) {
                 writer.write(String.join(",",
@@ -289,7 +293,7 @@ public class DisclosureVisibilityCorrelationWorkflow {
             writer.write("Metric Pair,Spearman Rho,P-Value,Sample Size,Significance Level,Significance Result,Confidence Interval Lower,Confidence Interval Upper,Excluded Repository Count,Interpretation");
             writer.newLine();
             writer.write(String.join(",",
-                    CsvTools.csv("Visibility Score vs Disclosure Rate"),
+                    CsvTools.csv("Visibility Score vs Automated Disclosure Rate"),
                     CsvTools.csv(formatNullable(result.rho())),
                     CsvTools.csv(formatNullable(result.pValue())),
                     CsvTools.csv(Integer.toString(result.n())),

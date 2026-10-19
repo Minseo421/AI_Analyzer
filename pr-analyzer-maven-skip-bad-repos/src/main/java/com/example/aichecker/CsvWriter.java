@@ -49,6 +49,7 @@ public class CsvWriter {
     }
 
     public static int appendReportRows(Path path, List<PrReportRow> rows) throws IOException {
+        validateAppendSchema(path, false);
         boolean writeHeader = !Files.exists(path) || Files.size(path) == 0;
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             if (writeHeader) {
@@ -69,6 +70,7 @@ public class CsvWriter {
     }
 
     public static int appendPrDatasetRows(Path path, List<PrReportRow> rows, String analysisStartedUtc) throws IOException {
+        validateAppendSchema(path, true);
         boolean writeHeader = !Files.exists(path) || Files.size(path) == 0;
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             if (writeHeader) {
@@ -86,6 +88,7 @@ public class CsvWriter {
     }
 
     public static Set<String> completedReportIds(Path path) throws IOException {
+        validateAppendSchema(path, false);
         Set<String> ids = new LinkedHashSet<>();
         if (!Files.exists(path) || Files.size(path) == 0) return ids;
         for (Map<String, String> row : CsvTools.readRows(path)) {
@@ -95,6 +98,7 @@ public class CsvWriter {
     }
 
     public static Set<String> completedPrDatasetIds(Path path) throws IOException {
+        validateAppendSchema(path, true);
         Set<String> ids = new LinkedHashSet<>();
         if (!Files.exists(path) || Files.size(path) == 0) return ids;
         for (Map<String, String> row : CsvTools.readRows(path)) {
@@ -121,19 +125,20 @@ public class CsvWriter {
             writeAnalysisMetadata(writer, analysisStartedUtc, analysisCompletedUtc);
             writer.write("Repo,Eligible PRs Reviewed,Bot PRs Excluded,AI Disclosure Present Count,"
                     + "Positive Disclosure Count,Negative Disclosure Count,Ambiguous Disclosure Count,"
-                    + "No Disclosure Count,Manual Review Required Count,Disclosure Compliance Rate");
+                    + "No Disclosure Count,Manual Review Required Count,Automated Disclosure Rate,Complete Evidence Count,Unknown Disclosure Count,Policy Acknowledgement Count");
             writer.newLine();
             for (Map.Entry<String, List<PrReportRow>> entry : rowsByRepo.entrySet()) {
                 String repo = entry.getKey();
                 List<PrReportRow> repoRows = entry.getValue();
                 int eligible = repoRows.size();
-                long present = repoRows.stream().filter(PrReportRow::aiDisclosure).count();
+                long complete = repoRows.stream().filter(PrReportRow::evidenceComplete).count();
+                long present = repoRows.stream().filter(PrReportRow::evidenceComplete).filter(PrReportRow::aiDisclosure).count();
                 long positive = countClassification(repoRows, "possible_positive");
                 long negative = countClassification(repoRows, "possible_negative");
                 long ambiguous = countClassification(repoRows, "possible_ambiguous");
-                long noDisclosure = eligible - present;
+                long noDisclosure = complete - present;
                 long manualReviewRequired = eligible;
-                double complianceRate = eligible == 0 ? 0.0 : present * 1.0 / eligible;
+                double disclosureRate = complete == 0 ? Double.NaN : present * 1.0 / complete;
 
                 writer.write(String.join(",",
                         csv(repo),
@@ -145,7 +150,10 @@ public class CsvWriter {
                         csv(Long.toString(ambiguous)),
                         csv(Long.toString(noDisclosure)),
                         csv(Long.toString(manualReviewRequired)),
-                        csv(String.format(Locale.ROOT, "%.4f", complianceRate))
+                        csv(complete == 0 ? "" : String.format(Locale.ROOT, "%.4f", disclosureRate)),
+                        csv(Long.toString(complete)),
+                        csv(Long.toString(eligible - complete)),
+                        csv(Long.toString(countClassification(repoRows, "policy_acknowledgement")))
                 ));
                 writer.newLine();
             }
@@ -165,7 +173,7 @@ public class CsvWriter {
     }
 
     private static long countClassification(List<PrReportRow> rows, String classification) {
-        return rows.stream().filter(row -> classification.equals(row.aiDisclosureClassification())).count();
+        return rows.stream().filter(PrReportRow::evidenceComplete).filter(row -> classification.equals(row.aiDisclosureClassification())).count();
     }
 
     private static void writeReportHeader(BufferedWriter writer) throws IOException {
@@ -182,7 +190,9 @@ public class CsvWriter {
                 csv("Merged"),
                 csv("AI Disclosure evidence"),
                 csv("HTML scrape success"),
-                csv("HTML scrape error")
+                csv("HTML scrape error"), csv("Evidence Completeness"), csv("Evidence Source"),
+                csv("Evidence ID"), csv("Evidence URL"), csv("Evidence Author"), csv("Evidence Created At"),
+                csv("Source Coverage Rule"), csv("Review Status")
         ));
     }
 
@@ -196,17 +206,23 @@ public class CsvWriter {
                 csv(Boolean.toString(row.closed())),
                 csv(Boolean.toString(row.humanAuthor())),
                 csv(row.githubUserType()),
-                csv(Boolean.toString(row.aiDisclosure())),
+                csv(row.disclosureStatus()),
                 csv(Boolean.toString(row.merged())),
                 csv(row.aiDisclosureEvidence()),
                 csv(Boolean.toString(row.htmlScrapeSuccess())),
-                csv(row.htmlScrapeError())
+                csv(row.htmlScrapeError()), csv(row.evidenceCompleteness()), csv(row.aiDisclosureSource()),
+                csv(row.evidenceId()), csv(row.evidenceUrl()), csv(row.author()), csv(row.createdAt()),
+                csv(row.sourceCoverageRule()), csv(row.reviewStatus())
         ));
     }
 
     private static void writePrDatasetHeader(BufferedWriter writer) throws IOException {
         writer.write("Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Bot,Status,"
-                + "AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text");
+                + "AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text,"
+                + "Evidence Completeness,Evidence Source,Evidence ID,Evidence URL,Evidence Author,Evidence Created At,"
+                + "Source Coverage Rule,HTML Scrape Success,HTML Scrape Error,Review Status,Policy Acknowledgement Only,"
+                + "Policy Requirement,Policy Effective From,Policy Effective Through,Policy Source URL,Policy Coded At,"
+                + "Policy Coder,Reviewed AI Use,Reviewed Disclosure Present,Reviewed Compliance,Review Evidence URL,Reviewed At,Reviewer");
     }
 
     private static void writePrDatasetRow(BufferedWriter writer, PrReportRow row) throws IOException {
@@ -222,9 +238,15 @@ public class CsvWriter {
                 csv(yesNo(!row.humanAuthor())),
                 csv(datasetStatus(row)),
                 csv(MANUAL_REVIEW_REQUIRED),
-                csv(yesNo(row.aiDisclosure())),
+                csv(row.disclosureStatus()),
                 csv(disclosureClassification(row)),
-                csv(disclosureText(row))
+                csv(disclosureText(row)),
+                csv(row.evidenceCompleteness()), csv(row.aiDisclosureSource()), csv(row.evidenceId()),
+                csv(row.evidenceUrl()), csv(row.author()), csv(row.createdAt()), csv(row.sourceCoverageRule()),
+                csv(yesNo(row.htmlScrapeSuccess())), csv(row.htmlScrapeError()), csv(row.reviewStatus()),
+                csv(yesNo("policy_acknowledgement".equals(row.aiDisclosureClassification()))),
+                csv("Unresolved"), csv(""), csv(""), csv(""), csv(""), csv(""),
+                csv("Unknown"), csv("Unknown"), csv("Unresolved"), csv(""), csv(""), csv("")
         ));
     }
 
@@ -255,13 +277,30 @@ public class CsvWriter {
     }
 
     private static String disclosureClassification(PrReportRow row) {
-        if (!row.aiDisclosure()) return "None";
-        return MANUAL_REVIEW_REQUIRED;
+        if (!row.evidenceComplete()) return "Unknown";
+        return row.aiDisclosureClassification();
     }
 
     private static String disclosureText(PrReportRow row) {
-        if (!row.aiDisclosure()) return "";
+        if (!row.aiDisclosure() && !"policy_acknowledgement".equals(row.aiDisclosureClassification())) return "";
         return row.aiDisclosureEvidence();
+    }
+
+    private static void validateAppendSchema(Path path, boolean dataset) throws IOException {
+        if (!Files.exists(path) || Files.size(path) == 0) return;
+        var buffer = new java.io.StringWriter();
+        try (var writer = new BufferedWriter(buffer)) {
+            if (dataset) writePrDatasetHeader(writer); else writeReportHeader(writer);
+        }
+        try (var reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank() || line.startsWith("#") || line.startsWith("\"#")) continue;
+                if (line.equals(buffer.toString())) return;
+                break;
+            }
+        }
+        throw new IOException("Incompatible CSV evidence schema: " + path + ". Recollect into a new file; legacy rows cannot be assumed complete.");
     }
 
     private static String csv(String value) {

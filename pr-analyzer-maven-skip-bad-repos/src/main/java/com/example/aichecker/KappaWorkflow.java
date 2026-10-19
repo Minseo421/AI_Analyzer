@@ -53,7 +53,7 @@ public class KappaWorkflow {
                         CsvTools.csv(row.mergedAt()),
                         CsvTools.csv(status(row)),
                         CsvTools.csv(row.aiDisclosure() ? row.aiDisclosureEvidence() : ""),
-                        CsvTools.csv(row.aiDisclosure() ? "Yes" : "No"),
+                        CsvTools.csv(row.disclosureStatus()),
                         CsvTools.csv("")
                 ));
                 writer.newLine();

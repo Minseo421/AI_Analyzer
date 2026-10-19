@@ -88,7 +88,7 @@ public class SpecificPrAnalysisWorkflow {
             if (attempt.detail() != null) {
                 PrReportRow analyzed = attempt.detail().row();
                 updatedRow.put(DISCLOSURE_EVIDENCE, analyzed.aiDisclosure() ? analyzed.aiDisclosureEvidence() : "");
-                updatedRow.put(SCRIPT_PRESENT, analyzed.aiDisclosure() ? "Yes" : "No");
+                updatedRow.put(SCRIPT_PRESENT, analyzed.disclosureStatus());
                 if (updatedRow.containsKey(SCRIPT_CLASSIFICATION)) {
                     updatedRow.put(SCRIPT_CLASSIFICATION, analyzed.aiDisclosureClassification());
                 }

@@ -1,0 +1,359 @@
+Command: mvn --batch-mode clean test
+Exit code: 0
+
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.example:pr-analyzer-maven >--------------------
+[INFO] Building pr-analyzer-maven 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ pr-analyzer-maven ---
+[INFO] Deleting /Users/anna/Downloads/AI_Analyzer/pr-analyzer-maven-skip-bad-repos/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ pr-analyzer-maven ---
+[INFO] skip non existing resourceDirectory /Users/anna/Downloads/AI_Analyzer/pr-analyzer-maven-skip-bad-repos/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ pr-analyzer-maven ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 26 source files with javac [debug target 17] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ pr-analyzer-maven ---
+[INFO] skip non existing resourceDirectory /Users/anna/Downloads/AI_Analyzer/pr-analyzer-maven-skip-bad-repos/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ pr-analyzer-maven ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 5 source files with javac [debug target 17] to target/test-classes
+[INFO] 
+[INFO] --- surefire:2.22.0:test (default-test) @ pr-analyzer-maven ---
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.example.aichecker.PolicyComplianceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s - in com.example.aichecker.PolicyComplianceTest
+[INFO] Running com.example.aichecker.EvidenceContractTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.103 s - in com.example.aichecker.EvidenceContractTest
+[INFO] Running com.example.aichecker.RegressionTest
+GitHub fetch repo=owner/repo pr=7 url=https://api.github.com/repos/owner/repo/pulls/7 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=7 url=https://api.github.com/repos/owner/repo/pulls/7 attempt=1 category=http2_goaway outcome=Retrying
+GitHub fetch repo=owner/repo pr=7 url=https://api.github.com/repos/owner/repo/pulls/7 attempt=2 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=7 url=https://api.github.com/repos/owner/repo/pulls/7 attempt=2 category=success outcome=Success
+GitHub fetch repo=owner/repo pr=8 url=https://api.github.com/repos/owner/repo/pulls/8 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=8 url=https://api.github.com/repos/owner/repo/pulls/8 attempt=1 category=socket_timeout outcome=Retrying
+GitHub fetch repo=owner/repo pr=8 url=https://api.github.com/repos/owner/repo/pulls/8 attempt=2 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=8 url=https://api.github.com/repos/owner/repo/pulls/8 attempt=2 category=socket_timeout outcome=Retrying
+GitHub fetch repo=owner/repo pr=8 url=https://api.github.com/repos/owner/repo/pulls/8 attempt=3 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=8 url=https://api.github.com/repos/owner/repo/pulls/8 attempt=3 category=socket_timeout outcome=Retrying
+GitHub fetch repo=owner/repo pr=8 url=https://api.github.com/repos/owner/repo/pulls/8 attempt=4 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=8 url=https://api.github.com/repos/owner/repo/pulls/8 attempt=4 category=socket_timeout outcome=Failed
+GitHub fetch repo=owner/repo pr=9 url=https://api.github.com/repos/owner/repo/pulls/9 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=9 url=https://api.github.com/repos/owner/repo/pulls/9 attempt=1 category=transient_http_429 outcome=Retrying
+GitHub fetch repo=owner/repo pr=9 url=https://api.github.com/repos/owner/repo/pulls/9 attempt=2 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=9 url=https://api.github.com/repos/owner/repo/pulls/9 attempt=2 category=success outcome=Success
+GitHub fetch repo=owner/repo pr=15 url=https://api.github.com/repos/owner/repo/pulls/15 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=15 url=https://api.github.com/repos/owner/repo/pulls/15 attempt=1 category=transient_http_403 outcome=Retrying
+GitHub fetch repo=owner/repo pr=15 url=https://api.github.com/repos/owner/repo/pulls/15 attempt=2 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=15 url=https://api.github.com/repos/owner/repo/pulls/15 attempt=2 category=success outcome=Success
+GitHub fetch repo=owner/repo pr=13 url=https://api.github.com/repos/owner/repo/pulls/13 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=13 url=https://api.github.com/repos/owner/repo/pulls/13 attempt=1 timeout_seconds=60 category=request_timeout outcome=Retrying
+GitHub fetch repo=owner/repo pr=13 url=https://api.github.com/repos/owner/repo/pulls/13 attempt=2 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=13 url=https://api.github.com/repos/owner/repo/pulls/13 attempt=2 category=success outcome=Success
+GitHub fetch repo=owner/repo pr=14 url=https://api.github.com/repos/owner/repo/pulls/14 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=14 url=https://api.github.com/repos/owner/repo/pulls/14 attempt=1 timeout_seconds=60 category=request_timeout outcome=Retrying
+GitHub fetch repo=owner/repo pr=14 url=https://api.github.com/repos/owner/repo/pulls/14 attempt=2 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=14 url=https://api.github.com/repos/owner/repo/pulls/14 attempt=2 timeout_seconds=60 category=request_timeout outcome=Retrying
+GitHub fetch repo=owner/repo pr=14 url=https://api.github.com/repos/owner/repo/pulls/14 attempt=3 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=14 url=https://api.github.com/repos/owner/repo/pulls/14 attempt=3 timeout_seconds=60 category=request_timeout outcome=Retrying
+GitHub fetch repo=owner/repo pr=14 url=https://api.github.com/repos/owner/repo/pulls/14 attempt=4 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=14 url=https://api.github.com/repos/owner/repo/pulls/14 attempt=4 timeout_seconds=60 category=request_timeout outcome=Failed
+GitHub fetch repo=owner/repo pr=10 url=https://api.github.com/repos/owner/repo/pulls/10 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=10 url=https://api.github.com/repos/owner/repo/pulls/10 attempt=1 category=permanent_http_404 outcome=Failed
+GitHub fetch repo=owner/repo pr=11 url=https://api.github.com/repos/owner/repo/pulls/11 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=11 url=https://api.github.com/repos/owner/repo/pulls/11 attempt=1 category=http2_goaway outcome=Retrying
+GitHub fetch repo=owner/repo pr=11 url=https://api.github.com/repos/owner/repo/pulls/11 attempt=2 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=11 url=https://api.github.com/repos/owner/repo/pulls/11 attempt=2 category=success outcome=Success
+GitHub fetch repo=owner/repo pr=12 url=https://api.github.com/repos/owner/repo/pulls/12 attempt=1 timeout_seconds=60 category=request_start outcome=Starting
+GitHub fetch repo=owner/repo pr=12 url=https://api.github.com/repos/owner/repo/pulls/12 attempt=1 category=transient_http_503 outcome=Retrying
+
+All eligible closed human PRs for window/repo
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+│   1 │ window/repo                  │ #17    │ human                │ Unknown       │ NO     │
+│   2 │ window/repo                  │ #16    │ human                │ Unknown       │ NO     │
+│   3 │ window/repo                  │ #13    │ human                │ Unknown       │ NO     │
+│   4 │ window/repo                  │ #12    │ human                │ Unknown       │ NO     │
+│   5 │ window/repo                  │ #11    │ human                │ Unknown       │ NO     │
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for window/repo
+Analysis timestamp (UTC): 2026-07-23T12:00Z
+Deprecated requested-count argument ignored: 3
+Collection timestamp (UTC): 2026-07-23T12:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-03-23T12:00:00Z
+Fetched unique PRs inspected: 8
+Excluded as older than four calendar months: 1
+Excluded because state was not closed: 1
+Duplicate PRs skipped across pages: 1
+Final PRs written: 5
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+
+All eligible closed human PRs for page/repo
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+│   1 │ page/repo                    │ #4     │ human                │ Unknown       │ NO     │
+│   2 │ page/repo                    │ #3     │ human                │ Unknown       │ NO     │
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for page/repo
+Analysis timestamp (UTC): 2026-07-22T00:00Z
+Deprecated requested-count argument ignored: 1
+Collection timestamp (UTC): 2026-07-22T00:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-03-22T00:00:00Z
+Fetched unique PRs inspected: 5
+Excluded as older than four calendar months: 1
+Excluded because closed_at is after the analysis timestamp: 1
+Final PRs written: 2
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+
+All eligible closed human PRs for calendar/repo
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+│   1 │ calendar/repo                │ #1     │ human                │ Unknown       │ NO     │
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for calendar/repo
+Analysis timestamp (UTC): 2026-06-30T00:00Z
+Deprecated requested-count argument ignored: 1
+Collection timestamp (UTC): 2026-06-30T00:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-02-28T00:00:00Z
+Fetched unique PRs inspected: 1
+Excluded as older than four calendar months: 0
+Final PRs written: 1
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+
+All eligible closed human PRs for bad/repo
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+WARNING: Excluding bad/repo#1 because closed_at is missing or invalid: (blank)
+WARNING: Excluding bad/repo#2 because closed_at is missing or invalid: not-a-date
+│   1 │ bad/repo                     │ #3     │ human                │ Unknown       │ NO     │
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for bad/repo
+Analysis timestamp (UTC): 2026-07-22T00:00Z
+Deprecated requested-count argument ignored: 3
+Collection timestamp (UTC): 2026-07-22T00:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-03-22T00:00:00Z
+Fetched unique PRs inspected: 3
+Excluded as older than four calendar months: 0
+Excluded because closed_at was missing or invalid: 2
+Final PRs written: 1
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+
+All eligible closed human PRs for multi/one
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+│   1 │ multi/one                    │ #1     │ human                │ Unknown       │ NO     │
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for multi/one
+Analysis timestamp (UTC): 2026-07-22T00:00Z
+Deprecated requested-count argument ignored: 1
+Collection timestamp (UTC): 2026-07-22T00:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-03-22T00:00:00Z
+Fetched unique PRs inspected: 1
+Excluded as older than four calendar months: 0
+Final PRs written: 1
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+
+All eligible closed human PRs for multi/two
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for multi/two
+Analysis timestamp (UTC): 2026-07-22T00:00Z
+Deprecated requested-count argument ignored: 1
+Collection timestamp (UTC): 2026-07-22T00:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-03-22T00:00:00Z
+Fetched unique PRs inspected: 1
+Excluded as older than four calendar months: 1
+Final PRs written: 0
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+
+Combined repository summary
+┌──────────────────────────────┬─────────────┬────────────┬────────────┐
+│ Repository                   │ Complete    │ Disclosed  │ Percentage │
+├──────────────────────────────┼─────────────┼────────────┼────────────┤
+│ multi/one                    │           0 │          0 │       NaN% │
+├──────────────────────────────┼─────────────┼────────────┼────────────┤
+│ TOTAL                        │           0 │          0 │       NaN% │
+└──────────────────────────────┴─────────────┴────────────┴────────────┘
+
+
+All eligible closed human PRs for html/repo
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+│   1 │ html/repo                    │ #2     │ human                │ Unknown       │ NO     │
+│   2 │ html/repo                    │ #1     │ human                │ Unknown       │ NO     │
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for html/repo
+Analysis timestamp (UTC): 2026-07-22T00:00Z
+Deprecated requested-count argument ignored: 2
+Collection timestamp (UTC): 2026-07-22T00:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-03-22T00:00:00Z
+Fetched unique PRs inspected: 2
+Excluded as older than four calendar months: 0
+Final PRs written: 2
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+
+All eligible closed human PRs for skip/one
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+
+Skipped repository: skip/one
+Reason: page fetch timed out
+The program will continue with the next repository.
+
+
+All eligible closed human PRs for skip/two
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+│   1 │ skip/two                     │ #1     │ human                │ Unknown       │ NO     │
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for skip/two
+Analysis timestamp (UTC): 2026-07-22T00:00Z
+Deprecated requested-count argument ignored: 1
+Collection timestamp (UTC): 2026-07-22T00:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-03-22T00:00:00Z
+Fetched unique PRs inspected: 1
+Excluded as older than four calendar months: 0
+Final PRs written: 1
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+
+Combined repository summary
+┌──────────────────────────────┬─────────────┬────────────┬────────────┐
+│ Repository                   │ Complete    │ Disclosed  │ Percentage │
+├──────────────────────────────┼─────────────┼────────────┼────────────┤
+│ skip/two                     │           0 │          0 │       NaN% │
+├──────────────────────────────┼─────────────┼────────────┼────────────┤
+│ TOTAL                        │           0 │          0 │       NaN% │
+└──────────────────────────────┴─────────────┴────────────┴────────────┘
+
+Skipped repositories
+- skip/one -> page fetch timed out
+These repositories were not included in the CSV percentage calculation.
+
+
+All eligible closed human PRs for resume/repo
+┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐
+│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │
+├─────┼──────────────────────────────┼────────┼──────────────────────┼───────────────┼────────┤
+│   1 │ resume/repo                  │ #2     │ human                │ Unknown       │ NO     │
+Skipping already completed PR: resume/repo#1
+└─────┴──────────────────────────────┴────────┴──────────────────────┴───────────────┴────────┘
+
+Collection eligibility summary for resume/repo
+Analysis timestamp (UTC): 2026-07-22T00:00Z
+Deprecated requested-count argument ignored: 2
+Collection timestamp (UTC): 2026-07-22T00:00Z
+Eligibility cutoff (closed_at, four calendar months): 2026-03-22T00:00:00Z
+Fetched unique PRs inspected: 2
+Excluded as older than four calendar months: 0
+Final PRs written: 1
+No per-repository maximum applied; every eligible PR in the window is written.
+
+Automated PR-body disclosure percentage: NaN% (0/0)
+AI disclosure PRs: None
+Detailed evidence is saved in the CSV file.
+
+AiDisclosureDetectorHarness passed
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.142 s - in com.example.aichecker.RegressionTest
+[INFO] Running com.example.aichecker.ResumeContractTest
+Manual review range: rows 1-2 of 2
+Labels output: /var/folders/rq/rcbgn2xn5fq8f5h31gt465lh0000gn/T/junit8283311360783060177/junit7788223793987793516.tmp
+Resuming existing labels file; completed Sample IDs will be skipped.
+Already completed in this range: 1/2
+Remaining: 1
+
+Review progress: 2/2 (sample row 2/2)
+
+Sample ID: owner/repo#2
+Repo: owner/repo
+PR #: 2
+PR URL: https://github.com/owner/repo/pull/2
+Title: null
+Enter SKIP at either label prompt to skip this PR.
+Disclosure Present [Yes, No]: Disclosure Classification [Positive, Negative, Ambiguous, None]: Notes optional, press Enter for blank: 
+Manual review complete for assigned range: 2/2
+Manual review range: rows 1-2 of 2
+Labels output: /var/folders/rq/rcbgn2xn5fq8f5h31gt465lh0000gn/T/junit8283311360783060177/junit7788223793987793516.tmp
+Resuming existing labels file; completed Sample IDs will be skipped.
+Already completed in this range: 2/2
+Remaining: 0
+
+Manual review complete for assigned range: 2/2
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s - in com.example.aichecker.ResumeContractTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.209 s
+[INFO] Finished at: 2026-10-19T15:06:48+13:00
+[INFO] ------------------------------------------------------------------------

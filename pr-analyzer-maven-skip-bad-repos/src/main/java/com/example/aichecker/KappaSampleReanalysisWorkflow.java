@@ -48,7 +48,7 @@ public class KappaSampleReanalysisWorkflow {
                 try {
                     PrReportRow analyzed = analyzer.analyzeExistingPullRequest(inputRow.get(REPO).trim(), Integer.parseInt(inputRow.get(PR_NUMBER).trim()));
                     outputRow.put(DISCLOSURE_EVIDENCE, analyzed.aiDisclosure() ? analyzed.aiDisclosureEvidence() : "");
-                    outputRow.put(SCRIPT_PRESENT, analyzed.aiDisclosure() ? "Yes" : "No");
+                    outputRow.put(SCRIPT_PRESENT, analyzed.disclosureStatus());
                     if (outputRow.containsKey(SCRIPT_CLASSIFICATION)) {
                         outputRow.put(SCRIPT_CLASSIFICATION, analyzed.aiDisclosureClassification());
                     }

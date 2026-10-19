@@ -30,6 +30,7 @@ public class AiDisclosureDetector {
     private static final Pattern AFFIRMATIVE_CHECKBOX_PATTERN = Pattern.compile("(?is)^(?:yes\\b|.*\\b(?:ai\\s+tooling|generative\\s+ai|ai|chatgpt|github\\s+copilot|copilot|claude|gemini|cursor|codex|windsurf|llm)\\b[^\\r\\n]{0,120}\\b(?:used|assisted|generated)\\b)");
     private static final Pattern NEGATIVE_CHECKBOX_PATTERN = Pattern.compile("(?is)^(?:(?:no|none|n/a|not\\s+applicable)\\s*[.!]??\\s*$|.*\\b(?:no|not|without)\\b[^\\r\\n]{0,80}\\b(?:ai|chatgpt|github\\s+copilot|copilot|claude|gemini|cursor|codex|windsurf|llm)\\b[^\\r\\n]{0,120}\\b(?:used|assistance|tooling|generated)\\b)");
     private static final List<Pattern> NEGATIVE_DISCLOSURE_PATTERNS = List.of(
+            Pattern.compile("(?is)\\bi\\s+have\\s+not\\s+used\\s+(?:any\\s+)?" + AI_TOOL + "\\b[^\\r\\n.]{0,120}"),
             Pattern.compile("(?is)\\b(?:was\\s+)?" + AI_TOOL + "\\b[^\\r\\n?]{0,160}\\?\\s*(?:no|none|n/a|not\\s+applicable)\\b"),
             Pattern.compile("(?is)\\bno\\s+(?:generative\\s+)?ai\\b[^\\r\\n.]{0,80}\\b(?:used|generated|assistance|tooling)?\\b"),
             Pattern.compile("(?is)\\bi\\s+did\\s+not\\s+use\\s+" + AI_TOOL + "\\b[^\\r\\n.]{0,120}"),
@@ -191,52 +192,31 @@ public class AiDisclosureDetector {
     }
 
     public DisclosureResult detect(String repository, String prBody, String htmlText) {
-        DisclosureResult repositoryBodyResult = detectRepositoryRules(repository, prBody, "PR body");
-        // Homebrew's acknowledgement is the gate, including when it is absent or unchecked.
-        // Only use the HTML fallback when the PR body itself is unavailable.
-        if ("homebrew/brew".equals(canonicalRepository(repository))) {
-            return isBlank(prBody)
-                    ? detectRepositoryRules(repository, removeGitHubChrome(htmlText), "HTML fallback")
-                    : repositoryBodyResult;
+        // Unattributed page text (including comments and site chrome) is never evidence.
+        if (isBlank(prBody)) {
+            return new DisclosureResult(false, "PR body unavailable or empty", "unknown", "PR body unavailable");
         }
-        DisclosureResult bodyResult = detectInText(removeUncheckedRepositoryTemplateText(repository, prBody), "PR body");
-        if (bodyResult.disclosed()) {
-            if (repositoryBodyResult.disclosed()
-                    && "possible_negative".equals(repositoryBodyResult.classification())
-                    && "possible_positive".equals(bodyResult.classification())) {
-                return new DisclosureResult(true, cleanEvidence(bodyResult.evidence() + "; contradictory template evidence: " + repositoryBodyResult.evidence()), "possible_positive", "PR body");
-            }
-            if (repositoryBodyResult.disclosed()) {
-                return repositoryBodyResult;
-            }
-            return bodyResult;
+        prBody = contributorText(prBody);
+        DisclosureResult repositoryResult = detectRepositoryRules(repository, prBody, "PR body");
+        if ("homebrew/brew".equals(canonicalRepository(repository))) return repositoryResult;
+        Pattern acknowledgement = Pattern.compile("(?im)^\\s*[-*+]\\s*\\[[xX]\\].*\\bI\\s+(?:(?:have|hereby)\\s+)?(?:read|confirm|acknowledge)\\b.*\\bpolicy\\b.*$");
+        Matcher acknowledgementMatch = acknowledgement.matcher(prBody);
+        String acknowledgementEvidence = acknowledgementMatch.find() ? acknowledgementMatch.group() : "";
+        String statementBody = acknowledgement.matcher(prBody).replaceAll("");
+        DisclosureResult bodyResult = detectInText(removeUncheckedRepositoryTemplateText(repository, statementBody), "PR body");
+        if ("possible_ambiguous".equals(repositoryResult.classification())) return repositoryResult;
+        if (repositoryResult.disclosed() && bodyResult.disclosed()
+                && !repositoryResult.classification().equals(bodyResult.classification())) {
+            return new DisclosureResult(true, cleanEvidence(repositoryResult.evidence() + "; " + bodyResult.evidence()),
+                    "possible_ambiguous", "PR body");
         }
-        if (repositoryBodyResult.disclosed()) {
-            return repositoryBodyResult;
+        if (repositoryResult.disclosed()) return repositoryResult;
+        if (bodyResult.disclosed()) return bodyResult;
+        if ("policy_acknowledgement".equals(repositoryResult.classification())) return repositoryResult;
+        if (!acknowledgementEvidence.isBlank()) {
+            return new DisclosureResult(false, cleanEvidence(acknowledgementEvidence), "policy_acknowledgement", "PR body");
         }
-
-        String filteredHtml = removeGitHubChrome(htmlText);
-        DisclosureResult repositoryHtmlResult = detectRepositoryRules(repository, filteredHtml, "HTML fallback");
-        DisclosureResult htmlResult = detectInText(removeUncheckedRepositoryTemplateText(repository, filteredHtml), "HTML fallback");
-        if (htmlResult.disclosed()) {
-            if (repositoryHtmlResult.disclosed()
-                    && "possible_negative".equals(repositoryHtmlResult.classification())
-                    && "possible_positive".equals(htmlResult.classification())) {
-                return new DisclosureResult(true, cleanEvidence(htmlResult.evidence() + "; contradictory template evidence: " + repositoryHtmlResult.evidence()), "possible_positive", "HTML fallback");
-            }
-            if (repositoryHtmlResult.disclosed()) {
-                return repositoryHtmlResult;
-            }
-            return htmlResult;
-        }
-        if (repositoryHtmlResult.disclosed()) {
-            return repositoryHtmlResult;
-        }
-
-        if (isBlank(prBody) && isBlank(htmlText)) {
-            return new DisclosureResult(false, "No PR body or HTML text found");
-        }
-        return new DisclosureResult(false, "No contributor AI disclosure text detected");
+        return new DisclosureResult(false, "No contributor AI disclosure text detected in PR body", "none", "PR body");
     }
 
     public DetectionDiagnostics diagnosePrBody(String prBody) {
@@ -245,10 +225,7 @@ public class AiDisclosureDetector {
 
     public DetectionDiagnostics diagnosePrBody(String repository, String prBody) {
         PreparedText prepared = prepareText(prBody == null ? "" : prBody);
-        DisclosureResult repositoryResult = detectRepositoryRules(repository, prBody, "PR body");
-        DisclosureResult result = repositoryResult.disclosed() || "homebrew/brew".equals(canonicalRepository(repository))
-                ? repositoryResult
-                : detectInText(removeUncheckedRepositoryTemplateText(repository, prBody), "PR body");
+        DisclosureResult result = detect(repository, prBody, "");
         return new DetectionDiagnostics(
                 prBody == null ? "" : prBody,
                 prepared.visibleText(),
@@ -270,6 +247,11 @@ public class AiDisclosureDetector {
 
         DisclosureResult checkboxResult = detectTemplateCheckboxes(prepared.checkedCheckboxes(), prepared.uncheckedCheckboxes(), source);
         if (checkboxResult.disclosed()) {
+            DisclosureResult prose = detectInText(prepared.textWithoutCheckboxes(), source);
+            if (prose.disclosed() && !checkboxResult.classification().equals(prose.classification())) {
+                return new DisclosureResult(true, cleanEvidence(checkboxResult.evidence() + "; " + prose.evidence()),
+                        "possible_ambiguous", source);
+            }
             return checkboxResult;
         }
 
@@ -307,10 +289,11 @@ public class AiDisclosureDetector {
             return new DisclosureResult(false, "Unresolved AI-use yes/no template", "none", source);
         }
         DisclosureResult negative = findDisclosure(broadMatchText, NEGATIVE_DISCLOSURE_PATTERNS, "possible_negative", source);
-        if (negative.disclosed()) {
-            return negative;
-        }
         DisclosureResult positive = findDisclosure(broadMatchText, POSITIVE_DISCLOSURE_PATTERNS, "possible_positive", source);
+        if (negative.disclosed() && positive.disclosed()) {
+            return new DisclosureResult(true, cleanEvidence(negative.evidence() + "; " + positive.evidence()), "possible_ambiguous", source);
+        }
+        if (negative.disclosed()) return negative;
         if (positive.disclosed()) {
             return positive;
         }
@@ -391,11 +374,36 @@ public class AiDisclosureDetector {
     }
 
     private static PreparedText prepareText(String text) {
-        String visibleText = stripMarkdownLinks(removeHtmlComments(text));
+        String visibleText = stripMarkdownLinks(contributorText(text));
         List<String> checkedCheckboxes = new ArrayList<>();
         List<String> uncheckedCheckboxes = new ArrayList<>();
         String textWithoutCheckboxes = removeTemplateResponseLines(visibleText, checkedCheckboxes, uncheckedCheckboxes);
         return new PreparedText(visibleText, textWithoutCheckboxes, checkedCheckboxes, uncheckedCheckboxes);
+    }
+
+    // Quoted examples and code are not assertions by the contributor.
+    private static String contributorText(String text) {
+        if (text == null) return "";
+        String cleaned = removeHtmlComments(text)
+                .replaceAll("(?is)<blockquote\\b[^>]*>.*?</blockquote>", "")
+                .replaceAll("(?is)<pre\\b[^>]*>.*?</pre>", "");
+        StringBuilder result = new StringBuilder();
+        String fence = null;
+        boolean quote = false;
+        for (String line : cleaned.split("\\R", -1)) {
+            String trimmed = line.stripLeading();
+            if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+                String marker = trimmed.substring(0, 3);
+                if (fence == null) fence = marker;
+                else if (fence.equals(marker)) fence = null;
+                continue;
+            }
+            if (fence != null) continue;
+            if (trimmed.startsWith(">")) { quote = true; continue; }
+            if (trimmed.isBlank()) quote = false;
+            if (!quote) result.append(line).append('\n');
+        }
+        return result.toString();
     }
 
     static String removeHtmlComments(String text) {
@@ -557,12 +565,6 @@ public class AiDisclosureDetector {
                 positive.add(checkbox);
             }
         }
-        for (String checkbox : uncheckedCheckboxes) {
-            String label = checkbox.replaceFirst("(?is)^\\[ ]\\s*", "").trim();
-            if (isAiToolDisclosureCheckbox(label)) {
-                negative.add(checkbox);
-            }
-        }
         if (!positive.isEmpty() && !negative.isEmpty()) {
             List<String> all = new ArrayList<>();
             all.addAll(positive);
@@ -595,7 +597,7 @@ public class AiDisclosureDetector {
                     if ("homebrew/brew".equals(canonicalRepository)
                             && "possible_negative".equals(rule.classification())) {
                         String answer = homebrewDisclosedTool(prepared.visibleText());
-                        addByClassification(answer.isBlank() ? "possible_negative" : "possible_positive",
+                        addByClassification(answer.isBlank() ? "possible_neutral" : "possible_positive",
                                 answer.isBlank() ? checkbox : answer + "; " + checkbox,
                                 positives, negatives, neutrals);
                     } else {
@@ -615,13 +617,6 @@ public class AiDisclosureDetector {
                     }
                 }
             }
-            for (String checkbox : prepared.uncheckedCheckboxes()) {
-                String normalized = normalizeCheckboxLabel(checkbox.replaceFirst("(?is)^\\[ ]\\s*", ""));
-                if (containsWordsInOrder(normalized, normalizeCheckboxLabel("ai supported development pr"))
-                        || containsWordsInOrder(normalized, normalizeCheckboxLabel("ai supported this pr"))) {
-                    negatives.add(checkbox);
-                }
-            }
         }
         if ("mdanalysis/mdanalysis".equals(canonicalRepository)) {
             DisclosureResult mdanalysisResult = detectMdanalysisAiQuestion(prepared.visibleText(), source);
@@ -631,7 +626,7 @@ public class AiDisclosureDetector {
         }
         if ("searxng/searxng".equals(canonicalRepository)) {
             DisclosureResult searxngResult = detectSearxngAiPolicyConfirmation(prepared, source);
-            if (searxngResult.disclosed()) {
+            if ("policy_acknowledgement".equals(searxngResult.classification())) {
                 addByClassification(searxngResult.classification(), searxngResult.evidence(), positives, negatives, neutrals);
             }
             for (String checkbox : prepared.checkedCheckboxes()) {
@@ -657,7 +652,7 @@ public class AiDisclosureDetector {
         for (String checkbox : prepared.checkedCheckboxes()) {
             String normalized = normalizeCheckboxLabel(checkbox.replaceFirst("(?is)^\\[x]\\s*", ""));
             if (containsWordsInOrder(normalized, normalizeCheckboxLabel("hereby confirm pr conforms ai policy"))) {
-                return new DisclosureResult(true, cleanEvidence(checkbox), "possible_negative", source);
+                return new DisclosureResult(false, cleanEvidence(checkbox), "policy_acknowledgement", source);
             }
         }
         return new DisclosureResult(false, "No checked SearXNG AI policy confirmation found", "none", source);
@@ -1004,8 +999,8 @@ public class AiDisclosureDetector {
     }
 
     private static DisclosureResult repositoryRuleResult(List<String> positives, List<String> negatives, List<String> neutrals, String source) {
-        int categories = (positives.isEmpty() ? 0 : 1) + (negatives.isEmpty() ? 0 : 1) + (neutrals.isEmpty() ? 0 : 1);
-        if (categories > 1 || positives.size() + negatives.size() + neutrals.size() > 1) {
+        int categories = (positives.isEmpty() ? 0 : 1) + (negatives.isEmpty() ? 0 : 1);
+        if (categories > 1) {
             List<String> all = new ArrayList<>();
             all.addAll(positives);
             all.addAll(negatives);
@@ -1014,7 +1009,7 @@ public class AiDisclosureDetector {
         }
         if (!positives.isEmpty()) return new DisclosureResult(true, cleanEvidence(positives.get(0)), "possible_positive", source);
         if (!negatives.isEmpty()) return new DisclosureResult(true, cleanEvidence(negatives.get(0)), "possible_negative", source);
-        if (!neutrals.isEmpty()) return new DisclosureResult(true, cleanEvidence(neutrals.get(0)), "possible_neutral", source);
+        if (!neutrals.isEmpty()) return new DisclosureResult(false, cleanEvidence(neutrals.get(0)), "policy_acknowledgement", source);
         return new DisclosureResult(false, "No repository-specific checked AI disclosure checkbox found", "none", source);
     }
 
@@ -1033,7 +1028,8 @@ public class AiDisclosureDetector {
     }
 
     private static boolean isAffirmativeCheckbox(String label) {
-        return AFFIRMATIVE_CHECKBOX_PATTERN.matcher(label).find();
+        return AFFIRMATIVE_CHECKBOX_PATTERN.matcher(label).find()
+                || findDisclosure(label, POSITIVE_DISCLOSURE_PATTERNS, "possible_positive", "PR body").disclosed();
     }
 
     private static boolean isNegativeCheckbox(String label) {

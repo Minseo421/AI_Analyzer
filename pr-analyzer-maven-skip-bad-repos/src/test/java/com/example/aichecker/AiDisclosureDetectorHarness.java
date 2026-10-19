@@ -366,9 +366,9 @@ public class AiDisclosureDetectorHarness {
         require(!detector.detect("django/django", "- [ ] AI was used\n- [ ] No AI was used", "").disclosed(), "Django unchecked options");
 
         requirePositive(detector.detect("OSGeo/gdal", "- [x] AI tools were used to prepare this pull request", ""), "GDAL checked AI checkbox");
-        requireNegative(detector.detect("OSGeo/gdal", "- [ ] AI tools were used to prepare this pull request", ""), "GDAL unchecked AI checkbox");
+        requireNoStatement(detector.detect("OSGeo/gdal", "- [ ] AI tools were used to prepare this pull request", ""), "GDAL unchecked AI checkbox");
         requirePositive(detector.detect("- [x] AI tool(s) supported my development of this PR", ""), "generic checked AI tool checkbox");
-        requireNegative(detector.detect("- [ ] AI tool(s) supported my development of this PR", ""), "generic unchecked AI tool checkbox");
+        requireNoStatement(detector.detect("- [ ] AI tool(s) supported my development of this PR", ""), "generic unchecked AI tool checkbox");
 
         verifyHomebrewDisclosure(detector);
 
@@ -384,8 +384,8 @@ public class AiDisclosureDetectorHarness {
         require(!detector.detect("cybertec-postgresql/pgwatch", "AI/automation tools used:\n\n", "").disclosed(), "pgwatch blank AI automation field");
 
         requirePositive(detector.detect("qgis/QGIS", "- [x] AI tools supported this PR", ""), "QGIS AI tools supported checkbox");
-        requireNegative(detector.detect("qgis/QGIS", "- [ ] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR. See our policy about AI tool use.", ""), "QGIS unchecked AI tools supported checkbox");
-        requireNegative(detector.detect("qgis/QGIS", """
+        requireNoStatement(detector.detect("qgis/QGIS", "- [ ] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR. See our policy about AI tool use.", ""), "QGIS unchecked AI tools supported checkbox");
+        requireNoStatement(detector.detect("qgis/QGIS", """
                 ## AI tool usage
 
                 - [ ] AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR.
@@ -403,7 +403,7 @@ public class AiDisclosureDetectorHarness {
                 I used Claude to write the checks.
                 """, "");
         requirePositive(qgisContradiction, "QGIS unchecked template with explicit positive statement");
-        require(qgisContradiction.evidence().contains("contradictory template evidence"), "QGIS contradiction evidence should mention template contradiction");
+        require(!qgisContradiction.evidence().contains("[ ]"), "unchecked template is not a negative statement");
 
         requirePositive(detector.detect("MDAnalysis/mdanalysis", "LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: yes", ""), "MDAnalysis yes answer");
         requireNegative(detector.detect("MDAnalysis/mdanalysis", "LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: **no**", ""), "MDAnalysis no answer");
@@ -420,7 +420,7 @@ public class AiDisclosureDetectorHarness {
                 I guess this is a "yes" now because I used the copilot AI overview and implemented changes based on what was suggested.
                 """, ""), "MDAnalysis later Copilot acknowledgement overrides struck no");
 
-        requireNegative(detector.detect("searxng/searxng", "- [X] **I hereby confirm that this PR conforms with the [AI Policy].**", ""), "SearXNG checked policy confirmation");
+        requireNeutral(detector.detect("searxng/searxng", "- [X] **I hereby confirm that this PR conforms with the [AI Policy].**", ""), "SearXNG checked policy confirmation");
         requireNegative(detector.detect("searxng/searxng", """
                 - [X] **I hereby confirm that this PR conforms with the [AI Policy].**
 
@@ -609,7 +609,7 @@ public class AiDisclosureDetectorHarness {
                 AI disclaimer: I used Claude to write the checks
                 """, ""), "AI disclaimer inline positive");
         requirePositive(detector.detect("_AI disclaimer_: I used `Claude\\:Sonnet5` to write the checks.", ""), "AI disclaimer with escaped Claude Sonnet");
-        requirePositive(detector.detect("> Prepared with AI assistance; a human reviewed the final patch.", ""), "quoted AI assistance disclosure");
+        requireNoStatement(detector.detect("> Prepared with AI assistance; a human reviewed the final patch.", ""), "quoted AI assistance disclosure");
         requirePositive(detector.detect("AI (Gemini 3.1 Pro) was used to prepare the first draft.", ""), "AI with Gemini model used");
         requirePositive(detector.detect("All AI, since this is relatively trivial stuff.", ""), "All AI statement");
         requirePositive(detector.detect("This PR was developed with AI assistance for code drafting and analysis.", ""), "developed with AI assistance");
@@ -650,9 +650,9 @@ public class AiDisclosureDetectorHarness {
                 Example: Generated documentation with ChatGPT
                 -->
                 """, "").disclosed(), "HTML comment example should not count");
-        requirePositive(detector.detect("""
+        requireNoStatement(detector.detect("""
                 > Generated documentation with ChatGPT.
-                """, ""), "quoted contributor disclosure should count");
+                """, ""), "quoted text requires manual attribution");
         require(!detector.detect("""
                 ## AI Generation Disclosure
 
@@ -701,7 +701,7 @@ public class AiDisclosureDetectorHarness {
         require(lines.size() == 5, "summary should contain metadata, header, and one repo row");
         require(lines.get(0).startsWith("\"# Analysis Started UTC\","), "summary should record analysis start once");
         require(lines.get(1).startsWith("\"# Analysis Completed UTC\","), "summary should record analysis completion once");
-        require(lines.get(4).equals("\"owner/repo\",\"3\",\"2\",\"2\",\"1\",\"1\",\"0\",\"1\",\"3\",\"0.6667\""), "summary counts and compliance rate");
+        require(lines.get(4).equals("\"owner/repo\",\"3\",\"2\",\"2\",\"1\",\"1\",\"0\",\"1\",\"3\",\"0.6667\",\"3\",\"0\",\"0\""), "summary counts and automated disclosure rate");
         require(CsvTools.readRows(summary).size() == 1, "metadata rows should not be treated as data rows");
 
         require(DisclosureVisibilityCorrelationWorkflow.canonicalRepo("https://github.com/Apache/Airflow/").orElseThrow().equals("apache/airflow"), "canonical GitHub URL with case and trailing slash");
@@ -732,10 +732,10 @@ public class AiDisclosureDetectorHarness {
         require("3".equals(visibilityByRepo.get("alpha/one").get("Total PR Rows")), "group multiple PR rows by repository");
         require("2".equals(visibilityByRepo.get("alpha/one").get("Successfully Analysed Eligible PRs")), "exclude failed analysis from denominator");
         require("1".equals(visibilityByRepo.get("alpha/one").get("Failed or Excluded PRs")), "failed row count");
-        require("0.5".equals(visibilityByRepo.get("alpha/one").get("Disclosure Rate")), "alpha disclosure rate");
-        require("0.00%".equals(visibilityByRepo.get("beta/two").get("Disclosure Rate Percentage")), "repo with no disclosures");
-        require("100.00%".equals(visibilityByRepo.get("gamma/three").get("Disclosure Rate Percentage")), "repo with 100 percent disclosure");
-        require(visibilityByRepo.get("delta/four").get("Disclosure Rate").isBlank(), "zero successfully analysed PRs should have blank rate");
+        require("0.5".equals(visibilityByRepo.get("alpha/one").get("Automated Disclosure Rate")), "alpha disclosure rate");
+        require("0.00%".equals(visibilityByRepo.get("beta/two").get("Automated Disclosure Rate Percentage")), "repo with no disclosures");
+        require("100.00%".equals(visibilityByRepo.get("gamma/three").get("Automated Disclosure Rate Percentage")), "repo with 100 percent disclosure");
+        require(visibilityByRepo.get("delta/four").get("Automated Disclosure Rate").isBlank(), "zero successfully analysed PRs should have blank rate");
         require(!visibilityByRepo.containsKey("epsilon/five"), "unmatched repository should be excluded when policy tracker is authoritative");
         require(!visibilityByRepo.containsKey("zeta/six"), "ambiguous repository should be excluded when policy tracker is authoritative");
         require(visibilityByRepo.get("eta/seven").get("Visibility Score Numeric").isBlank(), "blank visibility excluded");
@@ -753,7 +753,7 @@ public class AiDisclosureDetectorHarness {
         require(exclusionsByRepo.get("delta/four").get("Reason").contains("No successfully analysed"), "exclusions include no-rate repository");
         require(exclusionsByRepo.get("eta/seven").get("Reason").contains("visibility"), "exclusions include missing visibility score");
         String visibilityCorrelationText = Files.readString(visibilityCorrelation, StandardCharsets.UTF_8);
-        require(visibilityCorrelationText.contains("Visibility Score vs Disclosure Rate"), "correlation output metric pair");
+        require(visibilityCorrelationText.contains("Visibility Score vs Automated Disclosure Rate"), "correlation output metric pair");
         require(visibilityCorrelationText.contains("\"3\""), "correlation output sample size");
 
         Path repoSummaryCorrelationInput = Files.createTempFile("repo-summary-correlation-input", ".csv");
@@ -770,8 +770,8 @@ public class AiDisclosureDetectorHarness {
         require(repoSummaryResult.spearmanResult().n() == 3, "repo summary correlation should use matched repository summaries");
         require(Math.abs(repoSummaryResult.spearmanResult().rho() - 1.0) < 0.0000001, "repo summary Spearman coefficient");
         Map<String, Map<String, String>> repoSummaryByRepo = indexByColumn(CsvTools.readRows(repoSummaryOutput), "Repository");
-        require("0.5".equals(repoSummaryByRepo.get("alpha/one").get("Disclosure Rate")), "repo summary disclosure rate");
-        require("0.00%".equals(repoSummaryByRepo.get("beta/two").get("Disclosure Rate Percentage")), "repo summary percentage");
+        require("0.5".equals(repoSummaryByRepo.get("alpha/one").get("Automated Disclosure Rate")), "repo summary disclosure rate");
+        require("0.00%".equals(repoSummaryByRepo.get("beta/two").get("Automated Disclosure Rate Percentage")), "repo summary percentage");
 
         require(StudyDatasetExclusionValidator.matchesExcludedRepository("https://github.com/punkpeye/awesome-mcp-servers"), "excluded repository URL should match exactly");
         require(!StudyDatasetExclusionValidator.matchesExcludedRepository("https://github.com/punkpeye/awesome-map-servers"), "similarly named repository should not match");
@@ -874,9 +874,9 @@ public class AiDisclosureDetectorHarness {
 
         try {
             KappaWorkflow.codeSample(sample, coderA);
-            throw new AssertionError("codeSample should refuse to overwrite an existing labels file");
-        } catch (java.io.IOException expected) {
-            require(expected.getMessage().contains("already exists"), "overwrite refusal message");
+            throw new AssertionError("codeSample should reject labels containing foreign IDs");
+        } catch (IllegalArgumentException expected) {
+            require(expected.getMessage().contains("not present in the validation sample"), "foreign label ID rejection");
         }
 
         Path consensusCoderA = Files.createTempFile("consensus-coder-a", ".csv");
@@ -1333,7 +1333,7 @@ public class AiDisclosureDetectorHarness {
     }
 
     private static void verifyHomebrewDisclosure(AiDisclosureDetector detector) {
-        requireNegative(detector.detect("Homebrew/brew", "- [x] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", ""), "Homebrew combined compliance statement");
+        requireNeutral(detector.detect("Homebrew/brew", "- [x] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", ""), "Homebrew combined compliance statement");
         require(!detector.detect("Homebrew/brew", "- [ ] I did not use AI/LLM to create this PR, or I disclosed the tool/model below.", "").disclosed(), "Homebrew unchecked compliance statement");
         requirePositive(detector.detect("Homebrew/brew", "- [x] AI was used to generate or assist with generating this PR.", ""), "Homebrew historical positive statement");
 
@@ -1351,14 +1351,14 @@ public class AiDisclosureDetectorHarness {
                 "\n\nAI tool/model: [insert Claude Opus here]",
                 "\n\nAI tool/model: LLM",
                 "\n\nAI tool/model: I did not use ChatGPT")) {
-            requireNegative(detector.detect("Homebrew/brew", homebrewCheckbox + answer, ""),
+            requireNeutral(detector.detect("Homebrew/brew", homebrewCheckbox + answer, ""),
                     "Homebrew no contributor tool: " + answer);
         }
         for (String checkbox : List.of(homebrewCheckbox.replace("[x]", "[ ]"), "",
                 homebrewCheckbox.replace("- [x] ", ""), homebrewCheckbox.replace("[x]", "[?]"))) {
             for (String answer : List.of("", "\n\nAI disclosure: Claude Opus")) {
                 DisclosureResult result = detector.detect("Homebrew/brew", checkbox + answer, "");
-                require(!result.disclosed() && "none".equals(result.classification()), "Homebrew incomplete acknowledgement");
+                require(!result.disclosed() && List.of("none", "unknown").contains(result.classification()), "Homebrew incomplete acknowledgement");
                 require(!detector.diagnosePrBody("Homebrew/brew", checkbox + answer).result().disclosed(),
                         "Homebrew diagnostics incomplete acknowledgement");
             }
@@ -1368,15 +1368,15 @@ public class AiDisclosureDetectorHarness {
                 + "\n\n### AI disclosure\nClaude Opus", ""), "Homebrew Markdown and wrapped checkbox");
         requirePositive(detector.detect("Homebrew/brew", homebrewCheckbox + "\n\n**AI tool/model:** `ChatGPT`", ""),
                 "Homebrew bold inline field");
-        requireNegative(detector.detect("Homebrew/brew", homebrewCheckbox
+        requireNeutral(detector.detect("Homebrew/brew", homebrewCheckbox
                 + "\n\n## AI disclosure\n\n## Testing\nI used ChatGPT to discuss something unrelated.", ""),
                 "Homebrew disclosure section boundary takes precedence over unrelated prose");
         requirePositive(detector.detect("Homebrew/brew", homebrewCheckbox + "\n\nI used Claude Opus to write tests.", ""),
                 "Homebrew explicit prose disclosure without designated field");
-        requireNegative(detector.detect("Homebrew/brew", homebrewCheckbox + "\n\nUpdate ChatGPT documentation.", ""),
+        requireNeutral(detector.detect("Homebrew/brew", homebrewCheckbox + "\n\nUpdate ChatGPT documentation.", ""),
                 "Homebrew unrelated tool mention");
-        requirePositive(detector.detect("Homebrew/brew", "", homebrewCheckbox + "\nAI tool/model: ChatGPT"),
-                "Homebrew HTML fallback uses combined rule");
+        require(!detector.detect("Homebrew/brew", "", homebrewCheckbox + "\nAI tool/model: ChatGPT").disclosed(),
+                "Unattributed HTML never supplies evidence");
         require(!detector.detect("Homebrew/brew", homebrewCheckbox.replace("[x]", "[ ]"),
                 homebrewCheckbox + "\nAI tool/model: ChatGPT").disclosed(), "Homebrew body gate takes precedence over fallback");
 
@@ -1560,17 +1560,17 @@ public class AiDisclosureDetectorHarness {
     }
 
     private static String visibilityPrDatasetCsv() {
-        return "Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Bot,Status,AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text\n"
-                + "Alpha/One,1,https://github.com/Alpha/One/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
-                + "alpha/one,1,https://github.com/alpha/one/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
-                + "alpha/one,2,https://github.com/alpha/one/pull/2,t,a,2026-01-01T00:00:00Z,2026-04-02T00:00:00Z,,No,Closed,MANUAL_REVIEW_REQUIRED,No,None,\n"
-                + "alpha/one,3,https://github.com/alpha/one/pull/3,t,a,2026-01-01T00:00:00Z,2026-04-03T00:00:00Z,,No,Fetch Failed,MANUAL_REVIEW_REQUIRED,,None,\n"
-                + "beta/two,1,https://github.com/beta/two/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,No,None,\n"
-                + "gamma/three,1,https://github.com/gamma/three/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
-                + "delta/four,1,https://github.com/delta/four/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Analysis Failed,MANUAL_REVIEW_REQUIRED,,None,\n"
-                + "epsilon/five,1,https://github.com/epsilon/five/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
-                + "zeta/six,1,https://github.com/zeta/six/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e\n"
-                + "eta/seven,1,https://github.com/eta/seven/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,No,None,\n";
+        return "Repo,PR #,PR URL,Title,Author,Created Date,Closed Date,Merged Date,Bot,Status,AI Disclosure Required,AI Disclosure Present,Disclosure Classification,Disclosure Text,Evidence Completeness,Source Coverage Rule,Complete,PR_BODY_ONLY_V1\n"
+                + "Alpha/One,1,https://github.com/Alpha/One/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e,Complete,PR_BODY_ONLY_V1\n"
+                + "alpha/one,1,https://github.com/alpha/one/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e,Complete,PR_BODY_ONLY_V1\n"
+                + "alpha/one,2,https://github.com/alpha/one/pull/2,t,a,2026-01-01T00:00:00Z,2026-04-02T00:00:00Z,,No,Closed,MANUAL_REVIEW_REQUIRED,No,None,,Complete,PR_BODY_ONLY_V1\n"
+                + "alpha/one,3,https://github.com/alpha/one/pull/3,t,a,2026-01-01T00:00:00Z,2026-04-03T00:00:00Z,,No,Fetch Failed,MANUAL_REVIEW_REQUIRED,,None,,Complete,PR_BODY_ONLY_V1\n"
+                + "beta/two,1,https://github.com/beta/two/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,No,None,,Complete,PR_BODY_ONLY_V1\n"
+                + "gamma/three,1,https://github.com/gamma/three/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e,Complete,PR_BODY_ONLY_V1\n"
+                + "delta/four,1,https://github.com/delta/four/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Analysis Failed,MANUAL_REVIEW_REQUIRED,,None,,Complete,PR_BODY_ONLY_V1\n"
+                + "epsilon/five,1,https://github.com/epsilon/five/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e,Complete,PR_BODY_ONLY_V1\n"
+                + "zeta/six,1,https://github.com/zeta/six/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,Yes,MANUAL_REVIEW_REQUIRED,e,Complete,PR_BODY_ONLY_V1\n"
+                + "eta/seven,1,https://github.com/eta/seven/pull/1,t,a,2026-01-01T00:00:00Z,2026-04-01T00:00:00Z,,No,Merged,MANUAL_REVIEW_REQUIRED,No,None,,Complete,PR_BODY_ONLY_V1\n";
     }
 
     private static String visibilityPolicyCsv() {
@@ -1588,12 +1588,12 @@ public class AiDisclosureDetectorHarness {
         return "\"# Analysis Started UTC\",\"2026-07-22T00:00:00Z\"\n"
                 + "\"# Analysis Completed UTC\",\"2026-07-22T00:01:00Z\"\n"
                 + "\n"
-                + "Repo,Eligible PRs Reviewed,Bot PRs Excluded,AI Disclosure Present Count,Positive Disclosure Count,Negative Disclosure Count,Ambiguous Disclosure Count,No Disclosure Count,Manual Review Required Count,Disclosure Compliance Rate\n"
-                + "Alpha/One,2,0,1,1,0,0,1,2,0.5000\n"
-                + "beta/two,1,0,0,0,0,0,1,1,0.0000\n"
-                + "gamma/three,1,0,1,1,0,0,0,1,1.0000\n"
-                + "delta/four,0,0,0,0,0,0,0,0,0.0000\n"
-                + "eta/seven,1,0,0,0,0,0,1,1,0.0000\n";
+                + "Repo,Eligible PRs Reviewed,Bot PRs Excluded,AI Disclosure Present Count,Positive Disclosure Count,Negative Disclosure Count,Ambiguous Disclosure Count,No Disclosure Count,Manual Review Required Count,Automated Disclosure Rate,Complete Evidence Count,Unknown Disclosure Count\n"
+                + "Alpha/One,2,0,1,1,0,0,1,2,0.5000,2,0\n"
+                + "beta/two,1,0,0,0,0,0,1,1,0.0000,1,0\n"
+                + "gamma/three,1,0,1,1,0,0,0,1,1.0000,1,0\n"
+                + "delta/four,0,0,0,0,0,0,0,0,0.0000,0,0\n"
+                + "eta/seven,1,0,0,0,0,0,1,1,0.0000,1,0\n";
     }
 
     private static Path tempMissingPath(String prefix, String suffix) throws java.io.IOException {
@@ -1682,6 +1682,10 @@ public class AiDisclosureDetectorHarness {
         }
     }
 
+    private static void requireNoStatement(DisclosureResult result, String message) {
+        require(!result.disclosed(), message + " must not count as an answered statement");
+    }
+
     private static void requirePositive(DisclosureResult result, String message) {
         require(result.disclosed(), message + " should disclose");
         require("possible_positive".equals(result.classification()), message + " should be positive");
@@ -1693,8 +1697,8 @@ public class AiDisclosureDetectorHarness {
     }
 
     private static void requireNeutral(DisclosureResult result, String message) {
-        require(result.disclosed(), message + " should disclose");
-        require("possible_neutral".equals(result.classification()), message + " should be neutral");
+        require(!result.disclosed(), message + " is not an AI use/non-use statement");
+        require("policy_acknowledgement".equals(result.classification()), message + " should be an acknowledgement");
     }
 
     private static void requireAmbiguous(DisclosureResult result, String message) {

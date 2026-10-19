@@ -1,5 +1,6 @@
 # Pull Request Coding Framework
 
+Current automated scope, reviewed policy fields, metric denominators, and uncertainty rules: [Evidence and metric contract](evidence_and_metrics.md). The collector measures API PR bodies only; HTML and comments cannot supply automated evidence. Unknown is never No.
 This document defines pull-request-level coding rules for AI-use disclosure compliance.
 
 Repository-level governance coding is a separate manual activity. See `repository_analysis_framework.md` for policy-location, visibility, enforcement, and governance-theme coding.
@@ -233,13 +234,13 @@ Preliminary script summary:
 
 - `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset.
 - `AI Disclosure Present Count`: rows where disclosure-like text was detected.
-- `Disclosure Compliance Rate = AI Disclosure Present Count / Eligible PRs Reviewed`.
+- `Automated Disclosure Rate = AI Disclosure Present Count / Complete Evidence Count`.
 - `Manual Review Required Count`: rows requiring validation before final reporting.
 
 Final research calculation:
 
-- Denominator: eligible human PRs in scope where disclosure was required by repository policy.
-- Numerator: denominator rows with validated `AI Disclosure Present = Yes`.
-- Negative disclosures count as disclosure present because the contributor answered the disclosure requirement.
+- Denominator: evidence-complete, reviewed human PRs covered by dated policy applicability and assessed Compliant or Noncompliant. For conditional policies, reviewed AI use must be Yes; unknown use is unresolved.
+- Numerator: denominator rows explicitly assessed `Reviewed Compliance = Compliant`, with `Reviewed Disclosure Present = Yes`.
+- Explicit non-use answers count as disclosure presence; they can satisfy an all-contributors requirement. For a policy conditional on AI use, reviewed non-use is not applicable.
 - Ambiguous disclosures should be reported separately unless manually recoded.
 - Final compliance rates must be calculated after manual validation and policy coding are complete.

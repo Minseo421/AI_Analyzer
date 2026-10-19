@@ -6,15 +6,17 @@ The tool collects empirical PR-level data for studying:
 
 - AI-use disclosure compliance in OSS pull requests.
 - Governance mechanisms around mandatory AI disclosure.
-- Repository-level disclosure compliance rates.
+- Automated PR-body disclosure rates and separately reviewed policy compliance.
 
 The analyzer produces:
 
 1. A PR-level dataset compatible with `pr_dataset.csv`.
-2. An optional repository-level compliance summary.
+2. An optional repository-level automated disclosure summary.
 3. The original `report.csv` output for debugging and audit checks.
 
-Automated detection is only a first pass. Human validation is required before reporting final research results.
+Automated detection is only a first pass. Human validation is required before reporting final research results. The detector uses API PR bodies only. Missing bodies are Unknown; full-page HTML and third-party comments are excluded. See the [evidence and metric contract](methodology/evidence_and_metrics.md) for coding rules, eligible populations, denominators, and uncertainty treatment.
+
+To calculate compliance, review a copy of a new dataset and fill its dated policy and reviewed assessment fields, then run `java -jar target/pr-analyzer-maven-1.0.0.jar --policy-compliance reviewed_pr_dataset.csv reviewed_compliance_summary.csv`. All-contributors and conditional-on-AI-use policies have different eligible populations. Absence of disclosure never establishes undisclosed AI use. Existing datasets have not been retrospectively coded or regenerated.
 
 ## Requirements
 
@@ -43,6 +45,14 @@ Clone or open this repository, then enter the Maven project folder:
 cd pr-analyzer-maven-skip-bad-repos
 mvn clean package
 ```
+
+## Tests
+
+```bash
+mvn clean test
+```
+
+Maven Surefire discovers JUnit tests, including the existing assertion harness and focused evidence, policy, and label-resume tests. No GitHub access is needed. CI runs the same command and archives logs and Surefire reports. Local acceptance logs are in [methodology/evidence](methodology/evidence).
 
 ## Input Files
 
@@ -97,7 +107,7 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --latest-pr-dataset https://github.
 java -jar target/pr-analyzer-maven-1.0.0.jar --repos-pr-dataset repos.txt 100 pr_dataset_output.csv
 ```
 
-Research dataset plus repository compliance summary:
+Research dataset plus repository automated disclosure summary:
 
 ```bash
 java -jar target/pr-analyzer-maven-1.0.0.jar --latest-pr-dataset https://github.com/OWNER/REPO 100 pr_dataset_output.csv repo_compliance_summary.csv
@@ -243,7 +253,7 @@ Files such as `test.csv`, `airflow_pr_dataset_output.csv`, and `airflow_repo_com
 
 ### `pr_dataset_output.csv`
 
-One row per reviewed PR. The header matches `pr_dataset.csv`.
+One row per collected PR. The schema now includes evidence provenance and separate review/policy fields; it extends the legacy `pr_dataset.csv` schema.
 
 Key columns:
 
@@ -258,8 +268,8 @@ Key columns:
 - `Bot`: `Yes` or `No` based on the current bot heuristic.
 - `Status`: `Merged`, `Closed`, or `Unknown`.
 - `AI Disclosure Required`: currently `MANUAL_REVIEW_REQUIRED`; fill from policy coding.
-- `AI Disclosure Present`: `Yes` when disclosure-like text was detected, otherwise `No`.
-- `Disclosure Classification`: `MANUAL_REVIEW_REQUIRED` for detected text, `None` when no disclosure is detected.
+- `AI Disclosure Present`: `Yes` for detected statements in complete body evidence, `No` for complete bodies without a match, `Unknown` for incomplete evidence.
+- `Disclosure Classification`: automated `possible_positive`, `possible_negative`, `possible_ambiguous`, `policy_acknowledgement`, `none`, or `Unknown`.
 - `Disclosure Text`: extracted evidence for manual review.
 
 Negative statements such as `No AI used` still count as `AI Disclosure Present = Yes` because the contributor answered the disclosure question. `Disclosure Text` is evidence for review, not final proof.
@@ -277,21 +287,22 @@ Columns:
 - `Positive Disclosure Count`: preliminary detector count for possible positive disclosures.
 - `Negative Disclosure Count`: preliminary detector count for possible negative disclosures.
 - `Ambiguous Disclosure Count`: preliminary detector count for ambiguous AI disclosure mentions.
-- `No Disclosure Count`: eligible reviewed rows with no detected disclosure.
+- `No Disclosure Count`: complete body-evidence rows with no detected statement; excludes Unknown.
 - `Manual Review Required Count`: currently all eligible reviewed rows.
-- `Disclosure Rate`: `AI Disclosure Present Count / Eligible PRs Reviewed`.
+- `Automated Disclosure Rate`: `AI Disclosure Present Count / Complete Evidence Count`.
+- `Complete Evidence Count`, `Unknown Disclosure Count`, `Policy Acknowledgement Count`: coverage and acknowledgement counts. Empty denominators produce blank rates.
 
 Classification counts are preliminary and should be treated as manual-review queues until validated.
 
 Example summary row:
 
 ```csv
-"owner/repo","3","2","2","1","1","0","1","3","0.6667"
+"owner/repo","3","2","2","1","1","0","1","3","0.6667","3","0","0"
 ```
 
 ### `report.csv`
 
-The older/audit output. It is preserved for debugging and includes extra technical fields such as GitHub user type, boolean disclosure flag, HTML scrape success, and HTML scrape error.
+The older/audit output. It is preserved for debugging and includes extra technical fields such as GitHub user type, tri-state disclosure status, evidence provenance and completeness, HTML scrape success, and HTML scrape error.
 
 ### Inter-rater reliability files
 
@@ -310,7 +321,7 @@ The older/audit output. It is preserved for debugging and includes extra technic
 ## Methodology Notes
 
 - Bot PRs are excluded from the generated PR dataset by the current implementation. `Bot PRs Excluded` records how many closed PRs were skipped during collection.
-- The compliance denominator is eligible human PRs reviewed. Eligibility uses GitHub `closed_at`, not `created_at`, `updated_at`, or `merged_at`; both merged and unmerged closed PRs are eligible. Filtering by bot status and the inclusive four-calendar-month `closed_at` window occurs before rows are ordered locally by closure time. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands operate on specifically named/sample PRs and do not reapply dataset-selection eligibility.
+- The collection population is eligible human PRs. Automated rates use complete evidence; reviewed compliance uses dated policy applicability and human assessment. Collection eligibility uses GitHub `closed_at`, not `created_at`, `updated_at`, or `merged_at`; both merged and unmerged closed PRs are eligible. Filtering by bot status and the inclusive four-calendar-month `closed_at` window occurs before rows are ordered locally by closure time. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands operate on specifically named/sample PRs and do not reapply dataset-selection eligibility.
 - AI disclosure detection is not fully reliable without human validation.
 - GitHub page chrome, navigation text, Copilot marketing text, and filenames such as `CLAUDE.md` should not be counted as contributor disclosure.
 - Manual review is required before final disclosure compliance rates are reported.
@@ -407,7 +418,7 @@ Network stalls or interrupted long runs:
 - Each GitHub client has a 15-second connection timeout by default.
 - Each GitHub request has a 60-second full-request timeout by default.
 - Override with `GITHUB_CONNECT_TIMEOUT_SECONDS` or `GITHUB_REQUEST_TIMEOUT_SECONDS` if needed.
-- Multi-repository `--repos` and `--repos-pr-dataset` runs append and flush rows incrementally. Re-running the same command with the same output file resumes by skipping completed `Repo#PR` rows already present in that output. During resume, the optional repository compliance summary is not rewritten because already completed rows are not re-analysed in memory.
+- Multi-repository `--repos` and `--repos-pr-dataset` runs append and flush rows incrementally. Re-running the same command with the same output file resumes by skipping completed `Repo#PR` rows already present in that output. During resume, the optional repository automated disclosure summary is not rewritten because already completed rows are not re-analysed in memory.
 - Exact-PR reanalysis and retry commands keep their fixed-sample behavior.
 
 Empty output:
@@ -423,9 +434,9 @@ Malformed `repos.txt` entries:
 - Avoid PR URLs, search URLs, query strings, and browser filter URLs.
 - Blank lines and lines beginning with `#` are ignored.
 
-False positives from scraped HTML:
+Full-page HTML is diagnostic only and cannot create positive detections:
 
-- The detector filters common GitHub page chrome and marketing text, but manual review is still required.
+- The detector ignores full-page HTML entirely; manual review of body matches is still required.
 - Do not treat generic GitHub Copilot navigation/marketing text as contributor disclosure.
 
 ## Human Validation Checklist
@@ -440,3 +451,5 @@ Before reporting results:
 - Manually classify each row as `Positive`, `Negative`, `Ambiguous`, or `None`.
 - Fill or merge policy fields such as `AI Disclosure Required`.
 - Calculate final compliance only after manual validation.
+
+New exports cannot be appended to legacy CSV headers. Recollect into a new file before correlation; do not mark historical rows complete without checking source evidence.

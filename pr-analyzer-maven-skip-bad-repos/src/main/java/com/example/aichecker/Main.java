@@ -16,6 +16,10 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Main {
     public static void main(String[] args) {
         try {
+            if (args.length == 3 && args[0].equals("--policy-compliance")) {
+                PolicyComplianceWorkflow.analyze(Path.of(args[1]), Path.of(args[2]));
+                return;
+            }
             if (args.length == 1) {
                 PullRequestUrl prUrl = PullRequestUrl.parse(args[0]);
                 PrAnalyzer analyzer = new PrAnalyzer();
@@ -44,7 +48,7 @@ public class Main {
                 if (args.length == 5) {
                     Path summaryOutput = Path.of(args[4]);
                     CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository(), analyzer.analysisTimestampUtc(), analysisCompletedUtc);
-                    System.out.println("Repository compliance summary saved: " + summaryOutput.toAbsolutePath());
+                    System.out.println("Repository automated disclosure summary saved: " + summaryOutput.toAbsolutePath());
                 }
                 printSavedSummary(output, rows);
                 return;
@@ -80,10 +84,10 @@ public class Main {
                 if (args.length == summaryIndex + 1) {
                     Path summaryOutput = Path.of(args[summaryIndex]);
                     if (resumedOutput) {
-                        System.out.println("Repository compliance summary not written during resume because existing completed rows are not re-analysed in memory. Regenerate the summary after the resumed dataset is complete.");
+                        System.out.println("Repository automated disclosure summary not written during resume because existing completed rows are not re-analysed in memory. Regenerate the summary after the resumed dataset is complete.");
                     } else {
                         CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository(), analyzer.analysisTimestampUtc(), analysisCompletedUtc);
-                        System.out.println("Repository compliance summary saved: " + summaryOutput.toAbsolutePath());
+                        System.out.println("Repository automated disclosure summary saved: " + summaryOutput.toAbsolutePath());
                     }
                 }
                 printSavedSummary(output, rows);
@@ -343,7 +347,8 @@ public class Main {
     }
 
     private static boolean isKnownMode(String mode) {
-        return mode.equals("--latest")
+        return mode.equals("--policy-compliance")
+                || mode.equals("--latest")
                 || mode.equals("--latest-pr-dataset")
                 || mode.equals("--repos")
                 || mode.equals("--repos-pr-dataset")
@@ -369,6 +374,7 @@ public class Main {
     private static String expectedUsage(String mode) {
         return switch (mode) {
             case "--latest" -> "--latest https://github.com/OWNER/REPO COUNT report.csv";
+            case "--policy-compliance" -> "--policy-compliance reviewed_pr_dataset.csv reviewed_compliance_summary.csv";
             case "--latest-pr-dataset" -> "--latest-pr-dataset https://github.com/OWNER/REPO COUNT pr_dataset_output.csv [repo_compliance_summary.csv]";
             case "--repos" -> "--repos repos.txt COUNT report.csv";
             case "--repos-pr-dataset" -> "--repos-pr-dataset repos.txt pr_dataset_output.csv [repo_compliance_summary.csv]";
@@ -412,11 +418,12 @@ public class Main {
     }
 
     private static void printSavedSummary(Path output, List<PrReportRow> rows) {
-        long disclosed = rows.stream().filter(PrReportRow::aiDisclosure).count();
-        double percentage = rows.isEmpty() ? 0.0 : (disclosed * 100.0 / rows.size());
+        long disclosed = rows.stream().filter(PrReportRow::evidenceComplete).filter(PrReportRow::aiDisclosure).count();
+        long complete = rows.stream().filter(PrReportRow::evidenceComplete).count();
+        double percentage = complete == 0 ? Double.NaN : (disclosed * 100.0 / complete);
         System.out.println("CSV saved: " + output.toAbsolutePath());
         System.out.println("Human closed PRs checked: " + rows.size());
-        System.out.printf("AI disclosure percentage: %.2f%% (%d/%d)%n", percentage, disclosed, rows.size());
+        System.out.printf("Automated PR-body disclosure percentage: %.2f%% (%d/%d)%n", percentage, disclosed, complete);
     }
 
     private static List<PrReportRow> analyzeMultipleReposIncrementally(List<RepoUrl> repoUrls, int targetCountPerRepo, Path output, PrAnalyzer analyzer, boolean prDataset) throws Exception {
@@ -643,6 +650,7 @@ public class Main {
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --analyze-specific-prs kappa_sample_reanalyzed.csv kappa_sample_completed.csv OWNER/REPO#NUMBER [OWNER/REPO#NUMBER...]");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --retry-failed-reanalysis kappa_sample_reanalyzed.csv kappa_sample_retry.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt [--replace]");
+        System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --policy-compliance reviewed_pr_dataset.csv reviewed_compliance_summary.csv");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --visibility-correlation repo_compliance_summary.csv policy_tracker.csv repo_visibility_summary.csv visibility_correlation.csv");
         System.out.println("      Also accepts pr_dataset_output.csv as the first input; optional cleaned/exclusion outputs apply only to PR-level input.");
         System.out.println();

@@ -1,5 +1,7 @@
 # Data Dictionary
 
+The current analyzer CSV fields and reviewed compliance inputs are defined in [Evidence and metric contract](evidence_and_metrics.md). The workbook descriptions below describe the older workbook schema.
+
 This document describes every column currently present in `policy_tracker.xlsx` and `pr_dataset.xlsx`.
 
 ## Schema Mismatch Note

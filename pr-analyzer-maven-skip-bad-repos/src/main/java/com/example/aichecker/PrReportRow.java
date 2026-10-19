@@ -21,6 +21,21 @@ public record PrReportRow(
         boolean htmlScrapeSuccess,
         String htmlScrapeError
 ) {
+    public boolean evidenceComplete() {
+        return "PR body".equals(aiDisclosureSource) && author != null && !author.isBlank()
+                && url != null && !url.isBlank() && createdAt != null && !createdAt.isBlank();
+    }
+
+    public String disclosureStatus() {
+        return evidenceComplete() ? (aiDisclosure ? "Yes" : "No") : "Unknown";
+    }
+
+    public String evidenceCompleteness() { return evidenceComplete() ? "Complete" : "Incomplete"; }
+    public String evidenceId() { return evidenceComplete() ? repository + "#" + pullRequestNumber + ":body" : ""; }
+    public String evidenceUrl() { return evidenceComplete() ? url : ""; }
+    public String reviewStatus() { return "MANUAL_REVIEW_REQUIRED"; }
+    public String sourceCoverageRule() { return "PR_BODY_ONLY_V1"; }
+
     public static String consoleHeader() {
         return "┌─────┬──────────────────────────────┬────────┬──────────────────────┬───────────────┬────────┐\n"
                 + "│ No. │ Repository                   │ PR #   │ Author               │ AI Disclosure │ Merged │\n"
@@ -38,7 +53,7 @@ public record PrReportRow(
                 fit(repository, 28),
                 pullRequestNumber,
                 fit(author, 20),
-                aiDisclosure ? "YES" : "NO",
+                disclosureStatus(),
                 merged ? "YES" : "NO"
         );
     }
@@ -64,7 +79,7 @@ public record PrReportRow(
                 + "Closed: " + closed + "\n"
                 + "Human author: " + humanAuthor + "\n"
                 + "GitHub user type: " + githubUserType + "\n"
-                + "AI Disclosure: " + aiDisclosure + "\n"
+                + "Automated body disclosure: " + disclosureStatus() + "\n"
                 + "Merged: " + merged + "\n"
                 + "AI Disclosure evidence: " + aiDisclosureEvidence + "\n"
                 + "AI Disclosure classification: " + aiDisclosureClassification + "\n"

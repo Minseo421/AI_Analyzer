@@ -1,5 +1,6 @@
 # Methodology Workflow
 
+Current automated scope, reviewed policy fields, metric denominators, and uncertainty rules: [Evidence and metric contract](evidence_and_metrics.md). The collector measures API PR bodies only; HTML and comments cannot supply automated evidence. Unknown is never No.
 This document defines the research workflow for studying AI-use disclosure governance in open source software pull requests.
 
 The workflow separates manual repository governance analysis from PR-level data collection and coding.
@@ -23,7 +24,7 @@ The current workbooks are the source of truth for active data entry:
 - `policy_tracker.xlsx` / `policy-tracker.csv`: repository-level governance dataset.
 - `pr_dataset.xlsx` / `pr_dataset.csv`: pull-request-level compliance dataset.
 
-The PR analyzer script generates PR-level rows and optional repository compliance summaries. It does not generate repository-level governance coding such as visibility, enforcement, transparency, accountability, or legal/licensing rationale fields. Those fields are manually coded by researchers using `repository_analysis_framework.md`.
+The PR analyzer script generates PR-level rows and optional automated disclosure summaries. It does not generate repository-level governance coding such as visibility, enforcement, transparency, accountability, or legal/licensing rationale fields. Those fields are manually coded by researchers using `repository_analysis_framework.md`.
 
 ## 1. Repository Analysis Phase
 
@@ -126,15 +127,15 @@ Preliminary script-generated calculation:
 - `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset for that repository. Eligibility uses GitHub `closed_at` and an inclusive rolling four-calendar-month window calculated from the UTC analysis timestamp. The analyzer filters by closed state, present `closed_at`, cutoff, analysis timestamp upper bound, and bot status, then orders returned rows locally by `closed_at` descending and PR number descending. Repository collection has no per-repository PR limit.
 - `Bot PRs Excluded`: closed PRs skipped by the script's bot heuristic while collecting the human PR sample.
 - `AI Disclosure Present Count`: rows where disclosure-like text was detected.
-- `Disclosure Compliance Rate = AI Disclosure Present Count / Eligible PRs Reviewed`.
+- `Automated Disclosure Rate = AI Disclosure Present Count / Complete Evidence Count`.
 - `Positive Disclosure Count`, `Negative Disclosure Count`, and `Ambiguous Disclosure Count` are preliminary detector categories until manually validated.
 - `Manual Review Required Count` is set to the number of eligible PRs reviewed because final compliance rates require validation.
 
 Final research calculation:
 
-- Denominator: eligible human PRs in scope where disclosure was required by repository policy.
-- Numerator: denominator rows with validated `AI Disclosure Present = Yes`.
-- Negative disclosures count as disclosure present because the contributor answered the disclosure requirement.
+- Denominator: evidence-complete, reviewed human PRs covered by dated policy applicability and assessed Compliant or Noncompliant. For conditional policies, reviewed AI use must be Yes; unknown use is unresolved.
+- Numerator: denominator rows explicitly assessed `Reviewed Compliance = Compliant`, with `Reviewed Disclosure Present = Yes`.
+- Explicit non-use answers count as disclosure presence; they can satisfy an all-contributors requirement. For a policy conditional on AI use, reviewed non-use is not applicable.
 - Ambiguous cases should be reported separately unless manually recoded by consensus.
 - Final compliance rates should be calculated only after repository policy coding and PR-level validation are complete.
 
