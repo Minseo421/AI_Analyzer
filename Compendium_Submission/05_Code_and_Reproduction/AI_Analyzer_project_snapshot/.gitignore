@@ -1,7 +1,0 @@
-target/
-*.class
-*.log
-*.tmp
-*.lst
-
-target/classes/com/example/aichecker/*class
