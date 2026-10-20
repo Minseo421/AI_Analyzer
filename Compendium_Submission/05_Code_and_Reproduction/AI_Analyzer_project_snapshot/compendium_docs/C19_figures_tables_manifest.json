@@ -1,0 +1,5730 @@
+{
+  "schema_version": 2,
+  "audit_date": "2026-10-20",
+  "timezone": "Pacific/Auckland",
+  "reviewed_revision": "fa38ab8e0be0e0dd27ee5043da6ae04bb7bfb488",
+  "status": "C19 open",
+  "report": {
+    "path": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+    "sha256": "3196e5e5f828722aacb85d0b549aa9d07d483635bc58e551a4fce9ce5063fb97",
+    "body_block_indexing": "Zero-based direct children of word/document.xml w:body; not page numbers",
+    "embedded_editable_charts_or_workbooks": false,
+    "report_key": "minseo-final-report",
+    "student": "Minseo",
+    "verification_status": "Located and inspected in prior C19 audit; byte hash rechecked in joint-index update; exact submitted version/date not confirmed.",
+    "scope": "Individual Final Report; section/table/figure numbers apply only to this document."
+  },
+  "status_definitions": {
+    "Fully reproducible": "All table numeric cells repeat from repository inputs with the newly saved audit utility; source boundary is stated. This does not certify original typography, raw-evidence replay or detector independence.",
+    "Numerically verified but plotting workflow unavailable": "Numerical series/annotations agree with archived inputs, including authoritative final governance data; plotting workflow unavailable. This does not validate all policy codes.",
+    "Partially reproducible": "Table numerics repeat from saved aggregate, but underlying PR-level subtype transformation/assignments remain incomplete.",
+    "Not currently reproducible": "Essential inputs/definitions absent such that even a defensible numeric reconstruction cannot currently be made. No item is assigned this status because all 17 have at least partial numeric evidence."
+  },
+  "status_counts": {
+    "Fully reproducible": 4,
+    "Numerically verified but plotting workflow unavailable": 12,
+    "Partially reproducible": 1,
+    "Not currently reproducible": 0
+  },
+  "sources": {
+    "P": {
+      "path": "pr-analyzer-maven-skip-bad-repos/pr_dataset_output.csv",
+      "archived_in_repository": true,
+      "sha256": "16ded4f6eac9ff75301648e50be43b826866529bb78729d4f45330a96e7e5f02",
+      "columns": [
+        "Repo",
+        "PR #",
+        "PR URL",
+        "Title",
+        "Author",
+        "Created Date",
+        "Closed Date",
+        "Merged Date",
+        "Bot",
+        "Status",
+        "AI Disclosure Required",
+        "AI Disclosure Present",
+        "Disclosure Classification",
+        "Disclosure Text"
+      ]
+    },
+    "R": {
+      "path": "pr-analyzer-maven-skip-bad-repos/repo_compliance_summary.csv",
+      "archived_in_repository": true,
+      "sha256": "a8ea43da8492385fc5f6688824b9c247c188312e0b5945c3a971f0bfa151e35c",
+      "columns": [
+        "Repo",
+        "Eligible PRs Reviewed",
+        "Bot PRs Excluded",
+        "AI Disclosure Present Count",
+        "Positive Disclosure Count",
+        "Negative Disclosure Count",
+        "Ambiguous Disclosure Count",
+        "No Disclosure Count",
+        "Manual Review Required Count",
+        "Disclosure Compliance Rate"
+      ]
+    },
+    "V": {
+      "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+      "archived_in_repository": true,
+      "sha256": "dd98ea79d95007db60f3fcc9abeaae381f7883c1dd00f880740eb95fcd364ae1",
+      "columns": [
+        "Repository",
+        "Total PR Rows",
+        "Eligible PRs",
+        "Successfully Analysed Eligible PRs",
+        "PRs With Disclosure",
+        "PRs Without Disclosure",
+        "Failed or Excluded PRs",
+        "Disclosure Rate",
+        "Disclosure Rate Percentage",
+        "Policy Tracker Repo",
+        "Repository Link",
+        "Visibility Score Original",
+        "Visibility Score Numeric",
+        "Match Status",
+        "Correlation Included",
+        "Exclusion Reason"
+      ]
+    },
+    "T": {
+      "path": "pr-analyzer-maven-skip-bad-repos/policy_tracker.csv",
+      "archived_in_repository": true,
+      "sha256": "87bba2bf4396d5c97072db479c226fbc0066ec8c76c2ba2d5dfd7ab9c166d420",
+      "columns": [
+        "Repo",
+        "Notes",
+        "Repository Link",
+        "Stars",
+        "License",
+        "Policy URL",
+        "Policy Location",
+        "Visibility Score",
+        "PR template",
+        "Policy Exists",
+        "Policy documented in Repo",
+        "Policy linked from README",
+        "AI disclosure in PR template",
+        "Dedicated AI Policy",
+        "Governance Score",
+        "Rules to consider",
+        ""
+      ]
+    },
+    "S": {
+      "path": "pr-analyzer-maven-skip-bad-repos/spearman_correlation.csv",
+      "archived_in_repository": true,
+      "sha256": "99f3906af92170a3b68ec00231c21c7f3f613b6a9c013f1681d1ad3d43366f7e",
+      "columns": [
+        "Metric Pair",
+        "Spearman Rho",
+        "P-Value",
+        "Sample Size",
+        "Significance Level",
+        "Significance Result",
+        "Confidence Interval Lower",
+        "Confidence Interval Upper",
+        "Excluded Repository Count",
+        "Interpretation"
+      ]
+    },
+    "VS": {
+      "path": "pr-analyzer-maven-skip-bad-repos/all_repo_validation_sample_seeded.csv",
+      "archived_in_repository": true,
+      "sha256": "a438f28f27b736683db5b8a37b3f0a48fcfd01366a4cf1bd8bfaa43a9e22e1f5",
+      "columns": [
+        "Sample ID",
+        "Repo",
+        "PR #",
+        "PR URL",
+        "Title",
+        "Author",
+        "Created Date",
+        "Closed Date",
+        "Merged Date",
+        "Status",
+        "Disclosure Text detected by script",
+        "Script AI Disclosure Present",
+        "Notes",
+        "Reanalysis Status",
+        "Reanalysis Error"
+      ]
+    },
+    "HL": {
+      "path": "pr-analyzer-maven-skip-bad-repos/all_manual_seeded_labels.csv",
+      "archived_in_repository": true,
+      "sha256": "00c2e3c78e82706c728201300b702b558292246e1cfc411a780625a6da1c1f3f",
+      "columns": [
+        "Sample ID",
+        "Repo",
+        "PR #",
+        "PR URL",
+        "Disclosure Present",
+        "Disclosure Classification",
+        "Notes"
+      ]
+    },
+    "DV": {
+      "path": "pr-analyzer-maven-skip-bad-repos/all_seeded_detector_validation.csv",
+      "archived_in_repository": true,
+      "sha256": "7d2168b979336b2b01b118f047d14cf4148abfd391493149c340f45db2c1120c",
+      "columns": [
+        "Sample ID",
+        "Repo",
+        "PR #",
+        "PR URL",
+        "Script Disclosure Present",
+        "Consensus Disclosure Present",
+        "Detector Outcome",
+        "Script Detected Text",
+        "Consensus Classification",
+        "Consensus Notes"
+      ]
+    },
+    "G": {
+      "path": "compendium_docs/data/governance_coding_final.csv",
+      "archived_in_repository": true,
+      "sha256": "8cb51b4b29ecfe68202af11502d17d876819838f5da2b8bd1077bbbbc1920921",
+      "columns": [
+        "Repo",
+        "Repository URL",
+        "Policy URL",
+        "Visibility score (0-3; from tracker)",
+        "Visibility source note",
+        "Disclosure detail (1 basic; 2 tool; 3 use explained; 4 trace)",
+        "PR template",
+        " AI in discusion",
+        "Responsibility (0 none; 1 accountable; 2 explain work; 3 review/test required)",
+        "Attribution (0 none; 1 generic IP; 2 licence/DCO; 3 document provenance)",
+        "AI-use constraints (0 none; 1 bulk/low-effort; 2 specific contexts; 3 general prohibition)",
+        "Stated consequence (0 none; 1 correction/review; 2 reject/close; 3 participation restriction)",
+        "Disclosure in PR required (1 yes; 0 no)",
+        "Disclosure in commit required (1 yes; 0 no)",
+        "Rationale: transparency (1 yes; 0 no)",
+        "Rationale: code quality (1 yes; 0 no)",
+        "Rationale: reviewer workload (1 yes; 0 no)",
+        "Rationale: human accountability (1 yes; 0 no)",
+        "Rationale: rights/provenance (1 yes; 0 no)",
+        "Rationale: other stated (1 yes; 0 no)",
+        "Other rationale text",
+        "Evidence URL(s)",
+        "Evidence excerpt / coding justification",
+        "Coding notes",
+        "Source CSV Record",
+        "Source Dataset SHA256",
+        "Identity Verification Status",
+        "Coding Validation Status",
+        "Unresolved Coding Fields",
+        "Validation Notes",
+        "Researcher Confirmed Corrections",
+        "Policy Evidence Record"
+      ],
+      "role": "Authoritative final-38 compendium analysis view; not fully policy-validated",
+      "provenance_ledger": "compendium_docs/data/governance_coding_transformations.json"
+    },
+    "GR": {
+      "path": "/Users/minseokim/Desktop/P4P/GPT/repository_dataset(Rationale Summary Data).csv",
+      "archived_in_repository": false,
+      "sha256": "5541cd0734b59480dcff6c518cca3ac4643985c13bf8578407143c2a2fe62d58",
+      "columns": [
+        "A — Policy Rationale",
+        "B — Repository Count"
+      ],
+      "role": "Older external rationale aggregate; historical comparison only, not final analysis input"
+    },
+    "G_raw_history": {
+      "path": "compendium_docs/data/historical_raw/governance_coding_40_repository_original.csv",
+      "archived_in_repository": true,
+      "sha256": "e33ee272a42c56dd49cd94dde0c1b1daaaad4d797b46540d45880bf3cdaf48e2",
+      "columns": [
+        "Repo",
+        "Repository URL",
+        "Policy URL",
+        "Visibility score (0-3; from tracker)",
+        "Visibility source note",
+        "Disclosure detail (1 basic; 2 tool; 3 use explained; 4 trace)",
+        "PR template",
+        " AI in discusion",
+        "Responsibility (0 none; 1 accountable; 2 explain work; 3 review/test required)",
+        "Attribution (0 none; 1 generic IP; 2 licence/DCO; 3 document provenance)",
+        "AI-use constraints (0 none; 1 bulk/low-effort; 2 specific contexts; 3 general prohibition)",
+        "Stated consequence (0 none; 1 correction/review; 2 reject/close; 3 participation restriction)",
+        "Disclosure in PR required (1 yes; 0 no)",
+        "Disclosure in commit required (1 yes; 0 no)",
+        "Rationale: transparency (1 yes; 0 no)",
+        "Rationale: code quality (1 yes; 0 no)",
+        "Rationale: reviewer workload (1 yes; 0 no)",
+        "Rationale: human accountability (1 yes; 0 no)",
+        "Rationale: rights/provenance (1 yes; 0 no)",
+        "Rationale: other stated (1 yes; 0 no)",
+        "Other rationale text",
+        "Evidence URL(s)",
+        "Evidence excerpt / coding justification",
+        "Coding notes"
+      ],
+      "role": "Historical/raw, not a final analysis input",
+      "original_external_path": "/Users/minseokim/Desktop/P4P/GPT/repository_dataset(Governance_Coding_Sheet).csv"
+    }
+  },
+  "governance_confirmation_status": "Researcher explicitly authorized final-38 view and Curl 0-to-1 correction; CloudNativePG identity verified through current official policy chain. No pending question about intentional Curl correction. Other coding/historical applicability flagged.",
+  "artifacts": [
+    {
+      "report_id": "Table 4.1",
+      "description": "Dataset characteristics",
+      "report_location": "Section 4.1",
+      "inputs": [
+        {
+          "source_id": "P",
+          "path": "pr-analyzer-maven-skip-bad-repos/pr_dataset_output.csv",
+          "columns": [
+            "Repo",
+            "PR #",
+            "AI Disclosure Present"
+          ]
+        },
+        {
+          "source_id": "R",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_compliance_summary.csv",
+          "columns": [
+            "Repo",
+            "Eligible PRs Reviewed"
+          ]
+        },
+        {
+          "source_id": "HL",
+          "path": "pr-analyzer-maven-skip-bad-repos/all_manual_seeded_labels.csv",
+          "columns": [
+            "Sample ID"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Count unique canonical repository–PR keys and repositories",
+        "Count present/absent; count repository denominators <20; take maximum repository volume; count validation labels"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": [
+        [
+          "Characteristic",
+          "Result"
+        ],
+        [
+          "Repositories with AI-related contributor policies",
+          "38"
+        ],
+        [
+          "Eligible closed PRs",
+          "41,338"
+        ],
+        [
+          "PRs with detected disclosure presence",
+          "11,598"
+        ],
+        [
+          "PRs without detected disclosure presence",
+          "29,740"
+        ],
+        [
+          "Repositories with fewer than 20 eligible PRs",
+          "3"
+        ],
+        [
+          "Largest repository PR volume",
+          "18,748 (`llvm/llvm-project`)"
+        ],
+        [
+          "Manually labelled validation PRs",
+          "708"
+        ]
+      ],
+      "verification_result": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "38"
+          ],
+          [
+            "41,338"
+          ],
+          [
+            "11,598"
+          ],
+          [
+            "29,740"
+          ],
+          [
+            "3"
+          ],
+          [
+            "18,748 (`llvm/llvm-project`)"
+          ],
+          [
+            "708"
+          ]
+        ],
+        "calculated": [
+          [
+            "38"
+          ],
+          [
+            "41,338"
+          ],
+          [
+            "11,598"
+          ],
+          [
+            "29,740"
+          ],
+          [
+            "3"
+          ],
+          [
+            "18,748 (`llvm/llvm-project`)"
+          ],
+          [
+            "708"
+          ]
+        ]
+      },
+      "reproducibility_status": "Fully reproducible",
+      "missing_evidence_or_unresolved_issues": [
+        "Original Word table-assembly procedure unavailable; reproducible status covers all table numbers from stored inputs, not upstream live collection."
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "caption_body_block_zero_based": 215
+      },
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.dataset-characteristics"
+      ]
+    },
+    {
+      "report_id": "Table 4.2",
+      "description": "Selected governance characteristics in 38 repositories",
+      "report_location": "Section 4.2",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Disclosure in PR required (1 yes; 0 no)",
+            "Disclosure in commit required (1 yes; 0 no)",
+            "PR template",
+            "Disclosure detail (1 basic; 2 tool; 3 use explained; 4 trace)",
+            "Responsibility (0 none; 1 accountable; 2 explain work; 3 review/test required)",
+            "Attribution (0 none; 1 generic IP; 2 licence/DCO; 3 document provenance)",
+            "AI-use constraints (0 none; 1 bulk/low-effort; 2 specific contexts; 3 general prohibition)",
+            "Stated consequence (0 none; 1 correction/review; 2 reject/close; 3 participation restriction)"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Read authoritative final-38 CSV only; no implicit exclusions, aliases or recoding",
+        "Count each stated category, retaining N/A separately",
+        "Preprocessing and confirmed corrections are recorded in the C15 builder/ledger"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": [
+        [
+          "Governance characteristic",
+          "Category",
+          "Repositories (n)"
+        ],
+        [
+          "PR disclosure explicitly required",
+          "Yes / No",
+          "22 / 16"
+        ],
+        [
+          "Commit disclosure explicitly required",
+          "Yes / No",
+          "4 / 34"
+        ],
+        [
+          "PR template present",
+          "Yes / No",
+          "21 / 17"
+        ],
+        [
+          "Disclosure detail",
+          "Levels 1 / 2 / 3 / 4 / N/A",
+          "7 / 13 / 12 / 3 / 3"
+        ],
+        [
+          "Responsibility",
+          "Levels 0 / 1 / 2 / 3 / N/A",
+          "1 / 4 / 8 / 24 / 1"
+        ],
+        [
+          "Attribution",
+          "Levels 0 / 1 / 2 / 3",
+          "21 / 3 / 14 / 0"
+        ],
+        [
+          "AI-use constraints",
+          "Levels 0 / 1 / 2 / 3",
+          "15 / 3 / 19 / 1"
+        ],
+        [
+          "Stated consequence",
+          "None / Rejection / Participation restriction / N/A",
+          "9 / 13 / 15 / 1"
+        ]
+      ],
+      "verification_result": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "22 / 16"
+          ],
+          [
+            "4 / 34"
+          ],
+          [
+            "21 / 17"
+          ],
+          [
+            "7 / 13 / 12 / 3 / 3"
+          ],
+          [
+            "1 / 4 / 8 / 24 / 1"
+          ],
+          [
+            "21 / 3 / 14 / 0"
+          ],
+          [
+            "15 / 3 / 19 / 1"
+          ],
+          [
+            "9 / 13 / 15 / 1"
+          ]
+        ],
+        "calculated": [
+          [
+            "22 / 16"
+          ],
+          [
+            "4 / 34"
+          ],
+          [
+            "21 / 17"
+          ],
+          [
+            "7 / 13 / 12 / 3 / 3"
+          ],
+          [
+            "1 / 4 / 8 / 24 / 1"
+          ],
+          [
+            "21 / 3 / 14 / 0"
+          ],
+          [
+            "15 / 3 / 19 / 1"
+          ],
+          [
+            "9 / 13 / 15 / 1"
+          ]
+        ]
+      },
+      "reproducibility_status": "Fully reproducible",
+      "missing_evidence_or_unresolved_issues": [
+        "Original table-authoring script/workbook not recovered; numeric reproduction is now supported by saved final input and new audit utility",
+        "Policy coding remains explicitly not fully validated; this numeric status is not a coding sign-off"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "caption_body_block_zero_based": 221
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.governance-characteristics"
+      ]
+    },
+    {
+      "report_id": "Table 4.3",
+      "description": "Binary disclosure-presence evaluation, n=708; not fully held out",
+      "report_location": "Section 4.3",
+      "inputs": [
+        {
+          "source_id": "VS",
+          "path": "pr-analyzer-maven-skip-bad-repos/all_repo_validation_sample_seeded.csv",
+          "columns": [
+            "Sample ID",
+            "Script AI Disclosure Present"
+          ]
+        },
+        {
+          "source_id": "HL",
+          "path": "pr-analyzer-maven-skip-bad-repos/all_manual_seeded_labels.csv",
+          "columns": [
+            "Sample ID",
+            "Disclosure Present"
+          ]
+        },
+        {
+          "source_id": "DV",
+          "path": "pr-analyzer-maven-skip-bad-repos/all_seeded_detector_validation.csv",
+          "columns": [
+            "Sample ID",
+            "Script Disclosure Present",
+            "Consensus Disclosure Present",
+            "Detector Outcome"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Join sample and human labels by canonical Sample ID",
+        "Count TP/TN/FP/FN; calculate accuracy, precision, recall, specificity and F1; format percentages to two decimals"
+      ],
+      "existing_generation_script_or_workbook": "pr-analyzer-maven-skip-bad-repos/src/main/java/com/example/aichecker/ConsensusWorkflow.java (existing numeric comparison implementation; historical exact invocation unavailable)",
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": [
+        [
+          "Measure",
+          "Result"
+        ],
+        [
+          "True positives (TP)",
+          "278"
+        ],
+        [
+          "True negatives (TN)",
+          "425"
+        ],
+        [
+          "False positives (FP)",
+          "1"
+        ],
+        [
+          "False negatives (FN)",
+          "4"
+        ],
+        [
+          "Accuracy",
+          "99.29%"
+        ],
+        [
+          "Precision",
+          "99.64%"
+        ],
+        [
+          "Recall",
+          "98.58%"
+        ],
+        [
+          "Specificity",
+          "99.77%"
+        ],
+        [
+          "F1-score",
+          "99.11%"
+        ]
+      ],
+      "verification_result": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "278"
+          ],
+          [
+            "425"
+          ],
+          [
+            "1"
+          ],
+          [
+            "4"
+          ],
+          [
+            "99.29%"
+          ],
+          [
+            "99.64%"
+          ],
+          [
+            "98.58%"
+          ],
+          [
+            "99.77%"
+          ],
+          [
+            "99.11%"
+          ]
+        ],
+        "calculated": [
+          [
+            "278"
+          ],
+          [
+            "425"
+          ],
+          [
+            "1"
+          ],
+          [
+            "4"
+          ],
+          [
+            "99.29%"
+          ],
+          [
+            "99.64%"
+          ],
+          [
+            "98.58%"
+          ],
+          [
+            "99.77%"
+          ],
+          [
+            "99.11%"
+          ]
+        ]
+      },
+      "reproducibility_status": "Fully reproducible",
+      "missing_evidence_or_unresolved_issues": [
+        "Reproduces comparison arithmetic on saved predictions/labels, not a new detector run or a held-out accuracy claim."
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "caption_body_block_zero_based": 234
+      },
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "evidence.detector-validation-708"
+      ]
+    },
+    {
+      "report_id": "Table 4.4",
+      "description": "Detected PR disclosure classifications",
+      "report_location": "Section 4.4",
+      "inputs": [
+        {
+          "source_id": "R",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_compliance_summary.csv",
+          "columns": [
+            "Positive Disclosure Count",
+            "Negative Disclosure Count",
+            "Ambiguous Disclosure Count",
+            "AI Disclosure Present Count",
+            "No Disclosure Count",
+            "Eligible PRs Reviewed"
+          ]
+        },
+        {
+          "source_id": "P",
+          "path": "pr-analyzer-maven-skip-bad-repos/pr_dataset_output.csv",
+          "columns": [
+            "AI Disclosure Present",
+            "Disclosure Classification"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Sum saved repository subtype counts",
+        "Divide subtype counts by 11,598 and 41,338; format to two decimals",
+        "Compare aggregate subtype counts with actual PR classification fields"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": [
+        [
+          "Classification",
+          "PR count",
+          "% of detected disclosures",
+          "% of eligible PRs"
+        ],
+        [
+          "Positive disclosure",
+          "9,166",
+          "79.03%",
+          "22.17%"
+        ],
+        [
+          "Negative disclosure",
+          "1,785",
+          "15.39%",
+          "4.32%"
+        ],
+        [
+          "Ambiguous disclosure",
+          "647",
+          "5.58%",
+          "1.57%"
+        ],
+        [
+          "All disclosure present",
+          "11,598",
+          "100.00%",
+          "28.06%"
+        ],
+        [
+          "No detected disclosure",
+          "29,740",
+          "—",
+          "71.94%"
+        ]
+      ],
+      "verification_result": {
+        "all_cells_match_saved_summary_arithmetic": true,
+        "cell_comparison": {
+          "all_numeric_cells_match": true,
+          "reported": [
+            [
+              "9,166",
+              "79.03%",
+              "22.17%"
+            ],
+            [
+              "1,785",
+              "15.39%",
+              "4.32%"
+            ],
+            [
+              "647",
+              "5.58%",
+              "1.57%"
+            ],
+            [
+              "11,598",
+              "100.00%",
+              "28.06%"
+            ],
+            [
+              "29,740",
+              "—",
+              "71.94%"
+            ]
+          ],
+          "calculated": [
+            [
+              "9,166",
+              "79.03%",
+              "22.17%"
+            ],
+            [
+              "1,785",
+              "15.39%",
+              "4.32%"
+            ],
+            [
+              "647",
+              "5.58%",
+              "1.57%"
+            ],
+            [
+              "11,598",
+              "100.00%",
+              "28.06%"
+            ],
+            [
+              "29,740",
+              "—",
+              "71.94%"
+            ]
+          ]
+        },
+        "main_row_classification_counts": {
+          "MANUAL_REVIEW_REQUIRED": 10247,
+          "None": 29740,
+          "possible_negative": 99,
+          "possible_positive": 930,
+          "possible_ambiguous": 322
+        }
+      },
+      "reproducibility_status": "Partially reproducible",
+      "missing_evidence_or_unresolved_issues": [
+        "All numeric cells match the saved aggregate, but the main PR CSV does not contain a complete 9,166/1,785/647 final subtype assignment; the row-level transformation underlying the aggregate is not recoverable from that file alone."
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "caption_body_block_zero_based": 247
+      },
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.disclosure-classifications"
+      ]
+    },
+    {
+      "report_id": "Table 4.5",
+      "description": "Disclosure rates by policy visibility",
+      "report_location": "Section 4.5",
+      "inputs": [
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate",
+            "Visibility Score Numeric"
+          ]
+        },
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Visibility score (0-3; from tracker)"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Group the archived repository rates by numeric visibility",
+        "Calculate n, unweighted arithmetic mean, median, and pooled sum(present)/sum(eligible)",
+        "Round percentages to two decimals"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": [
+        [
+          "Visibility level",
+          "Repositories (n)",
+          "Mean repository rate",
+          "Median repository rate",
+          "Pooled PR rate"
+        ],
+        [
+          "Level 1 — Low",
+          "9",
+          "12.02%",
+          "9.41%",
+          "13.39%"
+        ],
+        [
+          "Level 2 — Moderate",
+          "10",
+          "21.53%",
+          "11.28%",
+          "20.13%"
+        ],
+        [
+          "Level 3 — High",
+          "19",
+          "51.24%",
+          "54.38%",
+          "51.73%"
+        ]
+      ],
+      "verification_result": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "9",
+            "12.02%",
+            "9.41%",
+            "13.39%"
+          ],
+          [
+            "10",
+            "21.53%",
+            "11.28%",
+            "20.13%"
+          ],
+          [
+            "19",
+            "51.24%",
+            "54.38%",
+            "51.73%"
+          ]
+        ],
+        "calculated": [
+          [
+            "9",
+            "12.02%",
+            "9.41%",
+            "13.39%"
+          ],
+          [
+            "10",
+            "21.53%",
+            "11.28%",
+            "20.13%"
+          ],
+          [
+            "19",
+            "51.24%",
+            "54.38%",
+            "51.73%"
+          ]
+        ]
+      },
+      "reproducibility_status": "Fully reproducible",
+      "missing_evidence_or_unresolved_issues": [
+        "Original report says Governance Coding Sheet scores were used; the new authoritative final view and archived derived visibility summary agree, but exact historical execution/typography is not reconstructed",
+        "Reproducible status is at the archived derived numeric-input boundary"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "caption_body_block_zero_based": 252
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.visibility-rate-comparison"
+      ]
+    },
+    {
+      "report_id": "Figure 4.1",
+      "description": "Counts of explicitly stated policy rationales; multiple codes allowed",
+      "report_location": "Section 4.2.1",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Rationale: transparency (1 yes; 0 no)",
+            "Rationale: code quality (1 yes; 0 no)",
+            "Rationale: reviewer workload (1 yes; 0 no)",
+            "Rationale: human accountability (1 yes; 0 no)",
+            "Rationale: rights/provenance (1 yes; 0 no)",
+            "Rationale: other stated (1 yes; 0 no)"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Sum each final-data binary rationale indicator independently; multiple codes permitted",
+        "Historical raw/older rationale summary excluded from final analysis"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "Reviewer workload": 20,
+        "Other stated reasons": 14,
+        "Code quality": 13,
+        "Rights/provenance": 13,
+        "Human accountability": 13,
+        "Transparency": 7
+      },
+      "verification_result": {
+        "Rationale: transparency (1 yes; 0 no)": {
+          "0": 31,
+          "1": 7
+        },
+        "Rationale: code quality (1 yes; 0 no)": {
+          "1": 13,
+          "0": 25
+        },
+        "Rationale: reviewer workload (1 yes; 0 no)": {
+          "1": 20,
+          "0": 18
+        },
+        "Rationale: human accountability (1 yes; 0 no)": {
+          "0": 25,
+          "1": 13
+        },
+        "Rationale: rights/provenance (1 yes; 0 no)": {
+          "0": 25,
+          "1": 13
+        },
+        "Rationale: other stated (1 yes; 0 no)": {
+          "1": 14,
+          "0": 24
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image4.png",
+        "sha256": "7ce1ce395e14e409122f5f3a025a3f099b1bc58957973936d69031252ce20258",
+        "document_body_block_zero_based": 227
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.policy-rationale-prevalence"
+      ]
+    },
+    {
+      "report_id": "Figure 4.2",
+      "description": "Stated AI-related policy consequences",
+      "report_location": "Section 4.2.2",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Stated consequence (0 none; 1 correction/review; 2 reject/close; 3 participation restriction)"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Count final consequence codes 0/1/2/3/N/A separately and label categories"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "Participation restriction": 15,
+        "Rejection/closure": 13,
+        "None stated": 9,
+        "N/A": 1,
+        "Correction/review": 0
+      },
+      "verification_result": {
+        "3": 15,
+        "0": 9,
+        "2": 13,
+        "N/A": 1
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image5.png",
+        "sha256": "98b678a0dfe9b1f37696a521303a0851cfd4346ac6e88f20ce9527ab4112f343",
+        "document_body_block_zero_based": 231
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.policy-consequence-prevalence"
+      ]
+    },
+    {
+      "report_id": "Figure 4.3",
+      "description": "Detected disclosure rates for 38 repositories",
+      "report_location": "Section 4.4",
+      "inputs": [
+        {
+          "source_id": "P",
+          "path": "pr-analyzer-maven-skip-bad-repos/pr_dataset_output.csv",
+          "columns": [
+            "Repo",
+            "PR #",
+            "AI Disclosure Present"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Compute 100*present/eligible per repository",
+        "Sort descending; show repository label, one-decimal rate and eligible denominator"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "repository_mean_percent": 34.13,
+        "repository_median_percent": 31.15,
+        "repository_IQR_percent": [
+          9.17,
+          56.21
+        ],
+        "searxng": "288/326 = 88.34%",
+        "curl": "15/1073 = 1.40%",
+        "zero_rate_repository_count": 3
+      },
+      "verification_result": {
+        "all_repository_points": [
+          {
+            "_repo": "searxng/searxng",
+            "_total": 326,
+            "_yes": 288,
+            "_rate": 88.34355828220859,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "homebrew/brew",
+            "_total": 1264,
+            "_yes": 1025,
+            "_rate": 81.09177215189874,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "mdanalysis/mdanalysis",
+            "_total": 43,
+            "_yes": 34,
+            "_rate": 79.06976744186046,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "joomla/joomla-cms",
+            "_total": 427,
+            "_yes": 326,
+            "_rate": 76.34660421545668,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "django/django",
+            "_total": 594,
+            "_yes": 447,
+            "_rate": 75.25252525252525,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "qgis/qgis",
+            "_total": 677,
+            "_yes": 487,
+            "_rate": 71.93500738552437,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "sympy/sympy",
+            "_total": 345,
+            "_yes": 248,
+            "_rate": 71.8840579710145,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "apache/airflow",
+            "_total": 3952,
+            "_yes": 2395,
+            "_rate": 60.60222672064777,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "scipy/scipy",
+            "_total": 749,
+            "_yes": 442,
+            "_rate": 59.012016021361816,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "cuthbertlab/music21",
+            "_total": 108,
+            "_yes": 61,
+            "_rate": 56.48148148148148,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "kiali/kiali",
+            "_total": 426,
+            "_yes": 236,
+            "_rate": 55.39906103286385,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "numpy/numpy",
+            "_total": 925,
+            "_yes": 503,
+            "_rate": 54.37837837837838,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "fedify-dev/fedify",
+            "_total": 121,
+            "_yes": 59,
+            "_rate": 48.760330578512395,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "kornia/kornia",
+            "_total": 584,
+            "_yes": 278,
+            "_rate": 47.602739726027394,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "qutip/qutip",
+            "_total": 71,
+            "_yes": 33,
+            "_rate": 46.478873239436616,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "pandas-dev/pandas",
+            "_total": 1537,
+            "_yes": 569,
+            "_rate": 37.020169160702665,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "apache/kvrocks",
+            "_total": 86,
+            "_yes": 31,
+            "_rate": 36.04651162790697,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "apache/couchdb",
+            "_total": 89,
+            "_yes": 31,
+            "_rate": 34.831460674157306,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "matplotlib/matplotlib",
+            "_total": 448,
+            "_yes": 154,
+            "_rate": 34.375,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "iree-org/iree",
+            "_total": 283,
+            "_yes": 79,
+            "_rate": 27.915194346289752,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "cilium/cilium",
+            "_total": 1746,
+            "_yes": 431,
+            "_rate": 24.68499427262314,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "ghostty-org/ghostty",
+            "_total": 632,
+            "_yes": 119,
+            "_rate": 18.829113924050635,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "pola-rs/polars",
+            "_total": 1067,
+            "_yes": 171,
+            "_rate": 16.026241799437674,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "llvm/llvm-project",
+            "_total": 18748,
+            "_yes": 2681,
+            "_rate": 14.300192020482184,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "go-gitea/gitea",
+            "_total": 1002,
+            "_yes": 135,
+            "_rate": 13.47305389221557,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "openedx/openedx-platform",
+            "_total": 287,
+            "_yes": 32,
+            "_rate": 11.149825783972126,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "cybertec-postgresql/pgwatch",
+            "_total": 81,
+            "_yes": 9,
+            "_rate": 11.11111111111111,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "kubernetes/kubernetes",
+            "_total": 2062,
+            "_yes": 194,
+            "_rate": 9.408341416100873,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "stan-dev/stan",
+            "_total": 22,
+            "_yes": 2,
+            "_rate": 9.090909090909092,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "cloudnative-pg/cloudnative-pg",
+            "_total": 264,
+            "_yes": 21,
+            "_rate": 7.954545454545454,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "apache/arrow",
+            "_total": 598,
+            "_yes": 38,
+            "_rate": 6.354515050167224,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "processing/p5.js",
+            "_total": 183,
+            "_yes": 9,
+            "_rate": 4.918032786885246,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "napari/napari",
+            "_total": 312,
+            "_yes": 11,
+            "_rate": 3.5256410256410255,
+            "_visibility": "3"
+          },
+          {
+            "_repo": "ocaml/ocaml",
+            "_total": 200,
+            "_yes": 4,
+            "_rate": 2.0,
+            "_visibility": "2"
+          },
+          {
+            "_repo": "curl/curl",
+            "_total": 1073,
+            "_yes": 15,
+            "_rate": 1.3979496738117427,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "easybuilders/easybuild",
+            "_total": 1,
+            "_yes": 0,
+            "_rate": 0.0,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "netbsd/src",
+            "_total": 4,
+            "_yes": 0,
+            "_rate": 0.0,
+            "_visibility": "1"
+          },
+          {
+            "_repo": "ory/oathkeeper",
+            "_total": 1,
+            "_yes": 0,
+            "_rate": 0.0,
+            "_visibility": "2"
+          }
+        ],
+        "overall": {
+          "n": 38,
+          "mean_percent": 34.13292639447916,
+          "median_percent": 31.145097173144876,
+          "q1_percent": 9.170267172207037,
+          "q3_percent": 56.210876369327075,
+          "lower_fence_percent": -61.39064662347302,
+          "upper_fence_percent": 126.77179016500713,
+          "outliers": [],
+          "present": 11598,
+          "eligible": 41338,
+          "pooled_percent": 28.05650974889932,
+          "repository_ids": [
+            "apache/airflow",
+            "apache/arrow",
+            "apache/couchdb",
+            "apache/kvrocks",
+            "cilium/cilium",
+            "cloudnative-pg/cloudnative-pg",
+            "curl/curl",
+            "cuthbertlab/music21",
+            "cybertec-postgresql/pgwatch",
+            "django/django",
+            "easybuilders/easybuild",
+            "fedify-dev/fedify",
+            "ghostty-org/ghostty",
+            "go-gitea/gitea",
+            "homebrew/brew",
+            "iree-org/iree",
+            "joomla/joomla-cms",
+            "kiali/kiali",
+            "kornia/kornia",
+            "kubernetes/kubernetes",
+            "llvm/llvm-project",
+            "matplotlib/matplotlib",
+            "mdanalysis/mdanalysis",
+            "napari/napari",
+            "netbsd/src",
+            "numpy/numpy",
+            "ocaml/ocaml",
+            "openedx/openedx-platform",
+            "ory/oathkeeper",
+            "pandas-dev/pandas",
+            "pola-rs/polars",
+            "processing/p5.js",
+            "qgis/qgis",
+            "qutip/qutip",
+            "scipy/scipy",
+            "searxng/searxng",
+            "stan-dev/stan",
+            "sympy/sympy"
+          ]
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image6.png",
+        "sha256": "19f840b84ef7447cc63d16fb1340533c1476b69d9e6ee77b6e61fad7d66bb3be",
+        "document_body_block_zero_based": 243
+      },
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.repository-disclosure-distribution"
+      ]
+    },
+    {
+      "report_id": "Figure 4.4",
+      "description": "Visibility-group box plots with repository points and means",
+      "report_location": "Section 4.5",
+      "inputs": [
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate",
+            "Visibility Score Numeric"
+          ]
+        },
+        {
+          "source_id": "S",
+          "path": "pr-analyzer-maven-skip-bad-repos/spearman_correlation.csv",
+          "columns": [
+            "Spearman Rho",
+            "P-Value",
+            "Sample Size"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Group repository rates by visibility; calculate quartiles, medians, mean diamonds",
+        "Audit with inclusive linear quartiles and 1.5*IQR fences",
+        "Calculate tie-aware Spearman rho and compare n/p; Cliff delta Level3 vs Level1"
+      ],
+      "existing_generation_script_or_workbook": "pr-analyzer-maven-skip-bad-repos/src/main/java/com/example/aichecker/DisclosureVisibilityCorrelationWorkflow.java generates numeric CSVs, not this plot",
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "group_n": [
+          9,
+          10,
+          19
+        ],
+        "displayed_group_means_percent": [
+          12.0,
+          21.5,
+          51.2
+        ],
+        "rho": 0.6181,
+        "displayed_p": 3.54e-05,
+        "n": 38,
+        "text_cliffs_delta": 0.813,
+        "text_level1_upper_fence_percent": 33.65,
+        "text_level2_Q3_percent": 41.28
+      },
+      "verification_result": {
+        "groups": {
+          "1": {
+            "n": 9,
+            "mean_percent": 12.019173369234345,
+            "median_percent": 9.408341416100873,
+            "q1_percent": 1.3979496738117427,
+            "q3_percent": 14.300192020482184,
+            "lower_fence_percent": -17.95541384619392,
+            "upper_fence_percent": 33.653555540487844,
+            "outliers": [
+              "apache/kvrocks"
+            ],
+            "present": 3053,
+            "eligible": 22808,
+            "pooled_percent": 13.385654156436338,
+            "repository_ids": [
+              "apache/kvrocks",
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "easybuilders/easybuild",
+              "iree-org/iree",
+              "kubernetes/kubernetes",
+              "llvm/llvm-project",
+              "netbsd/src",
+              "openedx/openedx-platform"
+            ]
+          },
+          "2": {
+            "n": 10,
+            "mean_percent": 21.530649783708547,
+            "median_percent": 11.28198149156233,
+            "q1_percent": 5.27715335270574,
+            "q3_percent": 41.277526414896954,
+            "lower_fence_percent": -48.723406240581085,
+            "upper_fence_percent": 95.27808600818378,
+            "outliers": [],
+            "present": 663,
+            "eligible": 3293,
+            "pooled_percent": 20.133616762830247,
+            "repository_ids": [
+              "apache/arrow",
+              "cuthbertlab/music21",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "kiali/kiali",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "processing/p5.js",
+              "stan-dev/stan"
+            ]
+          },
+          "3": {
+            "n": 19,
+            "mean_percent": 51.240639201579654,
+            "median_percent": 54.37837837837838,
+            "q1_percent": 34.60323033707866,
+            "q3_percent": 73.59376631902481,
+            "lower_fence_percent": -23.882573635840572,
+            "upper_fence_percent": 132.07957029194404,
+            "outliers": [],
+            "present": 7882,
+            "eligible": 15237,
+            "pooled_percent": 51.72934304653147,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/couchdb",
+              "cilium/cilium",
+              "cybertec-postgresql/pgwatch",
+              "django/django",
+              "homebrew/brew",
+              "joomla/joomla-cms",
+              "kornia/kornia",
+              "matplotlib/matplotlib",
+              "mdanalysis/mdanalysis",
+              "napari/napari",
+              "numpy/numpy",
+              "pandas-dev/pandas",
+              "pola-rs/polars",
+              "qgis/qgis",
+              "qutip/qutip",
+              "scipy/scipy",
+              "searxng/searxng",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "rho": 0.6181438853564616,
+        "p": 3.542225161607963e-05,
+        "cliffs_delta": {
+          "greater": 155,
+          "less": 16,
+          "ties": 0,
+          "pairs": 171,
+          "delta": 0.8128654970760234
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image7.png",
+        "sha256": "a290dbc7f9433d596e42612ab5fae184e9639d46efa4495248da1157562a864e",
+        "document_body_block_zero_based": 256
+      },
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.visibility-rate-comparison",
+        "analysis.visibility-rate-association"
+      ]
+    },
+    {
+      "report_id": "Figure 4.5",
+      "description": "Explicit PR-disclosure requirement versus observed disclosure rates",
+      "report_location": "Section 4.6",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Disclosure in PR required (1 yes; 0 no)"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Join canonical final Repo to archived repository rates",
+        "Compute unweighted group distributions/means and separately pooled counts/rates; no new significance tests"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "Yes": {
+          "n": 22,
+          "mean_percent": 38.23,
+          "pooled_percent": 27.08,
+          "present": 8602,
+          "eligible": 31763
+        },
+        "No": {
+          "n": 16,
+          "mean_percent": 28.49,
+          "pooled_percent": 31.29
+        },
+        "mean_difference_pp": 9.74
+      },
+      "verification_result": {
+        "0": {
+          "n": 16,
+          "mean_percent": 28.49478777902262,
+          "median_percent": 21.757054098336887,
+          "q1_percent": 7.699592074592075,
+          "q3_percent": 39.66581180203384,
+          "lower_fence_percent": -40.249737516570576,
+          "upper_fence_percent": 87.6151413931965,
+          "outliers": [
+            "searxng/searxng"
+          ],
+          "present": 2996,
+          "eligible": 9575,
+          "pooled_percent": 31.289817232375977,
+          "repository_ids": [
+            "apache/couchdb",
+            "cilium/cilium",
+            "curl/curl",
+            "django/django",
+            "ghostty-org/ghostty",
+            "go-gitea/gitea",
+            "kornia/kornia",
+            "matplotlib/matplotlib",
+            "netbsd/src",
+            "numpy/numpy",
+            "napari/napari",
+            "ocaml/ocaml",
+            "pandas-dev/pandas",
+            "cybertec-postgresql/pgwatch",
+            "searxng/searxng",
+            "stan-dev/stan"
+          ]
+        },
+        "1": {
+          "n": 22,
+          "mean_percent": 38.23339084208392,
+          "median_percent": 41.262692433671795,
+          "q1_percent": 9.843712508068686,
+          "q3_percent": 60.20467404582628,
+          "lower_fence_percent": -65.6977297985677,
+          "upper_fence_percent": 135.74611635246268,
+          "outliers": [],
+          "present": 8602,
+          "eligible": 31763,
+          "pooled_percent": 27.08182476466329,
+          "repository_ids": [
+            "apache/airflow",
+            "apache/arrow",
+            "cloudnative-pg/cloudnative-pg",
+            "easybuilders/easybuild",
+            "fedify-dev/fedify",
+            "homebrew/brew",
+            "iree-org/iree",
+            "joomla/joomla-cms",
+            "kubernetes/kubernetes",
+            "apache/kvrocks",
+            "llvm/llvm-project",
+            "ory/oathkeeper",
+            "openedx/openedx-platform",
+            "qgis/qgis",
+            "scipy/scipy",
+            "pola-rs/polars",
+            "processing/p5.js",
+            "qutip/qutip",
+            "sympy/sympy",
+            "mdanalysis/mdanalysis",
+            "kiali/kiali",
+            "cuthbertlab/music21"
+          ]
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image8.png",
+        "sha256": "04eec2d5c96232d80205beef0bd95f0a4ee29007590d0ebe80e3c38e26343311",
+        "document_body_block_zero_based": 265
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.pr-disclosure-requirement-comparison"
+      ]
+    },
+    {
+      "report_id": "Figure 4.6",
+      "description": "PR-template presence versus observed disclosure rates",
+      "report_location": "Section 4.6",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "PR template"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Use final binary PR template indicator; join repository rates",
+        "Compute distributions and unweighted means; no new significance test"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "Yes": {
+          "n": 21,
+          "mean_percent": 48.63
+        },
+        "No": {
+          "n": 17,
+          "mean_percent": 16.23
+        },
+        "mean_difference_pp": 32.4
+      },
+      "verification_result": {
+        "groups": {
+          "0": {
+            "n": 17,
+            "mean_percent": 16.230571440298128,
+            "median_percent": 11.149825783972126,
+            "q1_percent": 2.0,
+            "q3_percent": 24.68499427262314,
+            "lower_fence_percent": -32.02749140893471,
+            "upper_fence_percent": 58.71248568155785,
+            "outliers": [],
+            "present": 3854,
+            "eligible": 25079,
+            "pooled_percent": 15.36743889309781,
+            "repository_ids": [
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "iree-org/iree",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "netbsd/src",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "processing/p5.js",
+              "kiali/kiali",
+              "stan-dev/stan"
+            ]
+          },
+          "1": {
+            "n": 21,
+            "mean_percent": 48.625308976435235,
+            "median_percent": 54.37837837837838,
+            "q1_percent": 34.375,
+            "q3_percent": 71.93500738552437,
+            "lower_fence_percent": -21.965011078286558,
+            "upper_fence_percent": 128.27501846381094,
+            "outliers": [],
+            "present": 7744,
+            "eligible": 16259,
+            "pooled_percent": 47.62900547389138,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/couchdb",
+              "apache/arrow",
+              "django/django",
+              "homebrew/brew",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "matplotlib/matplotlib",
+              "numpy/numpy",
+              "napari/napari",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "qutip/qutip",
+              "searxng/searxng",
+              "sympy/sympy",
+              "mdanalysis/mdanalysis",
+              "cuthbertlab/music21"
+            ]
+          }
+        },
+        "rounding_order_check": {
+          "yes_mean_percent": 48.625308976435235,
+          "no_mean_percent": 16.230571440298128,
+          "unrounded_difference_pp": 32.39473753613711,
+          "full_precision_difference_rounded_2dp": "32.39",
+          "difference_of_rounded_means_2dp": "32.40"
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged",
+        "Reported gap 32.40 pp equals displayed-mean subtraction; full-precision gap 32.3947375361 rounds to 32.39 pp; original rounding order unrecorded"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image9.png",
+        "sha256": "5785806d1ff3fdf96a3c42aeefeabc4cf27ce1d618d2cc93c5f14e12e19bf701",
+        "document_body_block_zero_based": 268
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.pr-template-comparison"
+      ]
+    },
+    {
+      "report_id": "Figure A.1",
+      "description": "Disclosure detail and observed repository rates",
+      "report_location": "Appendix A",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Disclosure detail (1 basic; 2 tool; 3 use explained; 4 trace)"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Group final 1/2/3/4/N/A codes; Curl 0-to-1 is a researcher-confirmed correction in the ledger",
+        "Preserve three N/A rows; no global zero recoding; compute distributions/means"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "codes": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "N/A"
+        ],
+        "n": [
+          7,
+          13,
+          12,
+          3,
+          3
+        ],
+        "image_mean_percent": [
+          38.6,
+          36.0,
+          27.9,
+          61.8,
+          12.8
+        ],
+        "text_level1_mean_percent": 38.6
+      },
+      "verification_result": {
+        "1": {
+          "n": 7,
+          "mean_percent": 38.60496654224786,
+          "median_percent": 34.375,
+          "q1_percent": 11.28198149156233,
+          "q3_percent": 66.41404284846908,
+          "lower_fence_percent": -71.41611054379779,
+          "upper_fence_percent": 149.11213488382919,
+          "outliers": [],
+          "present": 727,
+          "eligible": 3123,
+          "pooled_percent": 23.278898495036824,
+          "repository_ids": [
+            "curl/curl",
+            "go-gitea/gitea",
+            "joomla/joomla-cms",
+            "matplotlib/matplotlib",
+            "mdanalysis/mdanalysis",
+            "stan-dev/stan",
+            "cuthbertlab/music21"
+          ]
+        },
+        "2": {
+          "n": 13,
+          "mean_percent": 36.00446189411918,
+          "median_percent": 27.915194346289752,
+          "q1_percent": 11.11111111111111,
+          "q3_percent": 60.60222672064777,
+          "lower_fence_percent": -63.125562303193874,
+          "upper_fence_percent": 134.83890013495275,
+          "outliers": [],
+          "present": 8184,
+          "eligible": 30358,
+          "pooled_percent": 26.958297648066406,
+          "repository_ids": [
+            "apache/airflow",
+            "cloudnative-pg/cloudnative-pg",
+            "django/django",
+            "homebrew/brew",
+            "iree-org/iree",
+            "kubernetes/kubernetes",
+            "llvm/llvm-project",
+            "openedx/openedx-platform",
+            "pandas-dev/pandas",
+            "cybertec-postgresql/pgwatch",
+            "qgis/qgis",
+            "processing/p5.js",
+            "kiali/kiali"
+          ]
+        },
+        "3": {
+          "n": 12,
+          "mean_percent": 27.927239875030885,
+          "median_percent": 21.757054098336887,
+          "q1_percent": 5.265886287625419,
+          "q3_percent": 46.759839861084316,
+          "lower_fence_percent": -56.97504407256292,
+          "upper_fence_percent": 109.00077022127266,
+          "outliers": [],
+          "present": 1452,
+          "eligible": 5433,
+          "pooled_percent": 26.72556598564329,
+          "repository_ids": [
+            "apache/arrow",
+            "cilium/cilium",
+            "easybuilders/easybuild",
+            "fedify-dev/fedify",
+            "ghostty-org/ghostty",
+            "kornia/kornia",
+            "apache/kvrocks",
+            "ocaml/ocaml",
+            "ory/oathkeeper",
+            "pola-rs/polars",
+            "qutip/qutip",
+            "searxng/searxng"
+          ]
+        },
+        "4": {
+          "n": 3,
+          "mean_percent": 61.75815079025156,
+          "median_percent": 59.012016021361816,
+          "q1_percent": 56.695197199870094,
+          "q3_percent": 65.44803699618816,
+          "lower_fence_percent": 43.56593750539299,
+          "upper_fence_percent": 78.57729669066526,
+          "outliers": [],
+          "present": 1193,
+          "eligible": 2019,
+          "pooled_percent": 59.088657751362064,
+          "repository_ids": [
+            "numpy/numpy",
+            "scipy/scipy",
+            "sympy/sympy"
+          ]
+        },
+        "N/A": {
+          "n": 3,
+          "mean_percent": 12.785700566599443,
+          "median_percent": 3.5256410256410255,
+          "q1_percent": 1.7628205128205128,
+          "q3_percent": 19.178550849899167,
+          "lower_fence_percent": -24.360774992797474,
+          "upper_fence_percent": 45.30214635551715,
+          "outliers": [],
+          "present": 42,
+          "eligible": 405,
+          "pooled_percent": 10.37037037037037,
+          "repository_ids": [
+            "apache/couchdb",
+            "netbsd/src",
+            "napari/napari"
+          ]
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image10.png",
+        "sha256": "451a680ff7f48d912afbc6b1e02ffdaf66045ec429fc27ef5d32e24ddc72a614",
+        "document_body_block_zero_based": 328
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.disclosure-detail-comparison"
+      ]
+    },
+    {
+      "report_id": "Figure A.2",
+      "description": "Policy rationale yes/no mean-rate comparisons",
+      "report_location": "Appendix A",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Rationale: transparency (1 yes; 0 no)",
+            "Rationale: code quality (1 yes; 0 no)",
+            "Rationale: reviewer workload (1 yes; 0 no)",
+            "Rationale: human accountability (1 yes; 0 no)",
+            "Rationale: rights/provenance (1 yes; 0 no)",
+            "Rationale: other stated (1 yes; 0 no)"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Six independent final binary rationale fields, each grouped Yes/No",
+        "Compute separate mean repository rates; no significance tests"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "yes_n": {
+          "Reviewer workload": 20,
+          "Human accountability": 13,
+          "Other stated": 14,
+          "Rights/provenance": 13,
+          "Code quality": 13,
+          "Transparency": 7
+        },
+        "graph": "Six connected mean-rate pairs; no numeric mean labels in image"
+      },
+      "verification_result": {
+        "Rationale: transparency (1 yes; 0 no)": {
+          "0": {
+            "n": 31,
+            "mean_percent": 35.67565155903138,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 7.881428233134049,
+            "q3_percent": 57.74674875142165,
+            "lower_fence_percent": -66.91655254429736,
+            "upper_fence_percent": 132.54472952885305,
+            "outliers": [],
+            "present": 8237,
+            "eligible": 20936,
+            "pooled_percent": 39.34371417653802,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/couchdb",
+              "apache/arrow",
+              "cilium/cilium",
+              "curl/curl",
+              "django/django",
+              "easybuilders/easybuild",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "numpy/numpy",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "qutip/qutip",
+              "searxng/searxng",
+              "sympy/sympy",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 7,
+            "mean_percent": 27.300857808605052,
+            "median_percent": 14.300192020482184,
+            "q1_percent": 10.12036743744061,
+            "q3_percent": 38.33776246240107,
+            "lower_fence_percent": -32.20572510000008,
+            "upper_fence_percent": 80.66385499984176,
+            "outliers": [],
+            "present": 3361,
+            "eligible": 20402,
+            "pooled_percent": 16.473875110283306,
+            "repository_ids": [
+              "cloudnative-pg/cloudnative-pg",
+              "fedify-dev/fedify",
+              "iree-org/iree",
+              "llvm/llvm-project",
+              "openedx/openedx-platform",
+              "qgis/qgis",
+              "stan-dev/stan"
+            ]
+          }
+        },
+        "Rationale: code quality (1 yes; 0 no)": {
+          "0": {
+            "n": 25,
+            "mean_percent": 37.54808006537233,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 11.11111111111111,
+            "q3_percent": 56.48148148148148,
+            "lower_fence_percent": -56.94444444444443,
+            "upper_fence_percent": 124.53703703703702,
+            "outliers": [],
+            "present": 7551,
+            "eligible": 31124,
+            "pooled_percent": 24.261020434391465,
+            "repository_ids": [
+              "apache/couchdb",
+              "cilium/cilium",
+              "django/django",
+              "easybuilders/easybuild",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "napari/napari",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "processing/p5.js",
+              "qutip/qutip",
+              "searxng/searxng",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 13,
+            "mean_percent": 27.565323181223054,
+            "median_percent": 16.026241799437674,
+            "q1_percent": 6.354515050167224,
+            "q3_percent": 54.37837837837838,
+            "lower_fence_percent": -65.68127994214952,
+            "upper_fence_percent": 126.41417337069512,
+            "outliers": [],
+            "present": 4047,
+            "eligible": 10214,
+            "pooled_percent": 39.62208733111416,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "numpy/numpy",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "Rationale: reviewer workload (1 yes; 0 no)": {
+          "0": {
+            "n": 18,
+            "mean_percent": 31.414690999870444,
+            "median_percent": 29.75822747339022,
+            "q1_percent": 9.170267172207037,
+            "q3_percent": 52.684468715290635,
+            "lower_fence_percent": -56.10103514241837,
+            "upper_fence_percent": 117.95577102991604,
+            "outliers": [],
+            "present": 3027,
+            "eligible": 9770,
+            "pooled_percent": 30.98259979529171,
+            "repository_ids": [
+              "apache/couchdb",
+              "cilium/cilium",
+              "curl/curl",
+              "easybuilders/easybuild",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "netbsd/src",
+              "numpy/numpy",
+              "cybertec-postgresql/pgwatch",
+              "processing/p5.js",
+              "qutip/qutip",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 20,
+            "mean_percent": 36.57933824962701,
+            "median_percent": 31.145097173144876,
+            "q1_percent": 10.351005701615458,
+            "q3_percent": 63.422684533239455,
+            "lower_fence_percent": -69.25651254582053,
+            "upper_fence_percent": 143.03020278067544,
+            "outliers": [],
+            "present": 8571,
+            "eligible": 31568,
+            "pooled_percent": 27.15091231626964,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "cloudnative-pg/cloudnative-pg",
+              "django/django",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "llvm/llvm-project",
+              "matplotlib/matplotlib",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "qgis/qgis",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "searxng/searxng",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "Rationale: human accountability (1 yes; 0 no)": {
+          "0": {
+            "n": 25,
+            "mean_percent": 36.28792051956925,
+            "median_percent": 36.04651162790697,
+            "q1_percent": 13.47305389221557,
+            "q3_percent": 56.48148148148148,
+            "lower_fence_percent": -51.0395874916833,
+            "upper_fence_percent": 120.99412286538035,
+            "outliers": [],
+            "present": 8441,
+            "eligible": 32129,
+            "pooled_percent": 26.272215132746116,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/couchdb",
+              "curl/curl",
+              "django/django",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "netbsd/src",
+              "ory/oathkeeper",
+              "pandas-dev/pandas",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "qutip/qutip",
+              "searxng/searxng",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 13,
+            "mean_percent": 29.988706923152073,
+            "median_percent": 11.149825783972126,
+            "q1_percent": 7.954545454545454,
+            "q3_percent": 54.37837837837838,
+            "lower_fence_percent": -61.68120393120394,
+            "upper_fence_percent": 124.01412776412778,
+            "outliers": [],
+            "present": 3157,
+            "eligible": 9209,
+            "pooled_percent": 34.28168096427408,
+            "repository_ids": [
+              "apache/arrow",
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "homebrew/brew",
+              "kubernetes/kubernetes",
+              "matplotlib/matplotlib",
+              "numpy/numpy",
+              "napari/napari",
+              "ocaml/ocaml",
+              "openedx/openedx-platform",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "Rationale: rights/provenance (1 yes; 0 no)": {
+          "0": {
+            "n": 25,
+            "mean_percent": 31.842293246955418,
+            "median_percent": 18.829113924050635,
+            "q1_percent": 9.090909090909092,
+            "q3_percent": 55.39906103286385,
+            "lower_fence_percent": -60.37131882202304,
+            "upper_fence_percent": 124.86128894579599,
+            "outliers": [],
+            "present": 6269,
+            "eligible": 16233,
+            "pooled_percent": 38.61886281032465,
+            "repository_ids": [
+              "apache/airflow",
+              "curl/curl",
+              "django/django",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "pola-rs/polars",
+              "searxng/searxng",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 13,
+            "mean_percent": 38.53799013971713,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 14.300192020482184,
+            "q3_percent": 59.012016021361816,
+            "lower_fence_percent": -52.76754398083726,
+            "upper_fence_percent": 126.07975202268126,
+            "outliers": [],
+            "present": 5329,
+            "eligible": 25105,
+            "pooled_percent": 21.226847241585343,
+            "repository_ids": [
+              "apache/couchdb",
+              "apache/arrow",
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "llvm/llvm-project",
+              "numpy/numpy",
+              "qgis/qgis",
+              "scipy/scipy",
+              "processing/p5.js",
+              "qutip/qutip",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "Rationale: other stated (1 yes; 0 no)": {
+          "0": {
+            "n": 24,
+            "mean_percent": 36.24656592933489,
+            "median_percent": 35.43898615103214,
+            "q1_percent": 11.140147115756871,
+            "q3_percent": 55.669666145018255,
+            "lower_fence_percent": -55.65413142813519,
+            "upper_fence_percent": 122.46394468891032,
+            "outliers": [],
+            "present": 6614,
+            "eligible": 30995,
+            "pooled_percent": 21.33892563316664,
+            "repository_ids": [
+              "apache/couchdb",
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "iree-org/iree",
+              "kubernetes/kubernetes",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "netbsd/src",
+              "numpy/numpy",
+              "napari/napari",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "scipy/scipy",
+              "qutip/qutip",
+              "searxng/searxng",
+              "sympy/sympy",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 14,
+            "mean_percent": 30.509544334726474,
+            "median_percent": 14.749647845826622,
+            "q1_percent": 5.27715335270574,
+            "q3_percent": 57.35235497199268,
+            "lower_fence_percent": -72.83564907622468,
+            "upper_fence_percent": 135.4651574009231,
+            "outliers": [],
+            "present": 4984,
+            "eligible": 10343,
+            "pooled_percent": 48.18717973508653,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "django/django",
+              "easybuilders/easybuild",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "joomla/joomla-cms",
+              "kornia/kornia",
+              "matplotlib/matplotlib",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "stan-dev/stan"
+            ]
+          }
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image11.png",
+        "sha256": "6b884ffd36c2375d83ee00fa24a35224dd25acb34d3cd79cb62f308c816ebcd8",
+        "document_body_block_zero_based": 330
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.policy-rationale-rate-comparison"
+      ]
+    },
+    {
+      "report_id": "Figure A.3",
+      "description": "Contributor responsibility and observed repository rates",
+      "report_location": "Appendix A",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Responsibility (0 none; 1 accountable; 2 explain work; 3 review/test required)"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Group authoritative final code values; retain N/A where present",
+        "Compute distributions/means without additional significance tests"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "codes": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "N/A"
+        ],
+        "n": [
+          1,
+          4,
+          8,
+          24,
+          1
+        ],
+        "image_mean_percent": [
+          34.8,
+          29.5,
+          47.1,
+          32.0,
+          0.0
+        ]
+      },
+      "verification_result": {
+        "0": {
+          "n": 1,
+          "mean_percent": 34.831460674157306,
+          "median_percent": 34.831460674157306,
+          "q1_percent": 34.831460674157306,
+          "q3_percent": 34.831460674157306,
+          "lower_fence_percent": 34.831460674157306,
+          "upper_fence_percent": 34.831460674157306,
+          "outliers": [],
+          "present": 31,
+          "eligible": 89,
+          "pooled_percent": 34.831460674157306,
+          "repository_ids": [
+            "apache/couchdb"
+          ]
+        },
+        "1": {
+          "n": 4,
+          "mean_percent": 29.498458598007566,
+          "median_percent": 25.200620899718835,
+          "q1_percent": 14.797459127356035,
+          "q3_percent": 39.90162037037037,
+          "lower_fence_percent": -22.858782737165463,
+          "upper_fence_percent": 77.55786223489187,
+          "outliers": [],
+          "present": 395,
+          "eligible": 1704,
+          "pooled_percent": 23.18075117370892,
+          "repository_ids": [
+            "matplotlib/matplotlib",
+            "cybertec-postgresql/pgwatch",
+            "pola-rs/polars",
+            "cuthbertlab/music21"
+          ]
+        },
+        "2": {
+          "n": 8,
+          "mean_percent": 47.131514843348064,
+          "median_percent": 50.99055905220288,
+          "q1_percent": 36.84779129321383,
+          "q3_percent": 62.23002650877498,
+          "lower_fence_percent": -1.225561530127898,
+          "upper_fence_percent": 100.30337933211672,
+          "outliers": [],
+          "present": 1828,
+          "eligible": 4337,
+          "pooled_percent": 42.1489508877104,
+          "repository_ids": [
+            "cloudnative-pg/cloudnative-pg",
+            "curl/curl",
+            "kornia/kornia",
+            "numpy/numpy",
+            "scipy/scipy",
+            "qutip/qutip",
+            "searxng/searxng",
+            "sympy/sympy"
+          ]
+        },
+        "3": {
+          "n": 24,
+          "mean_percent": 31.9655745490515,
+          "median_percent": 21.757054098336887,
+          "q1_percent": 8.406810580723624,
+          "q3_percent": 56.69985245480983,
+          "lower_fence_percent": -64.03275223040568,
+          "upper_fence_percent": 129.13941526593914,
+          "outliers": [],
+          "present": 9344,
+          "eligible": 35204,
+          "pooled_percent": 26.542438359277355,
+          "repository_ids": [
+            "apache/airflow",
+            "apache/arrow",
+            "cilium/cilium",
+            "django/django",
+            "easybuilders/easybuild",
+            "fedify-dev/fedify",
+            "ghostty-org/ghostty",
+            "go-gitea/gitea",
+            "homebrew/brew",
+            "iree-org/iree",
+            "joomla/joomla-cms",
+            "kubernetes/kubernetes",
+            "apache/kvrocks",
+            "llvm/llvm-project",
+            "napari/napari",
+            "ocaml/ocaml",
+            "ory/oathkeeper",
+            "openedx/openedx-platform",
+            "pandas-dev/pandas",
+            "qgis/qgis",
+            "processing/p5.js",
+            "mdanalysis/mdanalysis",
+            "kiali/kiali",
+            "stan-dev/stan"
+          ]
+        },
+        "N/A": {
+          "n": 1,
+          "mean_percent": 0.0,
+          "median_percent": 0.0,
+          "q1_percent": 0.0,
+          "q3_percent": 0.0,
+          "lower_fence_percent": 0.0,
+          "upper_fence_percent": 0.0,
+          "outliers": [],
+          "present": 0,
+          "eligible": 4,
+          "pooled_percent": 0.0,
+          "repository_ids": [
+            "netbsd/src"
+          ]
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image12.png",
+        "sha256": "6aadefffc49d487522e82042779f38cbcf0b7e7cffe7298a96c0400c2d49242e",
+        "document_body_block_zero_based": 333
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.responsibility-rate-comparison"
+      ]
+    },
+    {
+      "report_id": "Figure A.4",
+      "description": "AI-use restrictions and observed repository rates",
+      "report_location": "Appendix A",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "AI-use constraints (0 none; 1 bulk/low-effort; 2 specific contexts; 3 general prohibition)"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Group authoritative final code values; retain N/A where present",
+        "Compute distributions/means without additional significance tests"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "codes": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "n": [
+          15,
+          3,
+          19,
+          1
+        ],
+        "image_mean_percent": [
+          38.3,
+          23.0,
+          32.5,
+          34.8
+        ]
+      },
+      "verification_result": {
+        "0": {
+          "n": 15,
+          "mean_percent": 38.3259345623013,
+          "median_percent": 37.020169160702665,
+          "q1_percent": 10.1010101010101,
+          "q3_percent": 64.18276972624798,
+          "lower_fence_percent": -71.02162933684671,
+          "upper_fence_percent": 145.3054091641048,
+          "outliers": [],
+          "present": 5822,
+          "eligible": 25434,
+          "pooled_percent": 22.89061885664858,
+          "repository_ids": [
+            "cloudnative-pg/cloudnative-pg",
+            "curl/curl",
+            "fedify-dev/fedify",
+            "homebrew/brew",
+            "iree-org/iree",
+            "kornia/kornia",
+            "llvm/llvm-project",
+            "ory/oathkeeper",
+            "pandas-dev/pandas",
+            "cybertec-postgresql/pgwatch",
+            "qgis/qgis",
+            "searxng/searxng",
+            "sympy/sympy",
+            "stan-dev/stan",
+            "cuthbertlab/music21"
+          ]
+        },
+        "1": {
+          "n": 3,
+          "mean_percent": 22.985580590271667,
+          "median_percent": 6.354515050167224,
+          "q1_percent": 4.177257525083612,
+          "q3_percent": 33.4783708854075,
+          "lower_fence_percent": -39.774412515402226,
+          "upper_fence_percent": 77.43004092589334,
+          "outliers": [],
+          "present": 2437,
+          "eligible": 4750,
+          "pooled_percent": 51.305263157894736,
+          "repository_ids": [
+            "apache/airflow",
+            "apache/arrow",
+            "ocaml/ocaml"
+          ]
+        },
+        "2": {
+          "n": 19,
+          "mean_percent": 32.545999058458754,
+          "median_percent": 24.68499427262314,
+          "q1_percent": 10.2790836000365,
+          "q3_percent": 54.888719705621114,
+          "lower_fence_percent": -56.63537055834041,
+          "upper_fence_percent": 121.80317386399803,
+          "outliers": [],
+          "present": 3308,
+          "eligible": 11065,
+          "pooled_percent": 29.896068685042927,
+          "repository_ids": [
+            "cilium/cilium",
+            "django/django",
+            "easybuilders/easybuild",
+            "ghostty-org/ghostty",
+            "go-gitea/gitea",
+            "joomla/joomla-cms",
+            "kubernetes/kubernetes",
+            "apache/kvrocks",
+            "matplotlib/matplotlib",
+            "netbsd/src",
+            "numpy/numpy",
+            "napari/napari",
+            "openedx/openedx-platform",
+            "scipy/scipy",
+            "pola-rs/polars",
+            "processing/p5.js",
+            "qutip/qutip",
+            "mdanalysis/mdanalysis",
+            "kiali/kiali"
+          ]
+        },
+        "3": {
+          "n": 1,
+          "mean_percent": 34.831460674157306,
+          "median_percent": 34.831460674157306,
+          "q1_percent": 34.831460674157306,
+          "q3_percent": 34.831460674157306,
+          "lower_fence_percent": 34.831460674157306,
+          "upper_fence_percent": 34.831460674157306,
+          "outliers": [],
+          "present": 31,
+          "eligible": 89,
+          "pooled_percent": 34.831460674157306,
+          "repository_ids": [
+            "apache/couchdb"
+          ]
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image13.png",
+        "sha256": "4941175baa8409d1ea89cb016e07036df65a93b657ec172ac80e352696e3e095",
+        "document_body_block_zero_based": 335
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.ai-use-restrictions-rate-comparison"
+      ]
+    },
+    {
+      "report_id": "Figure A.5",
+      "description": "Stated consequences and observed repository rates",
+      "report_location": "Appendix A",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Stated consequence (0 none; 1 correction/review; 2 reject/close; 3 participation restriction)"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Group authoritative final code values; retain N/A where present",
+        "Compute distributions/means without additional significance tests"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "codes": [
+          "0",
+          "2",
+          "3",
+          "N/A"
+        ],
+        "n": [
+          9,
+          13,
+          15,
+          1
+        ],
+        "image_mean_percent": [
+          29.6,
+          24.1,
+          47.1,
+          11.1
+        ]
+      },
+      "verification_result": {
+        "0": {
+          "n": 9,
+          "mean_percent": 29.562494922640372,
+          "median_percent": 34.831460674157306,
+          "q1_percent": 2.0,
+          "q3_percent": 47.602739726027394,
+          "lower_fence_percent": -66.4041095890411,
+          "upper_fence_percent": 116.0068493150685,
+          "outliers": [],
+          "present": 1607,
+          "eligible": 2676,
+          "pooled_percent": 60.05231689088191,
+          "repository_ids": [
+            "apache/couchdb",
+            "easybuilders/easybuild",
+            "homebrew/brew",
+            "kornia/kornia",
+            "apache/kvrocks",
+            "netbsd/src",
+            "ocaml/ocaml",
+            "kiali/kiali",
+            "stan-dev/stan"
+          ]
+        },
+        "2": {
+          "n": 13,
+          "mean_percent": 24.141169571934064,
+          "median_percent": 14.300192020482184,
+          "q1_percent": 7.954545454545454,
+          "q3_percent": 27.915194346289752,
+          "lower_fence_percent": -21.986427883070995,
+          "upper_fence_percent": 57.8561676839062,
+          "outliers": [
+            "scipy/scipy",
+            "sympy/sympy"
+          ],
+          "present": 4963,
+          "eligible": 28284,
+          "pooled_percent": 17.547023051902137,
+          "repository_ids": [
+            "apache/arrow",
+            "cilium/cilium",
+            "cloudnative-pg/cloudnative-pg",
+            "go-gitea/gitea",
+            "iree-org/iree",
+            "kubernetes/kubernetes",
+            "llvm/llvm-project",
+            "numpy/numpy",
+            "napari/napari",
+            "scipy/scipy",
+            "pola-rs/polars",
+            "processing/p5.js",
+            "sympy/sympy"
+          ]
+        },
+        "3": {
+          "n": 15,
+          "mean_percent": 47.069495542679384,
+          "median_percent": 48.760330578512395,
+          "q1_percent": 26.602056962025316,
+          "q3_percent": 73.59376631902481,
+          "lower_fence_percent": -43.88550707347393,
+          "upper_fence_percent": 144.08133035452406,
+          "outliers": [],
+          "present": 5019,
+          "eligible": 10297,
+          "pooled_percent": 48.74235214140041,
+          "repository_ids": [
+            "apache/airflow",
+            "curl/curl",
+            "django/django",
+            "fedify-dev/fedify",
+            "ghostty-org/ghostty",
+            "joomla/joomla-cms",
+            "matplotlib/matplotlib",
+            "ory/oathkeeper",
+            "openedx/openedx-platform",
+            "pandas-dev/pandas",
+            "qgis/qgis",
+            "qutip/qutip",
+            "searxng/searxng",
+            "mdanalysis/mdanalysis",
+            "cuthbertlab/music21"
+          ]
+        },
+        "N/A": {
+          "n": 1,
+          "mean_percent": 11.11111111111111,
+          "median_percent": 11.11111111111111,
+          "q1_percent": 11.11111111111111,
+          "q3_percent": 11.11111111111111,
+          "lower_fence_percent": 11.11111111111111,
+          "upper_fence_percent": 11.11111111111111,
+          "outliers": [],
+          "present": 9,
+          "eligible": 81,
+          "pooled_percent": 11.11111111111111,
+          "repository_ids": [
+            "cybertec-postgresql/pgwatch"
+          ]
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image14.png",
+        "sha256": "86e96f10a3c29b61a6288e36350027f9d3f6d97bcf0336332d7c89c592d01dd4",
+        "document_body_block_zero_based": 338
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.policy-consequence-rate-comparison"
+      ]
+    },
+    {
+      "report_id": "Figure A.6",
+      "description": "Attribution requirements and observed repository rates",
+      "report_location": "Appendix A",
+      "inputs": [
+        {
+          "source_id": "G",
+          "path": "compendium_docs/data/governance_coding_final.csv",
+          "columns": [
+            "Repo",
+            "Repository URL",
+            "Attribution (0 none; 1 generic IP; 2 licence/DCO; 3 document provenance)"
+          ]
+        },
+        {
+          "source_id": "V",
+          "path": "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv",
+          "columns": [
+            "Repository",
+            "Successfully Analysed Eligible PRs",
+            "PRs With Disclosure",
+            "PRs Without Disclosure",
+            "Disclosure Rate"
+          ]
+        }
+      ],
+      "calculations_or_transformations": [
+        "Group authoritative final code values; retain N/A where present",
+        "Compute distributions/means without additional significance tests"
+      ],
+      "existing_generation_script_or_workbook": null,
+      "new_audit_utility": "compendium_docs/C19_read_only_verification.py",
+      "reported_result": {
+        "codes": [
+          "0",
+          "1",
+          "2"
+        ],
+        "n": [
+          21,
+          3,
+          14
+        ],
+        "image_mean_percent": [
+          30.8,
+          14.2,
+          43.4
+        ]
+      },
+      "verification_result": {
+        "0": {
+          "n": 21,
+          "mean_percent": 30.78063101281794,
+          "median_percent": 16.026241799437674,
+          "q1_percent": 7.954545454545454,
+          "q3_percent": 48.760330578512395,
+          "lower_fence_percent": -53.25413223140496,
+          "upper_fence_percent": 109.96900826446281,
+          "outliers": [],
+          "present": 3620,
+          "eligible": 11117,
+          "pooled_percent": 32.56274174687416,
+          "repository_ids": [
+            "cloudnative-pg/cloudnative-pg",
+            "django/django",
+            "easybuilders/easybuild",
+            "fedify-dev/fedify",
+            "ghostty-org/ghostty",
+            "go-gitea/gitea",
+            "homebrew/brew",
+            "kubernetes/kubernetes",
+            "kornia/kornia",
+            "matplotlib/matplotlib",
+            "napari/napari",
+            "ocaml/ocaml",
+            "ory/oathkeeper",
+            "openedx/openedx-platform",
+            "pandas-dev/pandas",
+            "cybertec-postgresql/pgwatch",
+            "pola-rs/polars",
+            "processing/p5.js",
+            "searxng/searxng",
+            "mdanalysis/mdanalysis",
+            "cuthbertlab/music21"
+          ]
+        },
+        "1": {
+          "n": 3,
+          "mean_percent": 14.194641799378758,
+          "median_percent": 6.354515050167224,
+          "q1_percent": 3.8762323619894836,
+          "q3_percent": 20.592987862162264,
+          "lower_fence_percent": -21.198900888269687,
+          "upper_fence_percent": 45.66812111242143,
+          "outliers": [],
+          "present": 84,
+          "eligible": 1760,
+          "pooled_percent": 4.7727272727272725,
+          "repository_ids": [
+            "apache/couchdb",
+            "apache/arrow",
+            "curl/curl"
+          ]
+        },
+        "2": {
+          "n": 14,
+          "mean_percent": 43.43385902306394,
+          "median_percent": 50.4286258089075,
+          "q1_percent": 25.492544291039792,
+          "q3_percent": 60.20467404582628,
+          "lower_fence_percent": -26.57565034113994,
+          "upper_fence_percent": 112.272868678006,
+          "outliers": [],
+          "present": 7894,
+          "eligible": 28461,
+          "pooled_percent": 27.73620041460244,
+          "repository_ids": [
+            "apache/airflow",
+            "cilium/cilium",
+            "iree-org/iree",
+            "joomla/joomla-cms",
+            "apache/kvrocks",
+            "llvm/llvm-project",
+            "netbsd/src",
+            "numpy/numpy",
+            "qgis/qgis",
+            "scipy/scipy",
+            "qutip/qutip",
+            "sympy/sympy",
+            "kiali/kiali",
+            "stan-dev/stan"
+          ]
+        }
+      },
+      "reproducibility_status": "Numerically verified but plotting workflow unavailable",
+      "missing_evidence_or_unresolved_issues": [
+        "Original plotting script/workbook, dependencies, style/export settings and point-jitter seed are unavailable; no original figure was regenerated",
+        "Final numeric inputs are archived; policy coding validation remains distinct and explicitly flagged"
+      ],
+      "existing_report_artifact": {
+        "docx": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+        "package_part": "word/media/image15.png",
+        "sha256": "0aa747e8c453b9e7059673ef6336a7445eecb6d5da5ef8146ee43390a4764c57",
+        "document_body_block_zero_based": 340
+      },
+      "governance_validation_caveat": "Final identity/membership and Curl correction are established; carried-forward coding and historical policy applicability are not fully validated; see per-row metadata and C15.",
+      "report_key": "minseo-final-report",
+      "report_owner": "Minseo",
+      "shared_artifact_ids": [
+        "analysis.attribution-rate-comparison"
+      ]
+    }
+  ],
+  "verification_environment": {
+    "python": "3.12.7",
+    "scipy": "1.13.1",
+    "standard_library": "csv, statistics (inclusive quartiles), zipfile, XML, hashlib; custom average ranks/Pearson and Cliff pair comparison"
+  },
+  "audit_commands": {
+    "repository_only": "python3 compendium_docs/C19_read_only_verification.py",
+    "with_report": "python3 compendium_docs/C19_read_only_verification.py --report '/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx'",
+    "rebuild_or_verify_final_governance": "python3 compendium_docs/C15_build_governance_final.py"
+  },
+  "audit_utility_sha256": "e5184e26aa32f3b0d33f1973ca25252921a7f32a2e352aac8a447a07ab364290",
+  "complete_verification_record": {
+    "audit_utility": "New C19 read-only verification; not the original plotting workflow",
+    "python_version": "3.12.7",
+    "input_sha256": {
+      "pr-analyzer-maven-skip-bad-repos/pr_dataset_output.csv": "16ded4f6eac9ff75301648e50be43b826866529bb78729d4f45330a96e7e5f02",
+      "pr-analyzer-maven-skip-bad-repos/repo_compliance_summary.csv": "a8ea43da8492385fc5f6688824b9c247c188312e0b5945c3a971f0bfa151e35c",
+      "pr-analyzer-maven-skip-bad-repos/repo_visibility_summary.csv": "dd98ea79d95007db60f3fcc9abeaae381f7883c1dd00f880740eb95fcd364ae1",
+      "pr-analyzer-maven-skip-bad-repos/all_repo_validation_sample_seeded.csv": "a438f28f27b736683db5b8a37b3f0a48fcfd01366a4cf1bd8bfaa43a9e22e1f5",
+      "pr-analyzer-maven-skip-bad-repos/all_manual_seeded_labels.csv": "00c2e3c78e82706c728201300b702b558292246e1cfc411a780625a6da1c1f3f",
+      "pr-analyzer-maven-skip-bad-repos/all_seeded_detector_validation.csv": "7d2168b979336b2b01b118f047d14cf4148abfd391493149c340f45db2c1120c",
+      "pr-analyzer-maven-skip-bad-repos/spearman_correlation.csv": "99f3906af92170a3b68ec00231c21c7f3f613b6a9c013f1681d1ad3d43366f7e"
+    },
+    "table_numeric_cells": {
+      "Table 4.1": [
+        [
+          "38"
+        ],
+        [
+          "41,338"
+        ],
+        [
+          "11,598"
+        ],
+        [
+          "29,740"
+        ],
+        [
+          "3"
+        ],
+        [
+          "18,748 (`llvm/llvm-project`)"
+        ],
+        [
+          "708"
+        ]
+      ],
+      "Table 4.3": [
+        [
+          "278"
+        ],
+        [
+          "425"
+        ],
+        [
+          "1"
+        ],
+        [
+          "4"
+        ],
+        [
+          "99.29%"
+        ],
+        [
+          "99.64%"
+        ],
+        [
+          "98.58%"
+        ],
+        [
+          "99.77%"
+        ],
+        [
+          "99.11%"
+        ]
+      ],
+      "Table 4.4": [
+        [
+          "9,166",
+          "79.03%",
+          "22.17%"
+        ],
+        [
+          "1,785",
+          "15.39%",
+          "4.32%"
+        ],
+        [
+          "647",
+          "5.58%",
+          "1.57%"
+        ],
+        [
+          "11,598",
+          "100.00%",
+          "28.06%"
+        ],
+        [
+          "29,740",
+          "—",
+          "71.94%"
+        ]
+      ],
+      "Table 4.5": [
+        [
+          "9",
+          "12.02%",
+          "9.41%",
+          "13.39%"
+        ],
+        [
+          "10",
+          "21.53%",
+          "11.28%",
+          "20.13%"
+        ],
+        [
+          "19",
+          "51.24%",
+          "54.38%",
+          "51.73%"
+        ]
+      ],
+      "Table 4.2": [
+        [
+          "22 / 16"
+        ],
+        [
+          "4 / 34"
+        ],
+        [
+          "21 / 17"
+        ],
+        [
+          "7 / 13 / 12 / 3 / 3"
+        ],
+        [
+          "1 / 4 / 8 / 24 / 1"
+        ],
+        [
+          "21 / 3 / 14 / 0"
+        ],
+        [
+          "15 / 3 / 19 / 1"
+        ],
+        [
+          "9 / 13 / 15 / 1"
+        ]
+      ]
+    },
+    "all_repositories": {
+      "n": 38,
+      "mean_percent": 34.13292639447916,
+      "median_percent": 31.145097173144876,
+      "q1_percent": 9.170267172207037,
+      "q3_percent": 56.210876369327075,
+      "lower_fence_percent": -61.39064662347302,
+      "upper_fence_percent": 126.77179016500713,
+      "outliers": [],
+      "present": 11598,
+      "eligible": 41338,
+      "pooled_percent": 28.05650974889932,
+      "repository_ids": [
+        "apache/airflow",
+        "apache/arrow",
+        "apache/couchdb",
+        "apache/kvrocks",
+        "cilium/cilium",
+        "cloudnative-pg/cloudnative-pg",
+        "curl/curl",
+        "cuthbertlab/music21",
+        "cybertec-postgresql/pgwatch",
+        "django/django",
+        "easybuilders/easybuild",
+        "fedify-dev/fedify",
+        "ghostty-org/ghostty",
+        "go-gitea/gitea",
+        "homebrew/brew",
+        "iree-org/iree",
+        "joomla/joomla-cms",
+        "kiali/kiali",
+        "kornia/kornia",
+        "kubernetes/kubernetes",
+        "llvm/llvm-project",
+        "matplotlib/matplotlib",
+        "mdanalysis/mdanalysis",
+        "napari/napari",
+        "netbsd/src",
+        "numpy/numpy",
+        "ocaml/ocaml",
+        "openedx/openedx-platform",
+        "ory/oathkeeper",
+        "pandas-dev/pandas",
+        "pola-rs/polars",
+        "processing/p5.js",
+        "qgis/qgis",
+        "qutip/qutip",
+        "scipy/scipy",
+        "searxng/searxng",
+        "stan-dev/stan",
+        "sympy/sympy"
+      ]
+    },
+    "visibility_groups": {
+      "1": {
+        "n": 9,
+        "mean_percent": 12.019173369234345,
+        "median_percent": 9.408341416100873,
+        "q1_percent": 1.3979496738117427,
+        "q3_percent": 14.300192020482184,
+        "lower_fence_percent": -17.95541384619392,
+        "upper_fence_percent": 33.653555540487844,
+        "outliers": [
+          "apache/kvrocks"
+        ],
+        "present": 3053,
+        "eligible": 22808,
+        "pooled_percent": 13.385654156436338,
+        "repository_ids": [
+          "apache/kvrocks",
+          "cloudnative-pg/cloudnative-pg",
+          "curl/curl",
+          "easybuilders/easybuild",
+          "iree-org/iree",
+          "kubernetes/kubernetes",
+          "llvm/llvm-project",
+          "netbsd/src",
+          "openedx/openedx-platform"
+        ]
+      },
+      "2": {
+        "n": 10,
+        "mean_percent": 21.530649783708547,
+        "median_percent": 11.28198149156233,
+        "q1_percent": 5.27715335270574,
+        "q3_percent": 41.277526414896954,
+        "lower_fence_percent": -48.723406240581085,
+        "upper_fence_percent": 95.27808600818378,
+        "outliers": [],
+        "present": 663,
+        "eligible": 3293,
+        "pooled_percent": 20.133616762830247,
+        "repository_ids": [
+          "apache/arrow",
+          "cuthbertlab/music21",
+          "fedify-dev/fedify",
+          "ghostty-org/ghostty",
+          "go-gitea/gitea",
+          "kiali/kiali",
+          "ocaml/ocaml",
+          "ory/oathkeeper",
+          "processing/p5.js",
+          "stan-dev/stan"
+        ]
+      },
+      "3": {
+        "n": 19,
+        "mean_percent": 51.240639201579654,
+        "median_percent": 54.37837837837838,
+        "q1_percent": 34.60323033707866,
+        "q3_percent": 73.59376631902481,
+        "lower_fence_percent": -23.882573635840572,
+        "upper_fence_percent": 132.07957029194404,
+        "outliers": [],
+        "present": 7882,
+        "eligible": 15237,
+        "pooled_percent": 51.72934304653147,
+        "repository_ids": [
+          "apache/airflow",
+          "apache/couchdb",
+          "cilium/cilium",
+          "cybertec-postgresql/pgwatch",
+          "django/django",
+          "homebrew/brew",
+          "joomla/joomla-cms",
+          "kornia/kornia",
+          "matplotlib/matplotlib",
+          "mdanalysis/mdanalysis",
+          "napari/napari",
+          "numpy/numpy",
+          "pandas-dev/pandas",
+          "pola-rs/polars",
+          "qgis/qgis",
+          "qutip/qutip",
+          "scipy/scipy",
+          "searxng/searxng",
+          "sympy/sympy"
+        ]
+      }
+    },
+    "repository_rates": [
+      {
+        "_repo": "searxng/searxng",
+        "_total": 326,
+        "_yes": 288,
+        "_rate": 88.34355828220859,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "homebrew/brew",
+        "_total": 1264,
+        "_yes": 1025,
+        "_rate": 81.09177215189874,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "mdanalysis/mdanalysis",
+        "_total": 43,
+        "_yes": 34,
+        "_rate": 79.06976744186046,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "joomla/joomla-cms",
+        "_total": 427,
+        "_yes": 326,
+        "_rate": 76.34660421545668,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "django/django",
+        "_total": 594,
+        "_yes": 447,
+        "_rate": 75.25252525252525,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "qgis/qgis",
+        "_total": 677,
+        "_yes": 487,
+        "_rate": 71.93500738552437,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "sympy/sympy",
+        "_total": 345,
+        "_yes": 248,
+        "_rate": 71.8840579710145,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "apache/airflow",
+        "_total": 3952,
+        "_yes": 2395,
+        "_rate": 60.60222672064777,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "scipy/scipy",
+        "_total": 749,
+        "_yes": 442,
+        "_rate": 59.012016021361816,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "cuthbertlab/music21",
+        "_total": 108,
+        "_yes": 61,
+        "_rate": 56.48148148148148,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "kiali/kiali",
+        "_total": 426,
+        "_yes": 236,
+        "_rate": 55.39906103286385,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "numpy/numpy",
+        "_total": 925,
+        "_yes": 503,
+        "_rate": 54.37837837837838,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "fedify-dev/fedify",
+        "_total": 121,
+        "_yes": 59,
+        "_rate": 48.760330578512395,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "kornia/kornia",
+        "_total": 584,
+        "_yes": 278,
+        "_rate": 47.602739726027394,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "qutip/qutip",
+        "_total": 71,
+        "_yes": 33,
+        "_rate": 46.478873239436616,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "pandas-dev/pandas",
+        "_total": 1537,
+        "_yes": 569,
+        "_rate": 37.020169160702665,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "apache/kvrocks",
+        "_total": 86,
+        "_yes": 31,
+        "_rate": 36.04651162790697,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "apache/couchdb",
+        "_total": 89,
+        "_yes": 31,
+        "_rate": 34.831460674157306,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "matplotlib/matplotlib",
+        "_total": 448,
+        "_yes": 154,
+        "_rate": 34.375,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "iree-org/iree",
+        "_total": 283,
+        "_yes": 79,
+        "_rate": 27.915194346289752,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "cilium/cilium",
+        "_total": 1746,
+        "_yes": 431,
+        "_rate": 24.68499427262314,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "ghostty-org/ghostty",
+        "_total": 632,
+        "_yes": 119,
+        "_rate": 18.829113924050635,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "pola-rs/polars",
+        "_total": 1067,
+        "_yes": 171,
+        "_rate": 16.026241799437674,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "llvm/llvm-project",
+        "_total": 18748,
+        "_yes": 2681,
+        "_rate": 14.300192020482184,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "go-gitea/gitea",
+        "_total": 1002,
+        "_yes": 135,
+        "_rate": 13.47305389221557,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "openedx/openedx-platform",
+        "_total": 287,
+        "_yes": 32,
+        "_rate": 11.149825783972126,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "cybertec-postgresql/pgwatch",
+        "_total": 81,
+        "_yes": 9,
+        "_rate": 11.11111111111111,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "kubernetes/kubernetes",
+        "_total": 2062,
+        "_yes": 194,
+        "_rate": 9.408341416100873,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "stan-dev/stan",
+        "_total": 22,
+        "_yes": 2,
+        "_rate": 9.090909090909092,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "cloudnative-pg/cloudnative-pg",
+        "_total": 264,
+        "_yes": 21,
+        "_rate": 7.954545454545454,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "apache/arrow",
+        "_total": 598,
+        "_yes": 38,
+        "_rate": 6.354515050167224,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "processing/p5.js",
+        "_total": 183,
+        "_yes": 9,
+        "_rate": 4.918032786885246,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "napari/napari",
+        "_total": 312,
+        "_yes": 11,
+        "_rate": 3.5256410256410255,
+        "_visibility": "3"
+      },
+      {
+        "_repo": "ocaml/ocaml",
+        "_total": 200,
+        "_yes": 4,
+        "_rate": 2.0,
+        "_visibility": "2"
+      },
+      {
+        "_repo": "curl/curl",
+        "_total": 1073,
+        "_yes": 15,
+        "_rate": 1.3979496738117427,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "easybuilders/easybuild",
+        "_total": 1,
+        "_yes": 0,
+        "_rate": 0.0,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "netbsd/src",
+        "_total": 4,
+        "_yes": 0,
+        "_rate": 0.0,
+        "_visibility": "1"
+      },
+      {
+        "_repo": "ory/oathkeeper",
+        "_total": 1,
+        "_yes": 0,
+        "_rate": 0.0,
+        "_visibility": "2"
+      }
+    ],
+    "classification_summary_totals": {
+      "Eligible PRs Reviewed": 41338,
+      "AI Disclosure Present Count": 11598,
+      "No Disclosure Count": 29740,
+      "Positive Disclosure Count": 9166,
+      "Negative Disclosure Count": 1785,
+      "Ambiguous Disclosure Count": 647
+    },
+    "main_row_classification_counts": {
+      "MANUAL_REVIEW_REQUIRED": 10247,
+      "None": 29740,
+      "possible_negative": 99,
+      "possible_positive": 930,
+      "possible_ambiguous": 322
+    },
+    "confusion_matrix": {
+      "True Negative": 425,
+      "True Positive": 278,
+      "False Negative": 4,
+      "False Positive": 1
+    },
+    "metrics": {
+      "Accuracy": 0.9929378531073446,
+      "Precision": 0.996415770609319,
+      "Recall": 0.9858156028368794,
+      "Specificity": 0.9976525821596244,
+      "F1-score": 0.9910873440285205
+    },
+    "spearman_rho": 0.6181438853564616,
+    "spearman_p_saved": 3.54223e-05,
+    "cliffs_delta": {
+      "greater": 155,
+      "less": 16,
+      "ties": 0,
+      "pairs": 171,
+      "delta": 0.8128654970760234
+    },
+    "spearman_p_crosscheck": 3.542225161607963e-05,
+    "scipy_version": "1.13.1",
+    "report_sha256": "3196e5e5f828722aacb85d0b549aa9d07d483635bc58e551a4fce9ce5063fb97",
+    "reported_tables": {
+      "Table 4.1": [
+        [
+          "Characteristic",
+          "Result"
+        ],
+        [
+          "Repositories with AI-related contributor policies",
+          "38"
+        ],
+        [
+          "Eligible closed PRs",
+          "41,338"
+        ],
+        [
+          "PRs with detected disclosure presence",
+          "11,598"
+        ],
+        [
+          "PRs without detected disclosure presence",
+          "29,740"
+        ],
+        [
+          "Repositories with fewer than 20 eligible PRs",
+          "3"
+        ],
+        [
+          "Largest repository PR volume",
+          "18,748 (`llvm/llvm-project`)"
+        ],
+        [
+          "Manually labelled validation PRs",
+          "708"
+        ]
+      ],
+      "Table 4.2": [
+        [
+          "Governance characteristic",
+          "Category",
+          "Repositories (n)"
+        ],
+        [
+          "PR disclosure explicitly required",
+          "Yes / No",
+          "22 / 16"
+        ],
+        [
+          "Commit disclosure explicitly required",
+          "Yes / No",
+          "4 / 34"
+        ],
+        [
+          "PR template present",
+          "Yes / No",
+          "21 / 17"
+        ],
+        [
+          "Disclosure detail",
+          "Levels 1 / 2 / 3 / 4 / N/A",
+          "7 / 13 / 12 / 3 / 3"
+        ],
+        [
+          "Responsibility",
+          "Levels 0 / 1 / 2 / 3 / N/A",
+          "1 / 4 / 8 / 24 / 1"
+        ],
+        [
+          "Attribution",
+          "Levels 0 / 1 / 2 / 3",
+          "21 / 3 / 14 / 0"
+        ],
+        [
+          "AI-use constraints",
+          "Levels 0 / 1 / 2 / 3",
+          "15 / 3 / 19 / 1"
+        ],
+        [
+          "Stated consequence",
+          "None / Rejection / Participation restriction / N/A",
+          "9 / 13 / 15 / 1"
+        ]
+      ],
+      "Table 4.3": [
+        [
+          "Measure",
+          "Result"
+        ],
+        [
+          "True positives (TP)",
+          "278"
+        ],
+        [
+          "True negatives (TN)",
+          "425"
+        ],
+        [
+          "False positives (FP)",
+          "1"
+        ],
+        [
+          "False negatives (FN)",
+          "4"
+        ],
+        [
+          "Accuracy",
+          "99.29%"
+        ],
+        [
+          "Precision",
+          "99.64%"
+        ],
+        [
+          "Recall",
+          "98.58%"
+        ],
+        [
+          "Specificity",
+          "99.77%"
+        ],
+        [
+          "F1-score",
+          "99.11%"
+        ]
+      ],
+      "Table 4.4": [
+        [
+          "Classification",
+          "PR count",
+          "% of detected disclosures",
+          "% of eligible PRs"
+        ],
+        [
+          "Positive disclosure",
+          "9,166",
+          "79.03%",
+          "22.17%"
+        ],
+        [
+          "Negative disclosure",
+          "1,785",
+          "15.39%",
+          "4.32%"
+        ],
+        [
+          "Ambiguous disclosure",
+          "647",
+          "5.58%",
+          "1.57%"
+        ],
+        [
+          "All disclosure present",
+          "11,598",
+          "100.00%",
+          "28.06%"
+        ],
+        [
+          "No detected disclosure",
+          "29,740",
+          "—",
+          "71.94%"
+        ]
+      ],
+      "Table 4.5": [
+        [
+          "Visibility level",
+          "Repositories (n)",
+          "Mean repository rate",
+          "Median repository rate",
+          "Pooled PR rate"
+        ],
+        [
+          "Level 1 — Low",
+          "9",
+          "12.02%",
+          "9.41%",
+          "13.39%"
+        ],
+        [
+          "Level 2 — Moderate",
+          "10",
+          "21.53%",
+          "11.28%",
+          "20.13%"
+        ],
+        [
+          "Level 3 — High",
+          "19",
+          "51.24%",
+          "54.38%",
+          "51.73%"
+        ]
+      ]
+    },
+    "table_numeric_comparisons": {
+      "Table 4.1": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "38"
+          ],
+          [
+            "41,338"
+          ],
+          [
+            "11,598"
+          ],
+          [
+            "29,740"
+          ],
+          [
+            "3"
+          ],
+          [
+            "18,748 (`llvm/llvm-project`)"
+          ],
+          [
+            "708"
+          ]
+        ],
+        "calculated": [
+          [
+            "38"
+          ],
+          [
+            "41,338"
+          ],
+          [
+            "11,598"
+          ],
+          [
+            "29,740"
+          ],
+          [
+            "3"
+          ],
+          [
+            "18,748 (`llvm/llvm-project`)"
+          ],
+          [
+            "708"
+          ]
+        ]
+      },
+      "Table 4.3": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "278"
+          ],
+          [
+            "425"
+          ],
+          [
+            "1"
+          ],
+          [
+            "4"
+          ],
+          [
+            "99.29%"
+          ],
+          [
+            "99.64%"
+          ],
+          [
+            "98.58%"
+          ],
+          [
+            "99.77%"
+          ],
+          [
+            "99.11%"
+          ]
+        ],
+        "calculated": [
+          [
+            "278"
+          ],
+          [
+            "425"
+          ],
+          [
+            "1"
+          ],
+          [
+            "4"
+          ],
+          [
+            "99.29%"
+          ],
+          [
+            "99.64%"
+          ],
+          [
+            "98.58%"
+          ],
+          [
+            "99.77%"
+          ],
+          [
+            "99.11%"
+          ]
+        ]
+      },
+      "Table 4.4": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "9,166",
+            "79.03%",
+            "22.17%"
+          ],
+          [
+            "1,785",
+            "15.39%",
+            "4.32%"
+          ],
+          [
+            "647",
+            "5.58%",
+            "1.57%"
+          ],
+          [
+            "11,598",
+            "100.00%",
+            "28.06%"
+          ],
+          [
+            "29,740",
+            "—",
+            "71.94%"
+          ]
+        ],
+        "calculated": [
+          [
+            "9,166",
+            "79.03%",
+            "22.17%"
+          ],
+          [
+            "1,785",
+            "15.39%",
+            "4.32%"
+          ],
+          [
+            "647",
+            "5.58%",
+            "1.57%"
+          ],
+          [
+            "11,598",
+            "100.00%",
+            "28.06%"
+          ],
+          [
+            "29,740",
+            "—",
+            "71.94%"
+          ]
+        ]
+      },
+      "Table 4.5": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "9",
+            "12.02%",
+            "9.41%",
+            "13.39%"
+          ],
+          [
+            "10",
+            "21.53%",
+            "11.28%",
+            "20.13%"
+          ],
+          [
+            "19",
+            "51.24%",
+            "54.38%",
+            "51.73%"
+          ]
+        ],
+        "calculated": [
+          [
+            "9",
+            "12.02%",
+            "9.41%",
+            "13.39%"
+          ],
+          [
+            "10",
+            "21.53%",
+            "11.28%",
+            "20.13%"
+          ],
+          [
+            "19",
+            "51.24%",
+            "54.38%",
+            "51.73%"
+          ]
+        ]
+      },
+      "Table 4.2": {
+        "all_numeric_cells_match": true,
+        "reported": [
+          [
+            "22 / 16"
+          ],
+          [
+            "4 / 34"
+          ],
+          [
+            "21 / 17"
+          ],
+          [
+            "7 / 13 / 12 / 3 / 3"
+          ],
+          [
+            "1 / 4 / 8 / 24 / 1"
+          ],
+          [
+            "21 / 3 / 14 / 0"
+          ],
+          [
+            "15 / 3 / 19 / 1"
+          ],
+          [
+            "9 / 13 / 15 / 1"
+          ]
+        ],
+        "calculated": [
+          [
+            "22 / 16"
+          ],
+          [
+            "4 / 34"
+          ],
+          [
+            "21 / 17"
+          ],
+          [
+            "7 / 13 / 12 / 3 / 3"
+          ],
+          [
+            "1 / 4 / 8 / 24 / 1"
+          ],
+          [
+            "21 / 3 / 14 / 0"
+          ],
+          [
+            "15 / 3 / 19 / 1"
+          ],
+          [
+            "9 / 13 / 15 / 1"
+          ]
+        ]
+      }
+    },
+    "governance_sha256": "8cb51b4b29ecfe68202af11502d17d876819838f5da2b8bd1077bbbbc1920921",
+    "governance_final": {
+      "path": "/Users/minseokim/Desktop/P4P/AI_Analyzer/compendium_docs/data/governance_coding_final.csv",
+      "n": 38,
+      "category_counts": {
+        "Visibility score (0-3; from tracker)": {
+          "3": 19,
+          "2": 10,
+          "1": 9
+        },
+        "Visibility source note": {
+          "": 32,
+          "Contains non-use attestation": 1,
+          "2 (becuase of a link in their pr template)": 1,
+          "-": 2,
+          "2 (link in pr)": 1,
+          "2 (link to contributing": 1
+        },
+        "Disclosure detail (1 basic; 2 tool; 3 use explained; 4 trace)": {
+          "2": 13,
+          "N/A": 3,
+          "3": 12,
+          "1": 7,
+          "4": 3
+        },
+        "PR template": {
+          "1": 21,
+          "0": 17
+        },
+        " AI in discusion": {
+          "1": 29,
+          "0": 9
+        },
+        "Responsibility (0 none; 1 accountable; 2 explain work; 3 review/test required)": {
+          "3": 24,
+          "0": 1,
+          "2": 8,
+          "1": 4,
+          "N/A": 1
+        },
+        "Attribution (0 none; 1 generic IP; 2 licence/DCO; 3 document provenance)": {
+          "2": 14,
+          "1": 3,
+          "0": 21
+        },
+        "AI-use constraints (0 none; 1 bulk/low-effort; 2 specific contexts; 3 general prohibition)": {
+          "1": 3,
+          "3": 1,
+          "2": 19,
+          "0": 15
+        },
+        "Stated consequence (0 none; 1 correction/review; 2 reject/close; 3 participation restriction)": {
+          "3": 15,
+          "0": 9,
+          "2": 13,
+          "N/A": 1
+        },
+        "Disclosure in PR required (1 yes; 0 no)": {
+          "1": 22,
+          "0": 16
+        },
+        "Disclosure in commit required (1 yes; 0 no)": {
+          "0": 34,
+          "1": 4
+        },
+        "Rationale: transparency (1 yes; 0 no)": {
+          "0": 31,
+          "1": 7
+        },
+        "Rationale: code quality (1 yes; 0 no)": {
+          "1": 13,
+          "0": 25
+        },
+        "Rationale: reviewer workload (1 yes; 0 no)": {
+          "1": 20,
+          "0": 18
+        },
+        "Rationale: human accountability (1 yes; 0 no)": {
+          "0": 25,
+          "1": 13
+        },
+        "Rationale: rights/provenance (1 yes; 0 no)": {
+          "0": 25,
+          "1": 13
+        },
+        "Rationale: other stated (1 yes; 0 no)": {
+          "1": 14,
+          "0": 24
+        }
+      },
+      "groups": {
+        "Disclosure detail (1 basic; 2 tool; 3 use explained; 4 trace)": {
+          "1": {
+            "n": 7,
+            "mean_percent": 38.60496654224786,
+            "median_percent": 34.375,
+            "q1_percent": 11.28198149156233,
+            "q3_percent": 66.41404284846908,
+            "lower_fence_percent": -71.41611054379779,
+            "upper_fence_percent": 149.11213488382919,
+            "outliers": [],
+            "present": 727,
+            "eligible": 3123,
+            "pooled_percent": 23.278898495036824,
+            "repository_ids": [
+              "curl/curl",
+              "go-gitea/gitea",
+              "joomla/joomla-cms",
+              "matplotlib/matplotlib",
+              "mdanalysis/mdanalysis",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "2": {
+            "n": 13,
+            "mean_percent": 36.00446189411918,
+            "median_percent": 27.915194346289752,
+            "q1_percent": 11.11111111111111,
+            "q3_percent": 60.60222672064777,
+            "lower_fence_percent": -63.125562303193874,
+            "upper_fence_percent": 134.83890013495275,
+            "outliers": [],
+            "present": 8184,
+            "eligible": 30358,
+            "pooled_percent": 26.958297648066406,
+            "repository_ids": [
+              "apache/airflow",
+              "cloudnative-pg/cloudnative-pg",
+              "django/django",
+              "homebrew/brew",
+              "iree-org/iree",
+              "kubernetes/kubernetes",
+              "llvm/llvm-project",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "processing/p5.js",
+              "kiali/kiali"
+            ]
+          },
+          "3": {
+            "n": 12,
+            "mean_percent": 27.927239875030885,
+            "median_percent": 21.757054098336887,
+            "q1_percent": 5.265886287625419,
+            "q3_percent": 46.759839861084316,
+            "lower_fence_percent": -56.97504407256292,
+            "upper_fence_percent": 109.00077022127266,
+            "outliers": [],
+            "present": 1452,
+            "eligible": 5433,
+            "pooled_percent": 26.72556598564329,
+            "repository_ids": [
+              "apache/arrow",
+              "cilium/cilium",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "pola-rs/polars",
+              "qutip/qutip",
+              "searxng/searxng"
+            ]
+          },
+          "4": {
+            "n": 3,
+            "mean_percent": 61.75815079025156,
+            "median_percent": 59.012016021361816,
+            "q1_percent": 56.695197199870094,
+            "q3_percent": 65.44803699618816,
+            "lower_fence_percent": 43.56593750539299,
+            "upper_fence_percent": 78.57729669066526,
+            "outliers": [],
+            "present": 1193,
+            "eligible": 2019,
+            "pooled_percent": 59.088657751362064,
+            "repository_ids": [
+              "numpy/numpy",
+              "scipy/scipy",
+              "sympy/sympy"
+            ]
+          },
+          "N/A": {
+            "n": 3,
+            "mean_percent": 12.785700566599443,
+            "median_percent": 3.5256410256410255,
+            "q1_percent": 1.7628205128205128,
+            "q3_percent": 19.178550849899167,
+            "lower_fence_percent": -24.360774992797474,
+            "upper_fence_percent": 45.30214635551715,
+            "outliers": [],
+            "present": 42,
+            "eligible": 405,
+            "pooled_percent": 10.37037037037037,
+            "repository_ids": [
+              "apache/couchdb",
+              "netbsd/src",
+              "napari/napari"
+            ]
+          }
+        },
+        "PR template": {
+          "0": {
+            "n": 17,
+            "mean_percent": 16.230571440298128,
+            "median_percent": 11.149825783972126,
+            "q1_percent": 2.0,
+            "q3_percent": 24.68499427262314,
+            "lower_fence_percent": -32.02749140893471,
+            "upper_fence_percent": 58.71248568155785,
+            "outliers": [],
+            "present": 3854,
+            "eligible": 25079,
+            "pooled_percent": 15.36743889309781,
+            "repository_ids": [
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "iree-org/iree",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "netbsd/src",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "processing/p5.js",
+              "kiali/kiali",
+              "stan-dev/stan"
+            ]
+          },
+          "1": {
+            "n": 21,
+            "mean_percent": 48.625308976435235,
+            "median_percent": 54.37837837837838,
+            "q1_percent": 34.375,
+            "q3_percent": 71.93500738552437,
+            "lower_fence_percent": -21.965011078286558,
+            "upper_fence_percent": 128.27501846381094,
+            "outliers": [],
+            "present": 7744,
+            "eligible": 16259,
+            "pooled_percent": 47.62900547389138,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/couchdb",
+              "apache/arrow",
+              "django/django",
+              "homebrew/brew",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "matplotlib/matplotlib",
+              "numpy/numpy",
+              "napari/napari",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "qutip/qutip",
+              "searxng/searxng",
+              "sympy/sympy",
+              "mdanalysis/mdanalysis",
+              "cuthbertlab/music21"
+            ]
+          }
+        },
+        "Responsibility (0 none; 1 accountable; 2 explain work; 3 review/test required)": {
+          "0": {
+            "n": 1,
+            "mean_percent": 34.831460674157306,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 34.831460674157306,
+            "q3_percent": 34.831460674157306,
+            "lower_fence_percent": 34.831460674157306,
+            "upper_fence_percent": 34.831460674157306,
+            "outliers": [],
+            "present": 31,
+            "eligible": 89,
+            "pooled_percent": 34.831460674157306,
+            "repository_ids": [
+              "apache/couchdb"
+            ]
+          },
+          "1": {
+            "n": 4,
+            "mean_percent": 29.498458598007566,
+            "median_percent": 25.200620899718835,
+            "q1_percent": 14.797459127356035,
+            "q3_percent": 39.90162037037037,
+            "lower_fence_percent": -22.858782737165463,
+            "upper_fence_percent": 77.55786223489187,
+            "outliers": [],
+            "present": 395,
+            "eligible": 1704,
+            "pooled_percent": 23.18075117370892,
+            "repository_ids": [
+              "matplotlib/matplotlib",
+              "cybertec-postgresql/pgwatch",
+              "pola-rs/polars",
+              "cuthbertlab/music21"
+            ]
+          },
+          "2": {
+            "n": 8,
+            "mean_percent": 47.131514843348064,
+            "median_percent": 50.99055905220288,
+            "q1_percent": 36.84779129321383,
+            "q3_percent": 62.23002650877498,
+            "lower_fence_percent": -1.225561530127898,
+            "upper_fence_percent": 100.30337933211672,
+            "outliers": [],
+            "present": 1828,
+            "eligible": 4337,
+            "pooled_percent": 42.1489508877104,
+            "repository_ids": [
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "kornia/kornia",
+              "numpy/numpy",
+              "scipy/scipy",
+              "qutip/qutip",
+              "searxng/searxng",
+              "sympy/sympy"
+            ]
+          },
+          "3": {
+            "n": 24,
+            "mean_percent": 31.9655745490515,
+            "median_percent": 21.757054098336887,
+            "q1_percent": 8.406810580723624,
+            "q3_percent": 56.69985245480983,
+            "lower_fence_percent": -64.03275223040568,
+            "upper_fence_percent": 129.13941526593914,
+            "outliers": [],
+            "present": 9344,
+            "eligible": 35204,
+            "pooled_percent": 26.542438359277355,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "cilium/cilium",
+              "django/django",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "qgis/qgis",
+              "processing/p5.js",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan"
+            ]
+          },
+          "N/A": {
+            "n": 1,
+            "mean_percent": 0.0,
+            "median_percent": 0.0,
+            "q1_percent": 0.0,
+            "q3_percent": 0.0,
+            "lower_fence_percent": 0.0,
+            "upper_fence_percent": 0.0,
+            "outliers": [],
+            "present": 0,
+            "eligible": 4,
+            "pooled_percent": 0.0,
+            "repository_ids": [
+              "netbsd/src"
+            ]
+          }
+        },
+        "Attribution (0 none; 1 generic IP; 2 licence/DCO; 3 document provenance)": {
+          "0": {
+            "n": 21,
+            "mean_percent": 30.78063101281794,
+            "median_percent": 16.026241799437674,
+            "q1_percent": 7.954545454545454,
+            "q3_percent": 48.760330578512395,
+            "lower_fence_percent": -53.25413223140496,
+            "upper_fence_percent": 109.96900826446281,
+            "outliers": [],
+            "present": 3620,
+            "eligible": 11117,
+            "pooled_percent": 32.56274174687416,
+            "repository_ids": [
+              "cloudnative-pg/cloudnative-pg",
+              "django/django",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "matplotlib/matplotlib",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "searxng/searxng",
+              "mdanalysis/mdanalysis",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 3,
+            "mean_percent": 14.194641799378758,
+            "median_percent": 6.354515050167224,
+            "q1_percent": 3.8762323619894836,
+            "q3_percent": 20.592987862162264,
+            "lower_fence_percent": -21.198900888269687,
+            "upper_fence_percent": 45.66812111242143,
+            "outliers": [],
+            "present": 84,
+            "eligible": 1760,
+            "pooled_percent": 4.7727272727272725,
+            "repository_ids": [
+              "apache/couchdb",
+              "apache/arrow",
+              "curl/curl"
+            ]
+          },
+          "2": {
+            "n": 14,
+            "mean_percent": 43.43385902306394,
+            "median_percent": 50.4286258089075,
+            "q1_percent": 25.492544291039792,
+            "q3_percent": 60.20467404582628,
+            "lower_fence_percent": -26.57565034113994,
+            "upper_fence_percent": 112.272868678006,
+            "outliers": [],
+            "present": 7894,
+            "eligible": 28461,
+            "pooled_percent": 27.73620041460244,
+            "repository_ids": [
+              "apache/airflow",
+              "cilium/cilium",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "netbsd/src",
+              "numpy/numpy",
+              "qgis/qgis",
+              "scipy/scipy",
+              "qutip/qutip",
+              "sympy/sympy",
+              "kiali/kiali",
+              "stan-dev/stan"
+            ]
+          }
+        },
+        "AI-use constraints (0 none; 1 bulk/low-effort; 2 specific contexts; 3 general prohibition)": {
+          "0": {
+            "n": 15,
+            "mean_percent": 38.3259345623013,
+            "median_percent": 37.020169160702665,
+            "q1_percent": 10.1010101010101,
+            "q3_percent": 64.18276972624798,
+            "lower_fence_percent": -71.02162933684671,
+            "upper_fence_percent": 145.3054091641048,
+            "outliers": [],
+            "present": 5822,
+            "eligible": 25434,
+            "pooled_percent": 22.89061885664858,
+            "repository_ids": [
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "fedify-dev/fedify",
+              "homebrew/brew",
+              "iree-org/iree",
+              "kornia/kornia",
+              "llvm/llvm-project",
+              "ory/oathkeeper",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "searxng/searxng",
+              "sympy/sympy",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 3,
+            "mean_percent": 22.985580590271667,
+            "median_percent": 6.354515050167224,
+            "q1_percent": 4.177257525083612,
+            "q3_percent": 33.4783708854075,
+            "lower_fence_percent": -39.774412515402226,
+            "upper_fence_percent": 77.43004092589334,
+            "outliers": [],
+            "present": 2437,
+            "eligible": 4750,
+            "pooled_percent": 51.305263157894736,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "ocaml/ocaml"
+            ]
+          },
+          "2": {
+            "n": 19,
+            "mean_percent": 32.545999058458754,
+            "median_percent": 24.68499427262314,
+            "q1_percent": 10.2790836000365,
+            "q3_percent": 54.888719705621114,
+            "lower_fence_percent": -56.63537055834041,
+            "upper_fence_percent": 121.80317386399803,
+            "outliers": [],
+            "present": 3308,
+            "eligible": 11065,
+            "pooled_percent": 29.896068685042927,
+            "repository_ids": [
+              "cilium/cilium",
+              "django/django",
+              "easybuilders/easybuild",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "apache/kvrocks",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "numpy/numpy",
+              "napari/napari",
+              "openedx/openedx-platform",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "qutip/qutip",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali"
+            ]
+          },
+          "3": {
+            "n": 1,
+            "mean_percent": 34.831460674157306,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 34.831460674157306,
+            "q3_percent": 34.831460674157306,
+            "lower_fence_percent": 34.831460674157306,
+            "upper_fence_percent": 34.831460674157306,
+            "outliers": [],
+            "present": 31,
+            "eligible": 89,
+            "pooled_percent": 34.831460674157306,
+            "repository_ids": [
+              "apache/couchdb"
+            ]
+          }
+        },
+        "Stated consequence (0 none; 1 correction/review; 2 reject/close; 3 participation restriction)": {
+          "0": {
+            "n": 9,
+            "mean_percent": 29.562494922640372,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 2.0,
+            "q3_percent": 47.602739726027394,
+            "lower_fence_percent": -66.4041095890411,
+            "upper_fence_percent": 116.0068493150685,
+            "outliers": [],
+            "present": 1607,
+            "eligible": 2676,
+            "pooled_percent": 60.05231689088191,
+            "repository_ids": [
+              "apache/couchdb",
+              "easybuilders/easybuild",
+              "homebrew/brew",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "netbsd/src",
+              "ocaml/ocaml",
+              "kiali/kiali",
+              "stan-dev/stan"
+            ]
+          },
+          "2": {
+            "n": 13,
+            "mean_percent": 24.141169571934064,
+            "median_percent": 14.300192020482184,
+            "q1_percent": 7.954545454545454,
+            "q3_percent": 27.915194346289752,
+            "lower_fence_percent": -21.986427883070995,
+            "upper_fence_percent": 57.8561676839062,
+            "outliers": [
+              "scipy/scipy",
+              "sympy/sympy"
+            ],
+            "present": 4963,
+            "eligible": 28284,
+            "pooled_percent": 17.547023051902137,
+            "repository_ids": [
+              "apache/arrow",
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "go-gitea/gitea",
+              "iree-org/iree",
+              "kubernetes/kubernetes",
+              "llvm/llvm-project",
+              "numpy/numpy",
+              "napari/napari",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "sympy/sympy"
+            ]
+          },
+          "3": {
+            "n": 15,
+            "mean_percent": 47.069495542679384,
+            "median_percent": 48.760330578512395,
+            "q1_percent": 26.602056962025316,
+            "q3_percent": 73.59376631902481,
+            "lower_fence_percent": -43.88550707347393,
+            "upper_fence_percent": 144.08133035452406,
+            "outliers": [],
+            "present": 5019,
+            "eligible": 10297,
+            "pooled_percent": 48.74235214140041,
+            "repository_ids": [
+              "apache/airflow",
+              "curl/curl",
+              "django/django",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "joomla/joomla-cms",
+              "matplotlib/matplotlib",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "qgis/qgis",
+              "qutip/qutip",
+              "searxng/searxng",
+              "mdanalysis/mdanalysis",
+              "cuthbertlab/music21"
+            ]
+          },
+          "N/A": {
+            "n": 1,
+            "mean_percent": 11.11111111111111,
+            "median_percent": 11.11111111111111,
+            "q1_percent": 11.11111111111111,
+            "q3_percent": 11.11111111111111,
+            "lower_fence_percent": 11.11111111111111,
+            "upper_fence_percent": 11.11111111111111,
+            "outliers": [],
+            "present": 9,
+            "eligible": 81,
+            "pooled_percent": 11.11111111111111,
+            "repository_ids": [
+              "cybertec-postgresql/pgwatch"
+            ]
+          }
+        },
+        "Disclosure in PR required (1 yes; 0 no)": {
+          "0": {
+            "n": 16,
+            "mean_percent": 28.49478777902262,
+            "median_percent": 21.757054098336887,
+            "q1_percent": 7.699592074592075,
+            "q3_percent": 39.66581180203384,
+            "lower_fence_percent": -40.249737516570576,
+            "upper_fence_percent": 87.6151413931965,
+            "outliers": [
+              "searxng/searxng"
+            ],
+            "present": 2996,
+            "eligible": 9575,
+            "pooled_percent": 31.289817232375977,
+            "repository_ids": [
+              "apache/couchdb",
+              "cilium/cilium",
+              "curl/curl",
+              "django/django",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "kornia/kornia",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "numpy/numpy",
+              "napari/napari",
+              "ocaml/ocaml",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "searxng/searxng",
+              "stan-dev/stan"
+            ]
+          },
+          "1": {
+            "n": 22,
+            "mean_percent": 38.23339084208392,
+            "median_percent": 41.262692433671795,
+            "q1_percent": 9.843712508068686,
+            "q3_percent": 60.20467404582628,
+            "lower_fence_percent": -65.6977297985677,
+            "upper_fence_percent": 135.74611635246268,
+            "outliers": [],
+            "present": 8602,
+            "eligible": 31763,
+            "pooled_percent": 27.08182476466329,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "cloudnative-pg/cloudnative-pg",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "homebrew/brew",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "qgis/qgis",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "qutip/qutip",
+              "sympy/sympy",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "cuthbertlab/music21"
+            ]
+          }
+        },
+        "Disclosure in commit required (1 yes; 0 no)": {
+          "0": {
+            "n": 34,
+            "mean_percent": 32.548723881553684,
+            "median_percent": 26.300094309456448,
+            "q1_percent": 8.238636363636363,
+            "q3_percent": 55.95570570570571,
+            "lower_fence_percent": -63.33696764946767,
+            "upper_fence_percent": 127.53130971880974,
+            "outliers": [],
+            "present": 8135,
+            "eligible": 21366,
+            "pooled_percent": 38.074510905176446,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/couchdb",
+              "apache/arrow",
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "django/django",
+              "easybuilders/easybuild",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "numpy/numpy",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "qutip/qutip",
+              "searxng/searxng",
+              "sympy/sympy",
+              "mdanalysis/mdanalysis",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 4,
+            "mean_percent": 47.5986477543457,
+            "median_percent": 52.07969580568812,
+            "q1_percent": 40.14529593900484,
+            "q3_percent": 59.533047621028985,
+            "lower_fence_percent": 11.063668415968621,
+            "upper_fence_percent": 88.6146751440652,
+            "outliers": [],
+            "present": 3463,
+            "eligible": 19972,
+            "pooled_percent": 17.33927498497897,
+            "repository_ids": [
+              "fedify-dev/fedify",
+              "llvm/llvm-project",
+              "qgis/qgis",
+              "kiali/kiali"
+            ]
+          }
+        },
+        "Rationale: transparency (1 yes; 0 no)": {
+          "0": {
+            "n": 31,
+            "mean_percent": 35.67565155903138,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 7.881428233134049,
+            "q3_percent": 57.74674875142165,
+            "lower_fence_percent": -66.91655254429736,
+            "upper_fence_percent": 132.54472952885305,
+            "outliers": [],
+            "present": 8237,
+            "eligible": 20936,
+            "pooled_percent": 39.34371417653802,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/couchdb",
+              "apache/arrow",
+              "cilium/cilium",
+              "curl/curl",
+              "django/django",
+              "easybuilders/easybuild",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "numpy/numpy",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "qutip/qutip",
+              "searxng/searxng",
+              "sympy/sympy",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 7,
+            "mean_percent": 27.300857808605052,
+            "median_percent": 14.300192020482184,
+            "q1_percent": 10.12036743744061,
+            "q3_percent": 38.33776246240107,
+            "lower_fence_percent": -32.20572510000008,
+            "upper_fence_percent": 80.66385499984176,
+            "outliers": [],
+            "present": 3361,
+            "eligible": 20402,
+            "pooled_percent": 16.473875110283306,
+            "repository_ids": [
+              "cloudnative-pg/cloudnative-pg",
+              "fedify-dev/fedify",
+              "iree-org/iree",
+              "llvm/llvm-project",
+              "openedx/openedx-platform",
+              "qgis/qgis",
+              "stan-dev/stan"
+            ]
+          }
+        },
+        "Rationale: code quality (1 yes; 0 no)": {
+          "0": {
+            "n": 25,
+            "mean_percent": 37.54808006537233,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 11.11111111111111,
+            "q3_percent": 56.48148148148148,
+            "lower_fence_percent": -56.94444444444443,
+            "upper_fence_percent": 124.53703703703702,
+            "outliers": [],
+            "present": 7551,
+            "eligible": 31124,
+            "pooled_percent": 24.261020434391465,
+            "repository_ids": [
+              "apache/couchdb",
+              "cilium/cilium",
+              "django/django",
+              "easybuilders/easybuild",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "napari/napari",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "processing/p5.js",
+              "qutip/qutip",
+              "searxng/searxng",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 13,
+            "mean_percent": 27.565323181223054,
+            "median_percent": 16.026241799437674,
+            "q1_percent": 6.354515050167224,
+            "q3_percent": 54.37837837837838,
+            "lower_fence_percent": -65.68127994214952,
+            "upper_fence_percent": 126.41417337069512,
+            "outliers": [],
+            "present": 4047,
+            "eligible": 10214,
+            "pooled_percent": 39.62208733111416,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "numpy/numpy",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "Rationale: reviewer workload (1 yes; 0 no)": {
+          "0": {
+            "n": 18,
+            "mean_percent": 31.414690999870444,
+            "median_percent": 29.75822747339022,
+            "q1_percent": 9.170267172207037,
+            "q3_percent": 52.684468715290635,
+            "lower_fence_percent": -56.10103514241837,
+            "upper_fence_percent": 117.95577102991604,
+            "outliers": [],
+            "present": 3027,
+            "eligible": 9770,
+            "pooled_percent": 30.98259979529171,
+            "repository_ids": [
+              "apache/couchdb",
+              "cilium/cilium",
+              "curl/curl",
+              "easybuilders/easybuild",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "netbsd/src",
+              "numpy/numpy",
+              "cybertec-postgresql/pgwatch",
+              "processing/p5.js",
+              "qutip/qutip",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 20,
+            "mean_percent": 36.57933824962701,
+            "median_percent": 31.145097173144876,
+            "q1_percent": 10.351005701615458,
+            "q3_percent": 63.422684533239455,
+            "lower_fence_percent": -69.25651254582053,
+            "upper_fence_percent": 143.03020278067544,
+            "outliers": [],
+            "present": 8571,
+            "eligible": 31568,
+            "pooled_percent": 27.15091231626964,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "cloudnative-pg/cloudnative-pg",
+              "django/django",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "llvm/llvm-project",
+              "matplotlib/matplotlib",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "qgis/qgis",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "searxng/searxng",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "Rationale: human accountability (1 yes; 0 no)": {
+          "0": {
+            "n": 25,
+            "mean_percent": 36.28792051956925,
+            "median_percent": 36.04651162790697,
+            "q1_percent": 13.47305389221557,
+            "q3_percent": 56.48148148148148,
+            "lower_fence_percent": -51.0395874916833,
+            "upper_fence_percent": 120.99412286538035,
+            "outliers": [],
+            "present": 8441,
+            "eligible": 32129,
+            "pooled_percent": 26.272215132746116,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/couchdb",
+              "curl/curl",
+              "django/django",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "netbsd/src",
+              "ory/oathkeeper",
+              "pandas-dev/pandas",
+              "scipy/scipy",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "qutip/qutip",
+              "searxng/searxng",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 13,
+            "mean_percent": 29.988706923152073,
+            "median_percent": 11.149825783972126,
+            "q1_percent": 7.954545454545454,
+            "q3_percent": 54.37837837837838,
+            "lower_fence_percent": -61.68120393120394,
+            "upper_fence_percent": 124.01412776412778,
+            "outliers": [],
+            "present": 3157,
+            "eligible": 9209,
+            "pooled_percent": 34.28168096427408,
+            "repository_ids": [
+              "apache/arrow",
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "homebrew/brew",
+              "kubernetes/kubernetes",
+              "matplotlib/matplotlib",
+              "numpy/numpy",
+              "napari/napari",
+              "ocaml/ocaml",
+              "openedx/openedx-platform",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "Rationale: rights/provenance (1 yes; 0 no)": {
+          "0": {
+            "n": 25,
+            "mean_percent": 31.842293246955418,
+            "median_percent": 18.829113924050635,
+            "q1_percent": 9.090909090909092,
+            "q3_percent": 55.39906103286385,
+            "lower_fence_percent": -60.37131882202304,
+            "upper_fence_percent": 124.86128894579599,
+            "outliers": [],
+            "present": 6269,
+            "eligible": 16233,
+            "pooled_percent": 38.61886281032465,
+            "repository_ids": [
+              "apache/airflow",
+              "curl/curl",
+              "django/django",
+              "easybuilders/easybuild",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "kubernetes/kubernetes",
+              "kornia/kornia",
+              "apache/kvrocks",
+              "matplotlib/matplotlib",
+              "netbsd/src",
+              "napari/napari",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "pola-rs/polars",
+              "searxng/searxng",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "stan-dev/stan",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 13,
+            "mean_percent": 38.53799013971713,
+            "median_percent": 34.831460674157306,
+            "q1_percent": 14.300192020482184,
+            "q3_percent": 59.012016021361816,
+            "lower_fence_percent": -52.76754398083726,
+            "upper_fence_percent": 126.07975202268126,
+            "outliers": [],
+            "present": 5329,
+            "eligible": 25105,
+            "pooled_percent": 21.226847241585343,
+            "repository_ids": [
+              "apache/couchdb",
+              "apache/arrow",
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "iree-org/iree",
+              "joomla/joomla-cms",
+              "llvm/llvm-project",
+              "numpy/numpy",
+              "qgis/qgis",
+              "scipy/scipy",
+              "processing/p5.js",
+              "qutip/qutip",
+              "sympy/sympy"
+            ]
+          }
+        },
+        "Rationale: other stated (1 yes; 0 no)": {
+          "0": {
+            "n": 24,
+            "mean_percent": 36.24656592933489,
+            "median_percent": 35.43898615103214,
+            "q1_percent": 11.140147115756871,
+            "q3_percent": 55.669666145018255,
+            "lower_fence_percent": -55.65413142813519,
+            "upper_fence_percent": 122.46394468891032,
+            "outliers": [],
+            "present": 6614,
+            "eligible": 30995,
+            "pooled_percent": 21.33892563316664,
+            "repository_ids": [
+              "apache/couchdb",
+              "cilium/cilium",
+              "cloudnative-pg/cloudnative-pg",
+              "curl/curl",
+              "fedify-dev/fedify",
+              "ghostty-org/ghostty",
+              "iree-org/iree",
+              "kubernetes/kubernetes",
+              "apache/kvrocks",
+              "llvm/llvm-project",
+              "netbsd/src",
+              "numpy/numpy",
+              "napari/napari",
+              "openedx/openedx-platform",
+              "pandas-dev/pandas",
+              "cybertec-postgresql/pgwatch",
+              "qgis/qgis",
+              "scipy/scipy",
+              "qutip/qutip",
+              "searxng/searxng",
+              "sympy/sympy",
+              "mdanalysis/mdanalysis",
+              "kiali/kiali",
+              "cuthbertlab/music21"
+            ]
+          },
+          "1": {
+            "n": 14,
+            "mean_percent": 30.509544334726474,
+            "median_percent": 14.749647845826622,
+            "q1_percent": 5.27715335270574,
+            "q3_percent": 57.35235497199268,
+            "lower_fence_percent": -72.83564907622468,
+            "upper_fence_percent": 135.4651574009231,
+            "outliers": [],
+            "present": 4984,
+            "eligible": 10343,
+            "pooled_percent": 48.18717973508653,
+            "repository_ids": [
+              "apache/airflow",
+              "apache/arrow",
+              "django/django",
+              "easybuilders/easybuild",
+              "go-gitea/gitea",
+              "homebrew/brew",
+              "joomla/joomla-cms",
+              "kornia/kornia",
+              "matplotlib/matplotlib",
+              "ocaml/ocaml",
+              "ory/oathkeeper",
+              "pola-rs/polars",
+              "processing/p5.js",
+              "stan-dev/stan"
+            ]
+          }
+        }
+      },
+      "coding_fully_validated": false,
+      "validation_status_counts": {
+        "carried_forward_not_independently_revalidated": 36,
+        "current_policy_conflicts_flagged_not_fully_validated": 1,
+        "detail_researcher_confirmed_other_codes_not_revalidated": 1
+      }
+    },
+    "governance_warning": "Authoritative final-38 analysis view uses documented researcher-confirmed Curl correction and policy-verified CloudNativePG identity. Carried-forward coding and historical policy applicability are not fully validated. No automatic recoding, exclusions or aliases are performed by this read-only verifier; historical raw data is not a final-analysis input.",
+    "group_mean_differences": {
+      "PR template": {
+        "yes_mean_percent": 48.625308976435235,
+        "no_mean_percent": 16.230571440298128,
+        "unrounded_difference_pp": 32.39473753613711,
+        "full_precision_difference_rounded_2dp": "32.39",
+        "difference_of_rounded_means_2dp": "32.40"
+      },
+      "Disclosure in PR required (1 yes; 0 no)": {
+        "yes_mean_percent": 38.23339084208392,
+        "no_mean_percent": 28.49478777902262,
+        "unrounded_difference_pp": 9.738603063061301,
+        "full_precision_difference_rounded_2dp": "9.74",
+        "difference_of_rounded_means_2dp": "9.74"
+      }
+    }
+  },
+  "final_scope_verification": {
+    "preexisting_inputs_unchanged": 66,
+    "tracked_changes": false,
+    "new_files": [
+      "compendium_docs/C15_build_governance_final.py",
+      "compendium_docs/C15_governance_coding_provenance.md",
+      "compendium_docs/C19_figures_tables_manifest.json",
+      "compendium_docs/C19_figures_tables_reproducibility.md",
+      "compendium_docs/C19_read_only_verification.py",
+      "compendium_docs/data/governance_coding_final.csv",
+      "compendium_docs/data/governance_coding_transformations.json",
+      "compendium_docs/data/historical_raw/governance_coding_40_repository_original.csv",
+      "compendium_docs/data/policy_evidence/2026-10-20_cloudnativepg_curl_policy_verification.md"
+    ],
+    "manifest_rows_validated": 17,
+    "read_only_commands_passed": [
+      "repository_only_with_authoritative_final_governance",
+      "report_and_authoritative_final_governance",
+      "C15_builder_repeat_byte_verification"
+    ],
+    "original_figures_regenerated": false,
+    "limited_current_policy_document_check_authorized": true,
+    "original_report_and_research_inputs_changed": false,
+    "final_governance_membership_and_change_ledger_verified": true,
+    "coding_fully_validated": false
+  },
+  "governance_release": {
+    "file": "compendium_docs/data/governance_coding_final.csv",
+    "sha256": "8cb51b4b29ecfe68202af11502d17d876819838f5da2b8bd1077bbbbc1920921",
+    "row_count": 38,
+    "matches_repos_txt_and_pr_data": true,
+    "raw_history": "compendium_docs/data/historical_raw/governance_coding_40_repository_original.csv",
+    "raw_history_sha256": "e33ee272a42c56dd49cd94dde0c1b1daaaad4d797b46540d45880bf3cdaf48e2",
+    "ledger": "compendium_docs/data/governance_coding_transformations.json",
+    "ledger_sha256": "329104db6f1d7ca99b67427d3f13b24912faff254085d3e63bbfd8e80709fdc6",
+    "builder": "compendium_docs/C15_build_governance_final.py",
+    "builder_sha256": "858b20ea9dfbd27486b0c5d09e0031f61fdb626abb725b962a8a99a85ed42a03",
+    "policy_evidence": "compendium_docs/data/policy_evidence/2026-10-20_cloudnativepg_curl_policy_verification.md",
+    "fully_validated": false,
+    "curl_level1_n": 7,
+    "curl_level1_mean_percent": 38.60496654224786,
+    "researcher_confirmation_date": "2026-10-20"
+  },
+  "identifier_scope": {
+    "shared_artifact_ids": "Descriptive research IDs defined in shared_research_artifacts_index.json; independent of individual report numbering and presentation.",
+    "report_id": "Preserved legacy field: local table/figure identifier exclusively within Minseo individual Final Report. Not a joint identifier.",
+    "report": "Preserved legacy object: Minseo individual Final Report only.",
+    "historical_verification_records": "Existing complete_verification_record and final_scope_verification retained unchanged as prior C19 audit evidence; report locators in those records refer only to Minseo.",
+    "schema_change": "Version 2 adds report ownership/verification registry and shared research links; original reported values, verification results, image locations/hashes, source hashes and status classifications are preserved."
+  },
+  "individual_reports": {
+    "minseo-final-report": {
+      "path": "/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx",
+      "sha256": "3196e5e5f828722aacb85d0b549aa9d07d483635bc58e551a4fce9ce5063fb97",
+      "body_block_indexing": "Zero-based direct children of word/document.xml w:body; not page numbers",
+      "embedded_editable_charts_or_workbooks": false,
+      "report_key": "minseo-final-report",
+      "student": "Minseo",
+      "verification_status": "Located and inspected in prior C19 audit; byte hash rechecked in joint-index update; exact submitted version/date not confirmed.",
+      "scope": "Individual Final Report; section/table/figure numbers apply only to this document."
+    },
+    "anna-final-report": {
+      "student": "Anna",
+      "path": null,
+      "sha256": null,
+      "verification_status": "Actual report not supplied or verified. No contents, structure, numbering or analysis roles inferred.",
+      "verified_artifact_mappings": []
+    }
+  },
+  "shared_research_index": "compendium_docs/shared_research_artifacts_index.json",
+  "status_counts_scope": "The 17 mapped outputs of Minseo individual Final Report only; not a count of Anna outputs or all possible shared artifacts.",
+  "joint_index_update_verification": {
+    "date": "2026-10-20",
+    "reviewed_revision": "fa38ab8e0be0e0dd27ee5043da6ae04bb7bfb488",
+    "minseo_numeric_table_comparisons_passed": 5,
+    "preserved_original_minseo_artifact_payloads": 17,
+    "unique_shared_artifact_ids": 30,
+    "anna_verified_output_mappings": 0,
+    "original_report_image_and_source_hashes": "unchanged",
+    "prior_complete_verification_record_and_final_scope_verification": "unchanged; historical audit evidence, not rewritten as current mutation scope",
+    "read_only_audit_command": "python3 compendium_docs/C19_read_only_verification.py --report '/Users/minseokim/Desktop/P4P/Report/Minseo Kim Final P4P .docx'",
+    "baseline_workspace_files_checked_excluding_git_and_build_outputs": 69,
+    "baseline_files_byte_identical": 66,
+    "existing_files_changed": [
+      "compendium_docs/C18_RQ_traceability.md",
+      "compendium_docs/C19_figures_tables_reproducibility.md",
+      "compendium_docs/C19_figures_tables_manifest.json"
+    ],
+    "new_files": [
+      "compendium_docs/shared_research_artifacts_index.md",
+      "compendium_docs/shared_research_artifacts_index.json",
+      "compendium_docs/C25_individual_submissions_index.md"
+    ],
+    "checks_passed": [
+      "baseline file preservation",
+      "source/report SHA-256 matches",
+      "original manifest fields and results preserved",
+      "shared ID uniqueness and coverage",
+      "separate report registries",
+      "exact input columns",
+      "local documentation links",
+      "Markdown table structure",
+      "git diff --check"
+    ],
+    "limitations": "Numeric agreement does not establish visual regeneration, full policy validation, exact submitted version identity or any Anna report content."
+  }
+}

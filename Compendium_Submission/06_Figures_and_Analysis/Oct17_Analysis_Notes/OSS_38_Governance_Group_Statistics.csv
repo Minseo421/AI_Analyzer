@@ -1,0 +1,41 @@
+﻿Characteristic,Group,Repositories (n),Mean repository disclosure rate (%),Pooled PR disclosure rate (%),Eligible PRs,Detected disclosures
+Visibility (1-3),1,9,12.0192,13.3857,22808,3053
+Visibility (1-3),2,10,21.5306,20.1336,3293,663
+Visibility (1-3),3,19,51.2406,51.7293,15237,7882
+PR Disclosure Required,0,16,28.4948,31.2898,9575,2996
+PR Disclosure Required,1,22,38.2334,27.0818,31763,8602
+PR Template Present,0,17,16.2306,15.3674,25079,3854
+PR Template Present,1,21,48.6253,47.629,16259,7744
+Disclosure Detail,1.0,7,38.605,23.2789,3123,727
+Disclosure Detail,2.0,13,36.0045,26.9583,30358,8184
+Disclosure Detail,3.0,12,27.9272,26.7256,5433,1452
+Disclosure Detail,4.0,3,61.7582,59.0887,2019,1193
+Disclosure Detail,N/A,3,12.7857,10.3704,405,42
+Responsibility,0.0,1,34.8315,34.8315,89,31
+Responsibility,1.0,4,29.4985,23.1808,1704,395
+Responsibility,2.0,8,47.1315,42.149,4337,1828
+Responsibility,3.0,24,31.9656,26.5424,35204,9344
+Responsibility,N/A,1,0.0,0.0,4,0
+Attribution,0,21,30.7806,32.5627,11117,3620
+Attribution,1,3,14.1946,4.7727,1760,84
+Attribution,2,14,43.4339,27.7362,28461,7894
+AI-use Constraints,0,15,38.3259,22.8906,25434,5822
+AI-use Constraints,1,3,22.9856,51.3053,4750,2437
+AI-use Constraints,2,19,32.546,29.8961,11065,3308
+AI-use Constraints,3,1,34.8315,34.8315,89,31
+Stated Consequence,0.0,9,29.5625,60.0523,2676,1607
+Stated Consequence,2.0,13,24.1412,17.547,28284,4963
+Stated Consequence,3.0,15,47.0695,48.7424,10297,5019
+Stated Consequence,N/A,1,11.1111,11.1111,81,9
+Rationale: Transparency,0,31,35.6757,39.3437,20936,8237
+Rationale: Transparency,1,7,27.3009,16.4739,20402,3361
+Rationale: Code Quality,0,25,37.5481,24.261,31124,7551
+Rationale: Code Quality,1,13,27.5653,39.6221,10214,4047
+Rationale: Reviewer Workload,0,18,31.4147,30.9826,9770,3027
+Rationale: Reviewer Workload,1,20,36.5793,27.1509,31568,8571
+Rationale: Human Accountability,0,25,36.2879,26.2722,32129,8441
+Rationale: Human Accountability,1,13,29.9887,34.2817,9209,3157
+Rationale: Rights / Provenance,0,25,31.8423,38.6189,16233,6269
+Rationale: Rights / Provenance,1,13,38.538,21.2268,25105,5329
+Rationale: Other,0,24,36.2466,21.3389,30995,6614
+Rationale: Other,1,14,30.5095,48.1872,10343,4984
