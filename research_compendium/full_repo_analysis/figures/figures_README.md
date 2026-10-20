@@ -32,4 +32,4 @@ This directory preserves the figures presented in the researchers' **separate fi
 
 These are **preserved report figures**, not separate data sources. Figures on repository disclosure rates use the final 38-repository dataset; governance figures draw on the manual policy coding and associated summaries. Supporting files are documented in [`../README.md`](../README.md) and [`../../governance_coding/README.md`](../../governance_coding/README.md).
 
-The original scripts used to create every final figure have not been fully recovered, so preserving an export does not mean it can be regenerated exactly. Older figure-mapping files, if retained, may refer to former `Main_Figures/` and `Appendix_Figures/` locations; check those paths against the current directory layout before relying on them.
+
