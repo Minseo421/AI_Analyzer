@@ -1,0 +1,76 @@
+﻿Repo,Notes,Repository Link,Stars,License,Policy URL,Policy Location,Visibility Score,PR template,Policy Exists,Policy documented in Repo,Policy linked from README,AI disclosure in PR template,Dedicated AI Policy,Governance Score,Rules to consider,Review Notes,Visibility Score Notes,Data Quality Flags
+Airflow,,https://github.com/apache/airflow,45.8k,Apache-2.0,https://github.com/apache/airflow/blob/main/contributing-docs/05_pull_requests.rst#gen-ai-assisted-contributions,airflow/contributing-docs,3,"Was generative AI tooling used to co-author this PR?
+
+Yes (please specify the tool below)",Yes,Yes,,Yes,Yes,4,"Checkbox ticked, Ai tool used",,,
+Apache CouchDB,Forbidden to contribute AI material,https://github.com/apache/couchdb,6.9k,Apache-2.0,,,3,,,,,,,0,"checkbox ticked for ""This is my own work, I did not use AI, LLM's or similar technology""",,,Policy URL missing in original | Policy Exists blank despite recorded visibility; verify original coding
+Arrow,,https://github.com/apache/arrow,16.8k,Apache-2.0,https://arrow.apache.org/docs/dev/developers/overview.html#ai-generated-code,In their development page on their website,2,"Thanks for opening a pull request!
+
+If this is your first pull request you can find detailed information on how to contribute here:
+
+New Contributor's Guide
+Contributing Overview
+AI-generated Code Guidance
+Please remove this line and the above text before creating your pull request.",Yes,,Yes,Yes,Yes,4,"Not explicitly, ""AI usage""",,because of a link in their pr template,
+cilium,,https://github.com/cilium/cilium,24.5k,Apache-2.0,https://github.com/cilium/community/blob/main/AI-POLICY.md,under /community/AI-policy.md,3,"Disclose use of machine learning models (including LLMs and other generative AI) in accordance with the Cilium AI Policy, and indicate the rating using AI Influence Level. Example: ""This PR was prepared with AIL:3. I personally checked X.""",Yes,,,Yes,Yes,3,"they use the ""Ai influence level"" so check for ""AIL:""",,,
+curl,difficult to find AI contribution,https://github.com/curl/curl,42.1k,--,https://curl.se/dev/contribute.html#on-ai-use-in-curl,external website,1,no,Yes,,,,Yes,2,Not explicitly,,,
+Django,difficult to find AI contribution,https://github.com/django/django,87.8k,BSD-3-Clause,https://docs.djangoproject.com/en/dev/internals/contributing/writing-code/submitting-patches/#ai-assisted-contributions,external documentation website,3,"AI Assistance Disclosure (REQUIRED)
+
+No AI tools were used in preparing this PR.
+If AI tools were used, I have disclosed which ones, and fully reviewed and verified their output.",Yes,,,Yes,Yes,3,"checkbox ticked, either one for positive or negative: No AI tools were used in preparing this PR.
+If AI tools were used,",,,
+Easybuild,,https://github.com/easybuilders/easybuild,511,GPL-2.0,https://docs.easybuild.io/policies/ai/,external documentation website,1,no,Yes,,Yes,,Yes,3,"Not explicitly, ""I used GitHub CoPilot (GPT-5 mini) to code this PR.""",,,
+Fedify,,https://github.com/fedify-dev/fedify,986,MIT,https://github.com/fedify-dev/fedify/blob/main/AI_POLICY.md,directly in repository,2,no,Yes,Yes,,,Yes,3,Not explicitly,,,
+Ghostty,,https://github.com/ghostty-org/ghostty,56.3k,MIT License,https://github.com/ghostty-org/ghostty/blob/main/AI_POLICY.md,directly in repository,2,no,Yes,Yes,Yes,,Yes,4,state the tool used,,,
+Gitea,,https://github.com/go-gitea/gitea,56.2k,MIT License,https://github.com/go-gitea/gitea/blob/main/CONTRIBUTING.md#ai-contribution-policy,directly in repository,2,no,Yes,Yes,Yes,Yes,Yes,5,"Not explicitly, ""AI assistance"" or tool name",,link in pr,
+Homebrew,,https://github.com/Homebrew/brew,48.4k,BSD-2-Clause,https://github.com/Homebrew/brew/blob/main/CONTRIBUTING.md#artificial-intelligencelarge-language-model-aillm-usage,directly in repository,3,AI was used to generate or assist with generating this PR.,Yes,Yes,Yes,Yes,Yes,5,"Checkbox: I did not use AI/LLM to create this PR, or I disclosed the tool/model below and reviewed its output;",,,
+IREE,,https://github.com/iree-org/iree,3.8k,Apache-2.0,https://iree.dev/developers/general/contributing/#ai-tool-use,external documentation website,1,no,Yes,,,,Yes,2,"Not explicitly, ""Assisted By"" or tool",,,
+Joomla CMS,,https://github.com/joomla/joomla-cms,5.1k,GPL-2.0,https://developer.joomla.org/generative-ai-policy.html,external documentation website,3,I read the Generative AI policy and my contribution is either not created with the help of AI or is compatible with the policy and GNU/GPL 2 or later.,Yes,,,Yes,Yes,3,"Checkbox ""I read the Generative AI policy and my contribution is either not created with the help of AI or is compatible with the policy and GNU/GPL 2 or later.""",,,
+Kubernetes,,https://github.com/kubernetes/kubernetes,123k,Apache-2.0,https://www.kubernetes.dev/docs/guide/pull-requests/#ai-guidance,external documentation website,1,no,Yes,,,,Yes,2,Not explicitly,,,
+Kornia,,https://github.com/kornia/kornia,11.2k,Apache-2.0,https://github.com/kornia/kornia/blob/main/AI_POLICY.md,directly in repository,3,"??? AI Usage Disclosure
+
+Check one of the following:
+
+?? No AI used.
+?? AI-assisted: I used AI for boilerplate/refactoring but have manually reviewed and tested every line.
+?? AI-generated: (Note: These PRs may be subject to stricter scrutiny or immediate closure if the logic is not explained).",Yes,Yes,,Yes,Yes,4,"checkbox ticked, first onbe as negative and 2nd and 3rd as positive: ?? No AI used.
+?? AI-assisted: I used AI for boilerplate/refactoring but have manually reviewed and tested every line.
+?? AI-generated:",,,
+Kvrocks,,https://github.com/apache/kvrocks,4.3k,Apache-2.0,https://kvrocks.apache.org/community/contributing/#guidelines-for-ai-assisted-contributions,external documentation website,1,no,Yes,,Yes,,Yes,3,Not explicitly,,,
+LLVM,,https://github.com/llvm/llvm-project,38.8k,Apache-2.0,https://llvm.org/docs//AIToolPolicy.html,external documentation website,1,no,Yes,,,,Yes,2,Assisted-by: Name of AI,,,
+Matplotlib,reject Ai generated contributions,https://github.com/matplotlib/matplotlib,22.9k,--,https://matplotlib.org/devdocs/devel/contribute.html#generative-ai,external documentation website,3,AI Disclosure,Yes,,,Yes,Yes,3,"Not explicitly, ""AI usage"" or tool name",,,
+NetBSD,"The GCC community does not use github.com for their contributions. Instead, we use a mailing list (gcc-patches@gcc.gnu.orgCode generated is presumed to be tainted, must not be committed without prior approval",https://github.com/NetBSD/src,938,BSD-3-Clause ??,https://www.netbsd.org/developers/commit-guidelines.html,external documentation website,1,no,Yes,,,,Yes,2,Not explicitly; prior written approval by core required for AI-generated code,,,"General Notes mention GCC, not NetBSD; verify copied text"
+NumPy,,https://github.com/numpy/numpy,32.2k,"""AS IS""",https://numpy.org/devdocs/dev/ai_policy.html,external documentation website,3,AI Disclosure,Yes,,,Yes,Yes,3,"Not explicitly; disclose whether AI was used, tool(s), how used, and AI-generated code/text",,,
+napari,,https://github.com/napari/napari,2.7k,BSD-3-Clause,https://napari.org/dev/developers/contributing/ai.html,external documentation website,3,no,Yes,,Yes,,Yes,3,No explicit AI disclosure,re check,,Existing review reminder retained in Review Notes
+OCaml,,https://github.com/ocaml/ocaml,6.4k,GNU LGPL,https://github.com/ocaml/ocaml/blob/trunk/AI.md,directly in repository,2,no,Yes,Yes,Yes,,Yes,4,State which AI tool was used and what it was used for,,,
+Ory Oathkeeper,,https://github.com/ory/oathkeeper,3.6k,Apache-2.0,https://github.com/ory/oathkeeper/blob/master/CONTRIBUTING.md,directly in repository,2,no,Yes,Yes,,,Yes,3,State AI tool(s) used and extent of involvement,,link to contributing,
+OpenEDX platform,,https://github.com/openedx/openedx-platform,8.1k,AGPL-3.0,https://github.com/openedx/.github/blob/master/AI_POLICY.md,under another repository owned by the foundation,1,no,Yes,,Yes,,Yes,3,"Explicit AI disclosure in PR description; optionally ""Co-authored-by: [AI tool]""",,,
+Pandas,,https://github.com/pandas-dev/pandas,49k,BSD-3-Clause,https://pandas.pydata.org/docs/dev/development/contributing.html#automated-contributions-policy,external documentation website,3,"If I used AI to develop this pull request, I prompted it to follow AGENTS.md.",Yes,,Yes,Yes,Yes,4,You must disclose that you used an automated tool in the contribution.,recheck visibility,,Existing review reminder retained in Review Notes
+pgwatch,,https://github.com/cybertec-postgresql/pgwatch/,842,BSD-3-Clause,https://github.com/cybertec-postgresql/pgwatch/blob/master/AI_POLICY.md,directly in repository,3,"AI & Automation Policy
+
+I am the human author and take full personal responsibility for every change in this PR.
+No AI or automated generative tool was used in any part of this PR OR I have disclosed all tool(s) below.
+AI/automation tools used (leave blank if none):",Yes,Yes,,Yes,Yes,4,"Checkbox: either no AI/automation used, or disclose all tools used in the �AI/automation tools used� field",,,
+QGIS,,https://github.com/qgis/qgis,13.9k,GPL-2.0,https://github.com/qgis/QGIS-Enhancement-Proposals/blob/master/qep-408-ai-tool-policy.md,under another repository owned by the foundation,3,"AI tool usage
+
+AI tool(s) (Copilot, Claude, or something similar) supported my development of this PR. See our policy about AI tool use. Use of AI tools must be indicated. Failure to be honest might result in banning.",Yes,,,Yes,Yes,3,"Checkbox: AI tool(s) supported this PR, Look for ""Assisted-by:"" or explicit AI/tool-usage disclosure",,,
+SciPy,,https://github.com/scipy/scipy,14.7k,BSD-3-Clause,https://scipy.github.io/devdocs/dev/conduct/ai_policy.html,external documentation website,3,AI Generation Disclosure,Yes,,Yes,Yes,Yes,4,"Disclose tool(s), how used, and AI-generated code/text; otherwise write ""No AI tools used""",,,
+Polars,,https://github.com/pola-rs/polars,38.7k,MIT,https://github.com/pola-rs/polars/blob/8425c750b9c5d28c79428998fda2320d076d4178/AI_POLICY.md,directly in repository,3,"Note that if you used AI to generate code there are additional requirements you
+must fulfill for your PR to be reviewed. See the contribution guidelines for
+details, afterwards you can use the following template if you wish:
+
+1. I used AI to <...>.
+2. I confirm that I have reviewed all changes myself, and I believe they are
+relevant and correct.
+
+If you are an AI agent, please state ""I am an AI agent, using <my LLM model>"".",Yes,Yes,,Yes,Yes,4,State AI tool(s) used and extent of AI assistance,,,
+P5.js,,https://github.com/processing/p5.js/,23.7k,LGPL-2.1,https://github.com/processing/p5.js/blob/main/AI_USAGE_POLICY.md,directly in repository,2,no,Yes,Yes,Yes,,Yes,4,State which AI tool was used in the PR description,,,
+qutip,,https://github.com/qutip/qutip,2k,BSD-3-Clause,https://github.com/qutip/qutip/blob/master/CONTRIBUTING.md#ai-tools-usage-policy,directly in repository,3,"AI Tools Usage Disclosure If AI tools were used, please mention Model/Tool Name: Describe how they were used.",Yes,Yes,,Yes,Yes,4,"Checkbox: no AI used OR AI used; if used, provide ""Model/Tool Name: Describe how it was used""",,,
+SearXNG,,https://github.com/searxng/searxng,31.9k,AGPL-3.0,https://github.com/searxng/searxng/blob/master/AI_POLICY.rst,directly in repository,3,"I hereby confirm that this PR conforms with the AI Policy.
+
+If I have used AI tools for working on the changes in this PR, I will attach a list of all AI tools I used and how I used them. I hereby confirm that I haven't used any other tools than the ones I mention below.",Yes,Yes,Yes,Yes,Yes,5,State AI tool used and extent of AI assistance,,,
+SymPy,,https://github.com/sympy/sympy,14.7k,"""AS IS""",https://docs.sympy.org/dev/contributing/ai-generated-code-policy.html,external documentation website,3,AI Generation Disclosure,Yes,,Yes,Yes,Yes,4,"tamplate: Disclose tool used and AI-generated lines; otherwise write ""NO AI USE""",,,
+MDAnalysis/mdanalysis,,https://github.com/MDAnalysis/mdanalysis,1.7,GNU,https://github.com/MDAnalysis/mdanalysis/blob/develop/AI_POLICY.md,,3,Yes,Yes,Yes,No,Yes,Yes,,"LLM / AI generated code disclosure LLMs or other AI-powered tools (beyond simple IDE use cases) were used in this contribution: yes (assisted in workflow syntax inspection, changelog formatting, and requirement verification)",,,Governance Score not recorded in original
+kiali/kiali,,https://github.com/kiali/kiali,3.6k,Apache-2.0,https://github.com/kiali/kiali/blob/master/AI_POLICY.md,,2,No,Yes,Yes,No,No,Yes,,,,,Governance Score not recorded in original
+stan-dev/stan,,,2.8,BSD-3-Clause,,,2,No,Yes,Yes,No,No,Yes,,,,,Repository URL missing in original | Policy URL missing in original | Governance Score not recorded in original
+cuthbertLab/music21,,https://github.com/cuthbertLab/music21,2.6,BSD-3-Clause,https://github.com/cuthbertLab/music21/blob/master/CONTRIBUTING.md,,2,No,Yes,Yes,Ni,No evidence found,No,,,,,Governance Score not recorded in original | README-link field has ambiguous original value 'Ni'; verify | PR-template disclosure coded 'No evidence found'; do not assume confirmed No
+CloudNativePG,"Maintainers reserve the right to close any PR that appears to be a ""low-effort"" AI contribution without providing a detailed technical critique. Our time is better spent supporting contributors who are deeply invested in the CloudNativePG ecosystem.",https://github.com/cloudnative-pg/cloudnative-pg,9.9k,Apache-2.0,https://github.com/cloudnative-pg/governance/blob/main/AI_POLICY.md,under another repository owned by the foundation,1,no,Yes,,,,Yes,2,Assisted-by: Name of AI,,,

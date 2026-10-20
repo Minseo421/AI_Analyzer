@@ -1,0 +1,1057 @@
+{
+  "schema_version": 1,
+  "prepared_date": "2026-10-20",
+  "timezone": "Pacific/Auckland",
+  "authority": "Researcher instructions in this session, 2026-10-20",
+  "dataset_role": "Authoritative final-38 compendium analysis view; NOT a claim of full coding validation or original historical execution bytes",
+  "original_external_source": "/Users/minseokim/Desktop/P4P/GPT/repository_dataset(Governance_Coding_Sheet).csv",
+  "historical_raw_copy": "compendium_docs/data/historical_raw/governance_coding_40_repository_original.csv",
+  "historical_raw_sha256": "e33ee272a42c56dd49cd94dde0c1b1daaaad4d797b46540d45880bf3cdaf48e2",
+  "historical_raw_populated_repositories": 40,
+  "final_file": "compendium_docs/data/governance_coding_final.csv",
+  "final_sha256": "8cb51b4b29ecfe68202af11502d17d876819838f5da2b8bd1077bbbbc1920921",
+  "final_repositories": 38,
+  "matching_inputs": {
+    "pr-analyzer-maven-skip-bad-repos/repos.txt": "4a59364d514a2efc3eec1cb1fa3f0660b9c41abdc0a11dc9aed31345b116c989",
+    "pr-analyzer-maven-skip-bad-repos/pr_dataset_output.csv": "16ded4f6eac9ff75301648e50be43b826866529bb78729d4f45330a96e7e5f02"
+  },
+  "structural_transformations": [
+    "Retain first 24 named governance columns; exclude right-hand summaries, empty header columns and footer from final analysis view",
+    "Keep original full CSV bytes in historical/raw-data location",
+    "Order final rows exactly as final repos.txt",
+    "Append provenance/validation metadata without inventing missing governance values",
+    "Serialize derived CSV as UTF-8 with LF line endings; source raw bytes unchanged"
+  ],
+  "exclusions": [
+    {
+      "source_csv_record": 20,
+      "source_repo": "Mesa",
+      "canonical_repo": "mesa/mesa",
+      "reason": "Absent from final repos.txt and PR dataset; researcher requires exactly final 38 repositories",
+      "recorded_git_exclusion_commit": "44c2808"
+    },
+    {
+      "source_csv_record": 31,
+      "source_repo": "STAC",
+      "canonical_repo": "stacdev/stac",
+      "reason": "Absent from final repos.txt and PR dataset; researcher requires exactly final 38 repositories",
+      "recorded_git_exclusion_commit": "9f8d541"
+    }
+  ],
+  "row_identity_map": [
+    {
+      "source_csv_record": 2,
+      "original_repo": "Airflow",
+      "original_repository_url": "https://github.com/apache/airflow",
+      "final_repo": "apache/airflow"
+    },
+    {
+      "source_csv_record": 3,
+      "original_repo": "Apache CouchDB",
+      "original_repository_url": "https://github.com/apache/couchdb",
+      "final_repo": "apache/couchdb"
+    },
+    {
+      "source_csv_record": 4,
+      "original_repo": "Arrow",
+      "original_repository_url": "https://github.com/apache/arrow ",
+      "final_repo": "apache/arrow"
+    },
+    {
+      "source_csv_record": 5,
+      "original_repo": "cilium",
+      "original_repository_url": "https://github.com/cilium/cilium",
+      "final_repo": "cilium/cilium"
+    },
+    {
+      "source_csv_record": 6,
+      "original_repo": "curl",
+      "original_repository_url": "https://github.com/curl/curl",
+      "final_repo": "curl/curl"
+    },
+    {
+      "source_csv_record": 7,
+      "original_repo": "Django",
+      "original_repository_url": "https://github.com/django/django ",
+      "final_repo": "django/django"
+    },
+    {
+      "source_csv_record": 8,
+      "original_repo": "Easybuild",
+      "original_repository_url": "https://github.com/easybuilders/easybuild ",
+      "final_repo": "easybuilders/easybuild"
+    },
+    {
+      "source_csv_record": 9,
+      "original_repo": "Fedify",
+      "original_repository_url": "https://github.com/fedify-dev/fedify ",
+      "final_repo": "fedify-dev/fedify"
+    },
+    {
+      "source_csv_record": 10,
+      "original_repo": "Ghostty",
+      "original_repository_url": "https://github.com/ghostty-org/ghostty ",
+      "final_repo": "ghostty-org/ghostty"
+    },
+    {
+      "source_csv_record": 11,
+      "original_repo": "Gitea",
+      "original_repository_url": "https://github.com/go-gitea/gitea",
+      "final_repo": "go-gitea/gitea"
+    },
+    {
+      "source_csv_record": 12,
+      "original_repo": "Homebrew",
+      "original_repository_url": "https://github.com/Homebrew/brew",
+      "final_repo": "Homebrew/brew"
+    },
+    {
+      "source_csv_record": 13,
+      "original_repo": "IREE",
+      "original_repository_url": "https://github.com/iree-org/iree ",
+      "final_repo": "iree-org/iree"
+    },
+    {
+      "source_csv_record": 14,
+      "original_repo": "Joomla CMS",
+      "original_repository_url": "https://github.com/joomla/joomla-cms ",
+      "final_repo": "joomla/joomla-cms"
+    },
+    {
+      "source_csv_record": 15,
+      "original_repo": "Kubernetes",
+      "original_repository_url": "https://github.com/kubernetes/kubernetes ",
+      "final_repo": "kubernetes/kubernetes"
+    },
+    {
+      "source_csv_record": 16,
+      "original_repo": "Kornia",
+      "original_repository_url": "https://github.com/kornia/kornia",
+      "final_repo": "kornia/kornia"
+    },
+    {
+      "source_csv_record": 17,
+      "original_repo": "Kvrocks",
+      "original_repository_url": "https://github.com/apache/kvrocks ",
+      "final_repo": "apache/kvrocks"
+    },
+    {
+      "source_csv_record": 18,
+      "original_repo": "Llvm",
+      "original_repository_url": "https://github.com/llvm/llvm-project ",
+      "final_repo": "llvm/llvm-project"
+    },
+    {
+      "source_csv_record": 19,
+      "original_repo": "Matpotlib",
+      "original_repository_url": "https://github.com/matplotlib/matplotlib ",
+      "final_repo": "matplotlib/matplotlib"
+    },
+    {
+      "source_csv_record": 21,
+      "original_repo": "NetBSD",
+      "original_repository_url": "https://github.com/NetBSD/src",
+      "final_repo": "NetBSD/src"
+    },
+    {
+      "source_csv_record": 22,
+      "original_repo": "NumPy",
+      "original_repository_url": "https://github.com/numpy/numpy ",
+      "final_repo": "numpy/numpy"
+    },
+    {
+      "source_csv_record": 23,
+      "original_repo": "napari",
+      "original_repository_url": "https://github.com/napari/napari",
+      "final_repo": "napari/napari"
+    },
+    {
+      "source_csv_record": 24,
+      "original_repo": "Ocaml",
+      "original_repository_url": "https://github.com/ocaml/ocaml",
+      "final_repo": "ocaml/ocaml"
+    },
+    {
+      "source_csv_record": 25,
+      "original_repo": "Ory Oathkeeper",
+      "original_repository_url": "https://github.com/ory/oathkeeper ",
+      "final_repo": "ory/oathkeeper"
+    },
+    {
+      "source_csv_record": 26,
+      "original_repo": "OpenEDX platform",
+      "original_repository_url": "https://github.com/openedx/openedx-platform",
+      "final_repo": "openedx/openedx-platform"
+    },
+    {
+      "source_csv_record": 27,
+      "original_repo": "Pandas",
+      "original_repository_url": "https://github.com/pandas-dev/pandas",
+      "final_repo": "pandas-dev/pandas"
+    },
+    {
+      "source_csv_record": 28,
+      "original_repo": "pgwatch",
+      "original_repository_url": "https://github.com/cybertec-postgresql/pgwatch/",
+      "final_repo": "cybertec-postgresql/pgwatch"
+    },
+    {
+      "source_csv_record": 29,
+      "original_repo": "QGIS",
+      "original_repository_url": "https://github.com/qgis/qgis",
+      "final_repo": "qgis/qgis"
+    },
+    {
+      "source_csv_record": 30,
+      "original_repo": "SciPy",
+      "original_repository_url": "https://github.com/scipy/scipy",
+      "final_repo": "scipy/scipy"
+    },
+    {
+      "source_csv_record": 32,
+      "original_repo": "Polars",
+      "original_repository_url": "https://github.com/pola-rs/polars",
+      "final_repo": "pola-rs/polars"
+    },
+    {
+      "source_csv_record": 33,
+      "original_repo": "P5.js",
+      "original_repository_url": "https://github.com/processing/p5.js/",
+      "final_repo": "processing/p5.js"
+    },
+    {
+      "source_csv_record": 34,
+      "original_repo": "qutip",
+      "original_repository_url": "https://github.com/qutip/qutip",
+      "final_repo": "qutip/qutip"
+    },
+    {
+      "source_csv_record": 35,
+      "original_repo": "SearXNG",
+      "original_repository_url": "https://github.com/searxng/searxng",
+      "final_repo": "searxng/searxng"
+    },
+    {
+      "source_csv_record": 36,
+      "original_repo": "SymPy",
+      "original_repository_url": "https://github.com/sympy/sympy",
+      "final_repo": "sympy/sympy"
+    },
+    {
+      "source_csv_record": 37,
+      "original_repo": "MDAnalysis/mdanalysis",
+      "original_repository_url": "https://github.com/MDAnalysis/mdanalysis",
+      "final_repo": "MDAnalysis/mdanalysis"
+    },
+    {
+      "source_csv_record": 38,
+      "original_repo": "kiali/kiali",
+      "original_repository_url": "https://github.com/kiali/kiali",
+      "final_repo": "kiali/kiali"
+    },
+    {
+      "source_csv_record": 39,
+      "original_repo": "stan-dev/stan",
+      "original_repository_url": "https://github.com/stan-dev/stan",
+      "final_repo": "stan-dev/stan"
+    },
+    {
+      "source_csv_record": 40,
+      "original_repo": "cuthbertLab/music21",
+      "original_repository_url": "https://github.com/cuthbertLab/music21",
+      "final_repo": "cuthbertLab/music21"
+    },
+    {
+      "source_csv_record": 41,
+      "original_repo": "CloudNativePg Landscape",
+      "original_repository_url": "https://github.com/cncf/landscape",
+      "final_repo": "cloudnative-pg/cloudnative-pg"
+    }
+  ],
+  "field_transformations": [
+    {
+      "source_csv_record": 2,
+      "repo": "apache/airflow",
+      "column": "Repo",
+      "original": "Airflow",
+      "final": "apache/airflow",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 2,
+      "repo": "apache/airflow",
+      "column": "Policy URL",
+      "original": "https://github.com/apache/airflow/blob/main/contributing-docs/05_pull_requests.rst#gen-ai-assisted-contributions ",
+      "final": "https://github.com/apache/airflow/blob/main/contributing-docs/05_pull_requests.rst#gen-ai-assisted-contributions",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 3,
+      "repo": "apache/couchdb",
+      "column": "Repo",
+      "original": "Apache CouchDB",
+      "final": "apache/couchdb",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 4,
+      "repo": "apache/arrow",
+      "column": "Repo",
+      "original": "Arrow",
+      "final": "apache/arrow",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 4,
+      "repo": "apache/arrow",
+      "column": "Repository URL",
+      "original": "https://github.com/apache/arrow ",
+      "final": "https://github.com/apache/arrow",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 4,
+      "repo": "apache/arrow",
+      "column": "Policy URL",
+      "original": "https://arrow.apache.org/docs/dev/developers/overview.html#ai-generated-code ",
+      "final": "https://arrow.apache.org/docs/dev/developers/overview.html#ai-generated-code",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 5,
+      "repo": "cilium/cilium",
+      "column": "Repo",
+      "original": "cilium",
+      "final": "cilium/cilium",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 5,
+      "repo": "cilium/cilium",
+      "column": "Policy URL",
+      "original": "https://github.com/cilium/community/blob/main/AI-POLICY.md ",
+      "final": "https://github.com/cilium/community/blob/main/AI-POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 6,
+      "repo": "curl/curl",
+      "column": "Repo",
+      "original": "curl",
+      "final": "curl/curl",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 6,
+      "repo": "curl/curl",
+      "column": "Policy URL",
+      "original": "https://curl.se/dev/contribute.html#on-ai-use-in-curl ",
+      "final": "https://curl.se/dev/contribute.html#on-ai-use-in-curl",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 6,
+      "repo": "curl/curl",
+      "column": "Disclosure detail (1 basic; 2 tool; 3 use explained; 4 trace)",
+      "original": "0",
+      "final": "1",
+      "reason": "Researcher-confirmed correction of earlier coding/data-entry error; final report uses Level 1; no general 0-to-1 rule",
+      "authority": "Researcher confirmation, 2026-10-20"
+    },
+    {
+      "source_csv_record": 7,
+      "repo": "django/django",
+      "column": "Repo",
+      "original": "Django",
+      "final": "django/django",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 7,
+      "repo": "django/django",
+      "column": "Repository URL",
+      "original": "https://github.com/django/django ",
+      "final": "https://github.com/django/django",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 7,
+      "repo": "django/django",
+      "column": "Policy URL",
+      "original": "https://docs.djangoproject.com/en/dev/internals/contributing/writing-code/submitting-patches/#ai-assisted-contributions ",
+      "final": "https://docs.djangoproject.com/en/dev/internals/contributing/writing-code/submitting-patches/#ai-assisted-contributions",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 8,
+      "repo": "easybuilders/easybuild",
+      "column": "Repo",
+      "original": "Easybuild",
+      "final": "easybuilders/easybuild",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 8,
+      "repo": "easybuilders/easybuild",
+      "column": "Repository URL",
+      "original": "https://github.com/easybuilders/easybuild ",
+      "final": "https://github.com/easybuilders/easybuild",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 8,
+      "repo": "easybuilders/easybuild",
+      "column": "Policy URL",
+      "original": "https://docs.easybuild.io/policies/ai/ ",
+      "final": "https://docs.easybuild.io/policies/ai/",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 9,
+      "repo": "fedify-dev/fedify",
+      "column": "Repo",
+      "original": "Fedify",
+      "final": "fedify-dev/fedify",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 9,
+      "repo": "fedify-dev/fedify",
+      "column": "Repository URL",
+      "original": "https://github.com/fedify-dev/fedify ",
+      "final": "https://github.com/fedify-dev/fedify",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 9,
+      "repo": "fedify-dev/fedify",
+      "column": "Policy URL",
+      "original": "https://github.com/fedify-dev/fedify/blob/main/AI_POLICY.md ",
+      "final": "https://github.com/fedify-dev/fedify/blob/main/AI_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 10,
+      "repo": "ghostty-org/ghostty",
+      "column": "Repo",
+      "original": "Ghostty",
+      "final": "ghostty-org/ghostty",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 10,
+      "repo": "ghostty-org/ghostty",
+      "column": "Repository URL",
+      "original": "https://github.com/ghostty-org/ghostty ",
+      "final": "https://github.com/ghostty-org/ghostty",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 10,
+      "repo": "ghostty-org/ghostty",
+      "column": "Policy URL",
+      "original": "https://github.com/ghostty-org/ghostty/blob/main/AI_POLICY.md ",
+      "final": "https://github.com/ghostty-org/ghostty/blob/main/AI_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 11,
+      "repo": "go-gitea/gitea",
+      "column": "Repo",
+      "original": "Gitea",
+      "final": "go-gitea/gitea",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 11,
+      "repo": "go-gitea/gitea",
+      "column": "Policy URL",
+      "original": "https://github.com/go-gitea/gitea/blob/main/CONTRIBUTING.md#ai-contribution-policy ",
+      "final": "https://github.com/go-gitea/gitea/blob/main/CONTRIBUTING.md#ai-contribution-policy",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 12,
+      "repo": "Homebrew/brew",
+      "column": "Repo",
+      "original": "Homebrew",
+      "final": "Homebrew/brew",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 12,
+      "repo": "Homebrew/brew",
+      "column": "Policy URL",
+      "original": "https://github.com/Homebrew/brew/blob/main/CONTRIBUTING.md#artificial-intelligencelarge-language-model-aillm-usage ",
+      "final": "https://github.com/Homebrew/brew/blob/main/CONTRIBUTING.md#artificial-intelligencelarge-language-model-aillm-usage",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 13,
+      "repo": "iree-org/iree",
+      "column": "Repo",
+      "original": "IREE",
+      "final": "iree-org/iree",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 13,
+      "repo": "iree-org/iree",
+      "column": "Repository URL",
+      "original": "https://github.com/iree-org/iree ",
+      "final": "https://github.com/iree-org/iree",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 13,
+      "repo": "iree-org/iree",
+      "column": "Policy URL",
+      "original": "https://iree.dev/developers/general/contributing/#ai-tool-use ",
+      "final": "https://iree.dev/developers/general/contributing/#ai-tool-use",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 14,
+      "repo": "joomla/joomla-cms",
+      "column": "Repo",
+      "original": "Joomla CMS",
+      "final": "joomla/joomla-cms",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 14,
+      "repo": "joomla/joomla-cms",
+      "column": "Repository URL",
+      "original": "https://github.com/joomla/joomla-cms ",
+      "final": "https://github.com/joomla/joomla-cms",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 14,
+      "repo": "joomla/joomla-cms",
+      "column": "Policy URL",
+      "original": "https://developer.joomla.org/generative-ai-policy.html ",
+      "final": "https://developer.joomla.org/generative-ai-policy.html",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 15,
+      "repo": "kubernetes/kubernetes",
+      "column": "Repo",
+      "original": "Kubernetes",
+      "final": "kubernetes/kubernetes",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 15,
+      "repo": "kubernetes/kubernetes",
+      "column": "Repository URL",
+      "original": "https://github.com/kubernetes/kubernetes ",
+      "final": "https://github.com/kubernetes/kubernetes",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 15,
+      "repo": "kubernetes/kubernetes",
+      "column": "Policy URL",
+      "original": "https://www.kubernetes.dev/docs/guide/pull-requests/#ai-guidance ",
+      "final": "https://www.kubernetes.dev/docs/guide/pull-requests/#ai-guidance",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 16,
+      "repo": "kornia/kornia",
+      "column": "Repo",
+      "original": "Kornia",
+      "final": "kornia/kornia",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 16,
+      "repo": "kornia/kornia",
+      "column": "Policy URL",
+      "original": "https://github.com/kornia/kornia/blob/main/AI_POLICY.md ",
+      "final": "https://github.com/kornia/kornia/blob/main/AI_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 17,
+      "repo": "apache/kvrocks",
+      "column": "Repo",
+      "original": "Kvrocks",
+      "final": "apache/kvrocks",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 17,
+      "repo": "apache/kvrocks",
+      "column": "Repository URL",
+      "original": "https://github.com/apache/kvrocks ",
+      "final": "https://github.com/apache/kvrocks",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 17,
+      "repo": "apache/kvrocks",
+      "column": "Policy URL",
+      "original": "https://kvrocks.apache.org/community/contributing/#guidelines-for-ai-assisted-contributions ",
+      "final": "https://kvrocks.apache.org/community/contributing/#guidelines-for-ai-assisted-contributions",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 18,
+      "repo": "llvm/llvm-project",
+      "column": "Repo",
+      "original": "Llvm",
+      "final": "llvm/llvm-project",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 18,
+      "repo": "llvm/llvm-project",
+      "column": "Repository URL",
+      "original": "https://github.com/llvm/llvm-project ",
+      "final": "https://github.com/llvm/llvm-project",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 18,
+      "repo": "llvm/llvm-project",
+      "column": "Policy URL",
+      "original": "https://llvm.org/docs//AIToolPolicy.html ",
+      "final": "https://llvm.org/docs//AIToolPolicy.html",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 19,
+      "repo": "matplotlib/matplotlib",
+      "column": "Repo",
+      "original": "Matpotlib",
+      "final": "matplotlib/matplotlib",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 19,
+      "repo": "matplotlib/matplotlib",
+      "column": "Repository URL",
+      "original": "https://github.com/matplotlib/matplotlib ",
+      "final": "https://github.com/matplotlib/matplotlib",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 19,
+      "repo": "matplotlib/matplotlib",
+      "column": "Policy URL",
+      "original": "https://matplotlib.org/devdocs/devel/contribute.html#generative-ai ",
+      "final": "https://matplotlib.org/devdocs/devel/contribute.html#generative-ai",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 21,
+      "repo": "NetBSD/src",
+      "column": "Repo",
+      "original": "NetBSD",
+      "final": "NetBSD/src",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 21,
+      "repo": "NetBSD/src",
+      "column": "Policy URL",
+      "original": "https://www.netbsd.org/developers/commit-guidelines.html ",
+      "final": "https://www.netbsd.org/developers/commit-guidelines.html",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 22,
+      "repo": "numpy/numpy",
+      "column": "Repo",
+      "original": "NumPy",
+      "final": "numpy/numpy",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 22,
+      "repo": "numpy/numpy",
+      "column": "Repository URL",
+      "original": "https://github.com/numpy/numpy ",
+      "final": "https://github.com/numpy/numpy",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 22,
+      "repo": "numpy/numpy",
+      "column": "Policy URL",
+      "original": "https://numpy.org/devdocs/dev/ai_policy.html ",
+      "final": "https://numpy.org/devdocs/dev/ai_policy.html",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 23,
+      "repo": "napari/napari",
+      "column": "Repo",
+      "original": "napari",
+      "final": "napari/napari",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 23,
+      "repo": "napari/napari",
+      "column": "Policy URL",
+      "original": "https://napari.org/dev/developers/contributing/ai.html ",
+      "final": "https://napari.org/dev/developers/contributing/ai.html",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 24,
+      "repo": "ocaml/ocaml",
+      "column": "Repo",
+      "original": "Ocaml",
+      "final": "ocaml/ocaml",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 24,
+      "repo": "ocaml/ocaml",
+      "column": "Policy URL",
+      "original": "https://github.com/ocaml/ocaml/blob/trunk/AI.md ",
+      "final": "https://github.com/ocaml/ocaml/blob/trunk/AI.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 25,
+      "repo": "ory/oathkeeper",
+      "column": "Repo",
+      "original": "Ory Oathkeeper",
+      "final": "ory/oathkeeper",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 25,
+      "repo": "ory/oathkeeper",
+      "column": "Repository URL",
+      "original": "https://github.com/ory/oathkeeper ",
+      "final": "https://github.com/ory/oathkeeper",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 25,
+      "repo": "ory/oathkeeper",
+      "column": "Policy URL",
+      "original": " https://github.com/ory/oathkeeper/blob/master/CONTRIBUTING.md",
+      "final": "https://github.com/ory/oathkeeper/blob/master/CONTRIBUTING.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 26,
+      "repo": "openedx/openedx-platform",
+      "column": "Repo",
+      "original": "OpenEDX platform",
+      "final": "openedx/openedx-platform",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 26,
+      "repo": "openedx/openedx-platform",
+      "column": "Policy URL",
+      "original": "https://github.com/openedx/.github/blob/master/AI_POLICY.md ",
+      "final": "https://github.com/openedx/.github/blob/master/AI_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 27,
+      "repo": "pandas-dev/pandas",
+      "column": "Repo",
+      "original": "Pandas",
+      "final": "pandas-dev/pandas",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 27,
+      "repo": "pandas-dev/pandas",
+      "column": "Policy URL",
+      "original": "https://pandas.pydata.org/docs/dev/development/contributing.html#automated-contributions-policy ",
+      "final": "https://pandas.pydata.org/docs/dev/development/contributing.html#automated-contributions-policy",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 28,
+      "repo": "cybertec-postgresql/pgwatch",
+      "column": "Repo",
+      "original": "pgwatch",
+      "final": "cybertec-postgresql/pgwatch",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 28,
+      "repo": "cybertec-postgresql/pgwatch",
+      "column": "Repository URL",
+      "original": "https://github.com/cybertec-postgresql/pgwatch/",
+      "final": "https://github.com/cybertec-postgresql/pgwatch",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 28,
+      "repo": "cybertec-postgresql/pgwatch",
+      "column": "Policy URL",
+      "original": "https://github.com/cybertec-postgresql/pgwatch/blob/master/AI_POLICY.md ",
+      "final": "https://github.com/cybertec-postgresql/pgwatch/blob/master/AI_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 29,
+      "repo": "qgis/qgis",
+      "column": "Repo",
+      "original": "QGIS",
+      "final": "qgis/qgis",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 29,
+      "repo": "qgis/qgis",
+      "column": "Policy URL",
+      "original": "https://github.com/qgis/QGIS-Enhancement-Proposals/blob/master/qep-408-ai-tool-policy.md ",
+      "final": "https://github.com/qgis/QGIS-Enhancement-Proposals/blob/master/qep-408-ai-tool-policy.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 30,
+      "repo": "scipy/scipy",
+      "column": "Repo",
+      "original": "SciPy",
+      "final": "scipy/scipy",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 30,
+      "repo": "scipy/scipy",
+      "column": "Policy URL",
+      "original": "https://scipy.github.io/devdocs/dev/conduct/ai_policy.html ",
+      "final": "https://scipy.github.io/devdocs/dev/conduct/ai_policy.html",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 32,
+      "repo": "pola-rs/polars",
+      "column": "Repo",
+      "original": "Polars",
+      "final": "pola-rs/polars",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 32,
+      "repo": "pola-rs/polars",
+      "column": "Policy URL",
+      "original": "https://github.com/pola-rs/polars/blob/8425c750b9c5d28c79428998fda2320d076d4178/AI_POLICY.md ",
+      "final": "https://github.com/pola-rs/polars/blob/8425c750b9c5d28c79428998fda2320d076d4178/AI_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 33,
+      "repo": "processing/p5.js",
+      "column": "Repo",
+      "original": "P5.js",
+      "final": "processing/p5.js",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 33,
+      "repo": "processing/p5.js",
+      "column": "Repository URL",
+      "original": "https://github.com/processing/p5.js/",
+      "final": "https://github.com/processing/p5.js",
+      "reason": "Canonical URL from verified final repository identity; trim surrounding whitespace/trailing slash",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 33,
+      "repo": "processing/p5.js",
+      "column": "Policy URL",
+      "original": "https://github.com/processing/p5.js/blob/main/AI_USAGE_POLICY.md ",
+      "final": "https://github.com/processing/p5.js/blob/main/AI_USAGE_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 34,
+      "repo": "qutip/qutip",
+      "column": "Repo",
+      "original": "qutip",
+      "final": "qutip/qutip",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 34,
+      "repo": "qutip/qutip",
+      "column": "Policy URL",
+      "original": "https://github.com/qutip/qutip/blob/master/CONTRIBUTING.md#ai-tools-usage-policy ",
+      "final": "https://github.com/qutip/qutip/blob/master/CONTRIBUTING.md#ai-tools-usage-policy",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 35,
+      "repo": "searxng/searxng",
+      "column": "Repo",
+      "original": "SearXNG",
+      "final": "searxng/searxng",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 35,
+      "repo": "searxng/searxng",
+      "column": "Policy URL",
+      "original": "https://github.com/searxng/searxng/blob/master/AI_POLICY.rst ",
+      "final": "https://github.com/searxng/searxng/blob/master/AI_POLICY.rst",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 36,
+      "repo": "sympy/sympy",
+      "column": "Repo",
+      "original": "SymPy",
+      "final": "sympy/sympy",
+      "reason": "Standardize display name to exact final repos.txt identifier; coding values unchanged",
+      "authority": "repos.txt and PR dataset membership"
+    },
+    {
+      "source_csv_record": 36,
+      "repo": "sympy/sympy",
+      "column": "Policy URL",
+      "original": "https://docs.sympy.org/dev/contributing/ai-generated-code-policy.html ",
+      "final": "https://docs.sympy.org/dev/contributing/ai-generated-code-policy.html",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 37,
+      "repo": "MDAnalysis/mdanalysis",
+      "column": "Policy URL",
+      "original": "https://github.com/MDAnalysis/mdanalysis/blob/develop/AI_POLICY.md ",
+      "final": "https://github.com/MDAnalysis/mdanalysis/blob/develop/AI_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    },
+    {
+      "source_csv_record": 41,
+      "repo": "cloudnative-pg/cloudnative-pg",
+      "column": "Repo",
+      "original": "CloudNativePg Landscape",
+      "final": "cloudnative-pg/cloudnative-pg",
+      "reason": "Repository identity corrected after verifying target contributing-guide -> governance guidelines -> AI policy chain",
+      "authority": "compendium_docs/data/policy_evidence/2026-10-20_cloudnativepg_curl_policy_verification.md"
+    },
+    {
+      "source_csv_record": 41,
+      "repo": "cloudnative-pg/cloudnative-pg",
+      "column": "Repository URL",
+      "original": "https://github.com/cncf/landscape",
+      "final": "https://github.com/cloudnative-pg/cloudnative-pg",
+      "reason": "Repository identity corrected after verifying target contributing-guide -> governance guidelines -> AI policy chain",
+      "authority": "compendium_docs/data/policy_evidence/2026-10-20_cloudnativepg_curl_policy_verification.md"
+    },
+    {
+      "source_csv_record": 41,
+      "repo": "cloudnative-pg/cloudnative-pg",
+      "column": "Policy URL",
+      "original": "https://github.com/cloudnative-pg/governance/blob/main/AI_POLICY.md ",
+      "final": "https://github.com/cloudnative-pg/governance/blob/main/AI_POLICY.md",
+      "reason": "Trim surrounding whitespace only; preserve policy source URL",
+      "authority": "Original cell value"
+    }
+  ],
+  "policy_evidence_record": "compendium_docs/data/policy_evidence/2026-10-20_cloudnativepg_curl_policy_verification.md",
+  "historical_policy_applicability_verified": false,
+  "fully_validated": false,
+  "curl_correction": {
+    "repo": "curl/curl",
+    "column": "Disclosure detail (1 basic; 2 tool; 3 use explained; 4 trace)",
+    "original": "0",
+    "final": "1",
+    "reason": "Correction of earlier coding/data-entry error; researcher confirms Level 1 used in final report",
+    "authority": "Researcher confirmation 2026-10-20",
+    "general_recode_rule": false,
+    "policy_source": "https://curl.se/dev/contribute.html#on-ai-use-in-curl"
+  },
+  "cloudnativepg_identity": {
+    "original_name": "CloudNativePg Landscape",
+    "original_repository_url": "https://github.com/cncf/landscape",
+    "final_repo": "cloudnative-pg/cloudnative-pg",
+    "status": "Current official policy chain verified; coding conflicts flagged; no automatic governance recoding"
+  }
+}

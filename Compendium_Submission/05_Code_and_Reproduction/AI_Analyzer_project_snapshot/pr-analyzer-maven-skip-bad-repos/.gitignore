@@ -1,0 +1,6 @@
+target/
+*.class
+*.log
+*.tmp
+*.lst
+.env
