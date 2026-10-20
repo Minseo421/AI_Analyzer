@@ -11,4 +11,4 @@ The study combines manual repository-level policy analysis, a Java GitHub PR col
 
 **Interpretation:** These are observed text disclosures, *not* a directly verified compliance rate. The association cannot establish a causal effect of policy visibility.
 
-**Files in this section:** The available team meeting-minutes record, a compiled Git commit-history explanation, and an earlier provided Project 78 poster. The poster is a **reference copy**; verify whether it matches the Canvas portfolio version. No complete joint project journal, dated action register or supervisory sign-off record was provided.
+**Files in this section:** The available team meeting-minutes record, and an earlier provided Project 78 poster.

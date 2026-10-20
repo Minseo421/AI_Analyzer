@@ -4,9 +4,7 @@
 
 **Joint research project:** Minseo Kim and Anna Chibel; supervisor Dr. Kelly Blincoe; Faculty of Engineering and Design, The University of Auckland.  
 **Compendium assembly:** 20 October 2026.  
-**Release status:** PROVISIONAL — see `09_Release_Verification/IMPORTANT_BEFORE_CANVAS_SUBMISSION.md`. Anna's individual documents and other required files must be added before Canvas submission.
-
-This is a **research compendium**, not a checklist submission. It preserves the research questions, procedures, Java 17 software, repository/policy analysis data, manually labelled samples, statistical outputs, historical experiments, code/data provenance, final figure images, and available research records. Its purpose is to support future replication, inspection and extension.
+**Release status:** PROVISIONAL
 
 ## Study summary and research interpretation
 
@@ -34,7 +32,7 @@ This joint compendium archives one **shared research evidence base**. `06_Figure
 
 ## Reproduction: saved data, without fetching GitHub
 
-Prerequisites: Python 3.10+ (only Python standard library is needed for the stored-data audit); Java 17 and Maven for compiling/running the original analyzer. SciPy is optional for an independent p-value cross-check. A newer Java runtime was not taken as proof of historical Java-17 behaviour.
+Prerequisites: Python 3.10+ (only Python standard library is needed for the stored-data audit); Java 17 and Maven for compiling/running the original analyzer.
 
 Execute from the extracted **Compendium Submission** root:
 
@@ -61,10 +59,5 @@ mvn test
 
 Maven test success by itself may **not run the standalone main-based `AiDisclosureDetectorHarness`**, because the supplied original project lacks a verified harness execution binding. The unmerged uploaded version was reported to fail one harness expectation near line 876. The team must merge and verify Anna's newer C01–C08 implementation and capture a clean test log; this provisional release makes no passing-harness claim.
 
-### Data availability, equipment and provenance
-
-This was an **observational software research project**. Hardware serial numbers, physical calibration, CAD designs, and materials specification sheets were not applicable to the reported methods. The actual 'experimental setup' consisted of the Java/Maven environment, GitHub REST API, saved repository list, sampling cutoffs, rule-based detector, seed/configuration choices and human-coding protocols; some historical execution settings remain unverified. The raw 40-repository source is archived separately from the final 38-repository derived view. Full immutable original API/HTML responses or full historical policy snapshots were not included in the materials supplied for packaging.
-
-The project source is supplied for research inspection. No new licence or permission to redistribute third-party data is asserted; consult repository policy sources and applicable rights before redistribution.
 
 **Before submitting:** see `09_Release_Verification/IMPORTANT_BEFORE_CANVAS_SUBMISSION.md`, add the missing individual files, verify the full team contribution statement, rerun tests after merging latest code, and rename the final ZIP using the **actual University usernames** in `78_usernameA_usernameB-Compendium.zip` format.

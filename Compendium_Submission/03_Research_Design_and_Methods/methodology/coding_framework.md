@@ -74,8 +74,6 @@ Manual analysis instructions:
 | Manual Review Required | Whether a human must inspect the row before final analysis. | `Yes`, `No` |
 | Notes | Reviewer notes, uncertainty, exclusions, or rationale. | Free text |
 
-The active `pr_dataset.csv` schema may not contain every recommended review field. When a field is missing, maintain it in a companion review sheet or audit log before final analysis.
-
 ## AI Disclosure Present
 
 Definition:
@@ -164,38 +162,6 @@ Manual analysis instructions:
 - Do not count GitHub navigation, page chrome, or marketing text as contributor disclosure.
 - If the source is unavailable in the active dataset, record it in a companion validation sheet.
 
-## Confidence
-
-| Confidence | Coding rule |
-| --- | --- |
-| High | Evidence is explicit, source location is clear, and classification follows directly from contributor wording or checked template choice. |
-| Medium | Evidence is likely a disclosure but wording, source, or context requires interpretation. |
-| Low | AI-related text is detected but may be a filename, documentation topic, quoted policy, maintainer discussion, or unrelated tool reference. |
-
-Manual analysis instructions:
-
-- Use `Low` for detector-only keyword matches.
-- Use `Medium` when the evidence appears relevant but speaker or scope is unclear.
-- Use `High` only when the disclosure statement is direct and attributable.
-
-## Manual Review Required
-
-Definition:
-
-Whether a human reviewer must inspect the PR before the row is usable for final analysis.
-
-Coding rules:
-
-- Code `Yes` for all detector-positive rows.
-- Code `Yes` for ambiguous mentions, low-confidence rows, unclear bot status, or unclear policy requirement.
-- Code `Yes` for sampled rows used in final compliance claims unless the validation protocol allows spot-checking.
-- Code `No` only after the row has been reviewed and evidence is clear.
-
-Manual analysis instructions:
-
-- Keep a record of reviewer decisions and disagreements.
-- Recalculate compliance after manual review updates classification and disclosure-present fields.
-
 ## Common AI Terms For Detection
 
 Automated detection may search for:
@@ -236,10 +202,13 @@ Preliminary script summary:
 - `Disclosure Compliance Rate = AI Disclosure Present Count / Eligible PRs Reviewed`.
 - `Manual Review Required Count`: rows requiring validation before final reporting.
 
-Final research calculation:
+## Final research calculation:
 
-- Denominator: eligible human PRs in scope where disclosure was required by repository policy.
-- Numerator: denominator rows with validated `AI Disclosure Present = Yes`.
+$$\text{Compliance Rate} = \frac{\text{Numerator}}{\text{Denominator}}$$
+
+* **Denominator:** Eligible human PRs in scope where disclosure was required by repository policy.
+* **Numerator:** Denominator rows with validated $\text{AI Disclosure Present} = \text{Yes}$.
+
 - Negative disclosures count as disclosure present because the contributor answered the disclosure requirement.
 - Ambiguous disclosures should be reported separately unless manually recoded.
 - Final compliance rates must be calculated after manual validation and policy coding are complete.
