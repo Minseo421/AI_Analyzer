@@ -7,14 +7,14 @@ The PR CSV preamble records collection start `2026-09-22T09:58:43.766425Z` and c
 | File | Contents and relationships |
 | --- | --- |
 | [pr_dataset_output.csv](pr_dataset_output.csv) | One row per PR: Repo, PR number/URL, title, author, creation/closure/merge timestamps, Bot, Status, disclosure requirement/presence/classification and matched text |
-| [repo_detected_disclosure_aggregates.csv](repo_detected_disclosure_aggregates.csv) | Repository totals, bot exclusions, presence/subtype counts and rounded rate; originally named repo_compliance_summary.csv |
+| [repo_detected_disclosure_aggregates.csv](repo_detected_disclosure_aggregates.csv) | Repository totals, bot exclusions, presence/subtype counts and rounded rate |
 | [policy_tracker.csv](policy_tracker.csv) | Original policy-source inventory and visibility input, including blank export rows; distinct from the canonical governance sheet |
 | [repo_visibility_summary.csv](repo_visibility_summary.csv) | Repository rates joined to policy visibility; matching status, denominator and exclusions |
 | [spearman_correlation.csv](spearman_correlation.csv) | Saved visibility–rate correlation: rho 0.6181438854, p 0.0000354223, n=38 |
 | [OSS_38_repositories_verified.csv](OSS_38_repositories_verified.csv) | Existing combined repository/governance analysis table from 17 October |
 | [OSS_38_Governance_Group_Statistics.csv](OSS_38_Governance_Group_Statistics.csv) | Existing grouped descriptive results from that analysis |
 
-Parse CSV records, not physical lines: evidence text contains newlines. Skip the main dataset/aggregate metadata preamble to the `Repo` header. Join PRs by case-normalized `Repo#PR`, and repository tables by `Repo` or `Repository`. Preserve source spelling and values.
+The PR dataset and aggregate CSVs contain metadata before the Repo header and quoted fields with line breaks. Match PRs using repository name and PR number, ignoring differences in repository-name capitalisation.
 
 A repository's observed rate is `AI Disclosure Present Count / Eligible PRs Reviewed`. The pooled rate uses summed counts; governance group means are unweighted means of repository rates. Spearman uses average ranks for ties; its p-value is an approximation for this sample size. Visibility is the recorded 0–3 scale, not the obsolete 0–4 framework.
 

@@ -1,6 +1,6 @@
 # Reproduce the research
 
-Keep `Compendium_Submission/` and `pr-analyzer-maven-skip-bad-repos/` as sibling directories. The commands below verify preserved outputs; a new GitHub collection uses today's repository state and is a different dataset.
+Keep `research_compendium/` and `pr-analyzer/` as sibling directories. The commands below verify preserved outputs; a new GitHub collection uses today's repository state and is a different dataset.
 
 1. **Identify the cohort and parameters.** Read [full repository analysis](../full_repo_analysis/README.md) for the repository list, stored collection timestamps, exclusions, columns and denominators.
 2. **Verify independent PR coding.** Follow [IRR](../irr/README.md) to join the 150 selected IDs, compare the two coder files and calculate kappa from saved labels.
