@@ -1,5 +1,6 @@
 # Cohen's Kappa Reliability Workflow
 
+Current managed collection uses [frozen study configuration and archived inputs](reproducible_studies.md). This supersedes older rolling-clock collection and random-seed guidance; legacy processed datasets are not retroactively certified.
 This document explains the inter-rater reliability workflow for the AI-use disclosure compliance study.
 
 The project investigates whether contributors to open source software pull requests disclose AI assistance when repository governance requires or encourages disclosure. Before using automated detection at full scale, researchers should verify that human coders can apply the coding framework consistently.
@@ -299,7 +300,7 @@ java -jar target/pr-analyzer-maven-1.0.0.jar \
 
 ## Assumptions Made
 
-- The reliability sample uses the same shared `closed_at` eligibility rule as dataset collection. Repository selection is random unless `KAPPA_SAMPLE_SEED` is set; PR rows are filtered by the closure-time window and ordered locally by closure time.
+- The reliability sample uses the same shared `closed_at` eligibility rule as dataset collection. Repository selection uses the frozen `seed.kappa`; PR rows are filtered by the closure-time window and ordered locally by closure time.
 - Bot PRs are excluded according to the current project methodology and implementation.
 - Both researchers use the same `kappa_sample.csv`.
 - Consensus labels, not script labels, become the gold standard.

@@ -1,5 +1,6 @@
 # Methodology Workflow
 
+Current managed collection uses [frozen study configuration and archived inputs](reproducible_studies.md). This supersedes older rolling-clock collection and random-seed guidance; legacy processed datasets are not retroactively certified.
 Current automated scope, reviewed policy fields, metric denominators, and uncertainty rules: [Evidence and metric contract](evidence_and_metrics.md). The collector measures API PR bodies only; HTML and comments cannot supply automated evidence. Unknown is never No.
 This document defines the research workflow for studying AI-use disclosure governance in open source software pull requests.
 
@@ -124,7 +125,7 @@ Important PR coding rules:
 
 Preliminary script-generated calculation:
 
-- `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset for that repository. Eligibility uses GitHub `closed_at` and an inclusive rolling four-calendar-month window calculated from the UTC analysis timestamp. The analyzer filters by closed state, present `closed_at`, cutoff, analysis timestamp upper bound, and bot status, then orders returned rows locally by `closed_at` descending and PR number descending. Repository collection has no per-repository PR limit.
+- `Eligible PRs Reviewed`: human PR rows included in the generated PR dataset for that repository. Eligibility uses GitHub `closed_at` and the fixed inclusive UTC window in the versioned study configuration. The analyzer filters by closed state, present `closed_at`, cutoff, analysis timestamp upper bound, and bot status, then orders returned rows locally by `closed_at` descending and PR number descending. Repository collection has no per-repository PR limit.
 - `Bot PRs Excluded`: closed PRs skipped by the script's bot heuristic while collecting the human PR sample.
 - `AI Disclosure Present Count`: rows where disclosure-like text was detected.
 - `Automated Disclosure Rate = AI Disclosure Present Count / Complete Evidence Count`.

@@ -18,6 +18,20 @@ Automated detection is only a first pass. Human validation is required before re
 
 To calculate compliance, review a copy of a new dataset and fill its dated policy and reviewed assessment fields, then run `java -jar target/pr-analyzer-maven-1.0.0.jar --policy-compliance reviewed_pr_dataset.csv reviewed_compliance_summary.csv`. All-contributors and conditional-on-AI-use policies have different eligible populations. Absence of disclosure never establishes undisclosed AI use. Existing datasets have not been retrospectively coded or regenerated.
 
+## Reproducible studies
+
+Use [versioned study runs](methodology/reproducible_studies.md) for C05–C08 collection, resumption, exclusions, source archival, and offline replay:
+
+```bash
+mvn clean package
+java -jar target/pr-analyzer-maven-1.0.0.jar --study study/study-v1.properties repos.txt study/exclusions-v1.csv runs/study-v1
+java -jar target/pr-analyzer-maven-1.0.0.jar --resume-study runs/study-v1
+java -jar target/pr-analyzer-maven-1.0.0.jar --replay-study runs/study-v1 runs/replayed-v1
+java -jar target/pr-analyzer-maven-1.0.0.jar --bundle-study runs/study-v1 study-v1.zip
+```
+
+Review the fixed dates and seeds in the configuration before collection. Changes require a new run directory; resume loads the original settings. The standalone bundle replays with Java 17 and no GitHub access. Human-looking bot matches block completion pending review. Real reviewed bot samples and missing historical policy/source snapshots must be supplied by the research team.
+
 ## Requirements
 
 - Java 17.
@@ -123,7 +137,7 @@ Repository list maintenance:
 java -jar target/pr-analyzer-maven-1.0.0.jar --repos-from-csv policy-tracker.csv repos.txt --replace
 ```
 
-The numeric argument in repository-collection commands is retained for backwards-compatible CLI parsing but is ignored. The analyzer writes every eligible PR per repository. A PR is eligible when it is closed, has a valid `closed_at`, was closed on or after the rolling four-calendar-month cutoff, was closed on or before the analysis timestamp, and is not bot-authored. The cutoff is calculated in UTC from the analysis timestamp as collection instant minus four calendar months, and both boundaries are inclusive (`closed_at >= cutoff` and `closed_at <= analysis timestamp`). The GitHub API page size remains `per_page=100` for efficiency, but this is only a pagination size, not an analysis limit. The analyzer fetches pages until GitHub returns no more closed PRs, filters by `closed_at` and bot status, then orders results locally by `closed_at` descending and PR number descending.
+The numeric argument in repository-collection commands is retained for backwards-compatible parsing but ignored. Primary dataset collection uses the fixed inclusive UTC `closed_at` bounds and settings from `study/study-v1.properties`, with no per-repository population cap. Ordering is repository-list order, closure instant descending, then PR number descending. The old rolling-clock constructor remains for exploratory library calls; it is not used by managed study collection.
 
 Inter-rater reliability modes:
 
@@ -140,7 +154,7 @@ java -jar target/pr-analyzer-maven-1.0.0.jar --code-kappa-sample kappa_sample.cs
 java -jar target/pr-analyzer-maven-1.0.0.jar --calculate-kappa anna_labels.csv minseo_labels.csv kappa_results.csv
 ```
 
-The kappa sample command reuses the same four-calendar-month `closed_at` eligibility rule and local closure-time ordering as the repository collection logic. Repository selection is random unless `KAPPA_SAMPLE_SEED` is set; the selected PR rows are deterministic for the fetched GitHub data and collection timestamp. `Sample ID` is stable as `Repo#PR`. The interactive coding command refuses to overwrite an existing labels file.
+The kappa command uses a managed population run, its frozen dates, `seed.kappa`, and configured sample size. It no longer chooses a random seed or reads `KAPPA_SAMPLE_SEED`. `Sample ID` remains `Repo#PR`. Existing coder labels resume by preserving completed IDs and appending only missing labels; foreign or duplicate IDs are rejected.
 
 Human consensus and detector validation modes:
 
@@ -321,7 +335,7 @@ The older/audit output. It is preserved for debugging and includes extra technic
 ## Methodology Notes
 
 - Bot PRs are excluded from the generated PR dataset by the current implementation. `Bot PRs Excluded` records how many closed PRs were skipped during collection.
-- The collection population is eligible human PRs. Automated rates use complete evidence; reviewed compliance uses dated policy applicability and human assessment. Collection eligibility uses GitHub `closed_at`, not `created_at`, `updated_at`, or `merged_at`; both merged and unmerged closed PRs are eligible. Filtering by bot status and the inclusive four-calendar-month `closed_at` window occurs before rows are ordered locally by closure time. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands operate on specifically named/sample PRs and do not reapply dataset-selection eligibility.
+- The collection population is eligible human PRs. Automated rates use complete evidence; reviewed compliance uses dated policy applicability and human assessment. Collection eligibility uses GitHub `closed_at`, not `created_at`, `updated_at`, or `merged_at`; both merged and unmerged closed PRs are eligible. Filtering by reviewed bot status and the fixed inclusive UTC `closed_at` window occurs before rows are ordered locally by closure time. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands operate on specifically named/sample PRs and do not reapply dataset-selection eligibility.
 - AI disclosure detection is not fully reliable without human validation.
 - GitHub page chrome, navigation text, Copilot marketing text, and filenames such as `CLAUDE.md` should not be counted as contributor disclosure.
 - Manual review is required before final disclosure compliance rates are reported.
@@ -418,7 +432,7 @@ Network stalls or interrupted long runs:
 - Each GitHub client has a 15-second connection timeout by default.
 - Each GitHub request has a 60-second full-request timeout by default.
 - Override with `GITHUB_CONNECT_TIMEOUT_SECONDS` or `GITHUB_REQUEST_TIMEOUT_SECONDS` if needed.
-- Multi-repository `--repos` and `--repos-pr-dataset` runs append and flush rows incrementally. Re-running the same command with the same output file resumes by skipping completed `Repo#PR` rows already present in that output. During resume, the optional repository automated disclosure summary is not rewritten because already completed rows are not re-analysed in memory.
+- Multi-repository collection durably checkpoints each completed PR in `<output>.study`. Resume reuses frozen inputs and checkpoints, retries failed repositories, and rebuilds the dataset and summary. Status distinguishes INCOMPLETE, COMPLETE, and COMPLETE_WITH_EXCLUSIONS; incomplete runs exit nonzero.
 - Exact-PR reanalysis and retry commands keep their fixed-sample behavior.
 
 Empty output:
@@ -426,7 +440,7 @@ Empty output:
 - Confirm the repository URL is valid and public.
 - Confirm the repository has closed human PRs.
 - Check whether the requested count is too high for the available closed human PRs.
-- Remember that bot PRs are skipped.
+- Automatic bots are excluded; uncertain logins enter a review queue and block study completion.
 
 Malformed `repos.txt` entries:
 

@@ -1,5 +1,6 @@
 # Pull Request Coding Framework
 
+Current managed collection uses [frozen study configuration and archived inputs](reproducible_studies.md). This supersedes older rolling-clock collection and random-seed guidance; legacy processed datasets are not retroactively certified.
 Current automated scope, reviewed policy fields, metric denominators, and uncertainty rules: [Evidence and metric contract](evidence_and_metrics.md). The collector measures API PR bodies only; HTML and comments cannot supply automated evidence. Unknown is never No.
 This document defines pull-request-level coding rules for AI-use disclosure compliance.
 
@@ -21,7 +22,7 @@ Eligible PRs should match the study's sampling frame before compliance is calcul
 Coding rules:
 
 - Include PRs from repositories selected for the study.
-- Include PRs in the intended study window. Eligibility uses each pull request's GitHub closure timestamp (`closed_at`) and an inclusive rolling four-calendar-month window calculated from the UTC analysis timestamp. Bot filtering and `closed_at` eligibility are applied before eligible rows are ordered locally by `closed_at` descending with PR number descending as a tie-breaker. Repository collection has no per-repository PR limit.
+- Include PRs in the intended study window. Eligibility uses each pull request's GitHub closure timestamp (`closed_at`) and the fixed inclusive UTC window in the versioned study configuration. Bot filtering and `closed_at` eligibility are applied before eligible rows are ordered locally by `closed_at` descending with PR number descending as a tie-breaker. Repository collection has no per-repository PR limit.
 - Include PRs with human contributors unless the research design explicitly includes bots.
 - Exclude or separately report bot PRs according to the bot handling rules below.
 - Record whether the PR was merged or closed unmerged.

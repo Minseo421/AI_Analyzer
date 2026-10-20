@@ -34,6 +34,21 @@ public class GitHubClient {
     private final Sleeper sleeper;
     private final String token;
     private HttpClient client;
+    private EvidenceArchive archive;
+    private Duration studyRequestTimeout;
+
+    public GitHubClient(StudyConfiguration config, EvidenceArchive archive) {
+        this(() -> HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(Long.parseLong(config.get("api.connect.timeout.seconds")))).build(),
+                System.getenv("GITHUB_TOKEN"), Thread::sleep);
+        this.archive = archive;
+        this.studyRequestTimeout = Duration.ofSeconds(Long.parseLong(config.get("api.request.timeout.seconds")));
+    }
+
+    GitHubClient(Supplier<HttpClient> factory, StudyConfiguration config, EvidenceArchive archive) {
+        this(factory, null, millis -> {});
+        this.archive = archive;
+        this.studyRequestTimeout = Duration.ofSeconds(Long.parseLong(config.get("api.request.timeout.seconds")));
+    }
 
     public GitHubClient() {
         this(GitHubClient::newHttpClient, System.getenv("GITHUB_TOKEN"), Thread::sleep);
@@ -60,7 +75,9 @@ public class GitHubClient {
         String url = "https://api.github.com/repos/" + enc(owner) + "/" + enc(repo)
                 + "/pulls?state=closed&sort=updated&direction=desc&per_page=100&page=" + page;
         String json = sendGet(url);
+        if (!json.strip().startsWith("[") || !json.strip().endsWith("]")) throw new IOException("Malformed PR page response: " + url);
         List<String> objects = JsonTools.splitTopLevelObjects(json);
+        if (objects.isEmpty() && !json.replaceAll("\\s", "").equals("[]")) throw new IOException("Malformed nonempty PR page: " + url);
         List<PullRequestData> result = new ArrayList<>();
         for (String object : objects) {
             result.add(parsePullRequestObject(owner + "/" + repo, object));
@@ -72,7 +89,9 @@ public class GitHubClient {
         String url = "https://api.github.com/repos/" + enc(owner) + "/" + enc(repo)
                 + "/pulls?state=closed&sort=updated&direction=desc&per_page=100&page=" + page;
         String json = sendGet(url);
+        if (!json.strip().startsWith("[") || !json.strip().endsWith("]")) throw new IOException("Malformed PR page response: " + url);
         List<String> objects = JsonTools.splitTopLevelObjects(json);
+        if (objects.isEmpty() && !json.replaceAll("\\s", "").equals("[]")) throw new IOException("Malformed nonempty PR page: " + url);
         List<PullRequestSummary> result = new ArrayList<>();
         for (String object : objects) {
             result.add(parsePullRequestSummary(owner + "/" + repo, object));
@@ -89,14 +108,20 @@ public class GitHubClient {
     }
 
     private String sendGet(String url, String acceptHeader) throws IOException, InterruptedException {
+        if (archive != null) return archive.response(url, acceptHeader, () -> sendLiveGet(url, acceptHeader));
+        return sendLiveGet(url, acceptHeader);
+    }
+
+    private String sendLiveGet(String url, String acceptHeader) throws IOException, InterruptedException {
+        Duration timeout = studyRequestTimeout == null ? REQUEST_TIMEOUT : studyRequestTimeout;
         if (!isAuthenticated()) {
             warnUnauthenticatedOnce();
         }
         IOException lastFailure = null;
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            HttpRequest request = buildGetRequest(URI.create(url), acceptHeader, token);
+            HttpRequest request = buildGetRequest(URI.create(url), acceptHeader, token, timeout);
             try {
-                logFetch(url, attempt, "request_start", "Starting", REQUEST_TIMEOUT);
+                logFetch(url, attempt, "request_start", "Starting", timeout);
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() >= 200 && response.statusCode() < 300) {
                     logFetch(url, attempt, "success", "Success");
@@ -116,9 +141,9 @@ public class GitHubClient {
                 sleepBeforeRetry(attempt, failure.retryAfter());
             } catch (HttpTimeoutException e) {
                 lastFailure = e;
-                logFetch(url, attempt, "request_timeout", attempt == MAX_ATTEMPTS ? "Failed" : "Retrying", REQUEST_TIMEOUT);
+                logFetch(url, attempt, "request_timeout", attempt == MAX_ATTEMPTS ? "Failed" : "Retrying", timeout);
                 if (attempt == MAX_ATTEMPTS) {
-                    throw new IOException("GitHub fetch timed out after " + attempt + " attempts with request timeout " + REQUEST_TIMEOUT.toSeconds() + "s for " + safeUrlForLog(url), e);
+                    throw new IOException("GitHub fetch timed out after " + attempt + " attempts with request timeout " + timeout.toSeconds() + "s for " + safeUrlForLog(url), e);
                 }
                 sleepBeforeRetry(attempt, Optional.empty());
             } catch (IOException e) {
@@ -158,9 +183,13 @@ public class GitHubClient {
     }
 
     static HttpRequest buildGetRequest(URI uri, String acceptHeader, String token) {
+        return buildGetRequest(uri, acceptHeader, token, REQUEST_TIMEOUT);
+    }
+
+    private static HttpRequest buildGetRequest(URI uri, String acceptHeader, String token, Duration timeout) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(uri)
-                .timeout(REQUEST_TIMEOUT)
+                .timeout(timeout)
                 .header("Accept", acceptHeader)
                 .header("X-GitHub-Api-Version", API_VERSION)
                 .header("User-Agent", "pr-ai-disclosure-analyzer");
@@ -395,7 +424,7 @@ public class GitHubClient {
         );
     }
 
-    private PullRequestData parsePullRequestObject(String repository, String json) {
+    static PullRequestData parsePullRequestObject(String repository, String json) {
         int number = JsonTools.intValue(json, "number", -1);
         String url = JsonTools.stringValue(json, "html_url", "");
         String title = JsonTools.stringValue(json, "title", "");

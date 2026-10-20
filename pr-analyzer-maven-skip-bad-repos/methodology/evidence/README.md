@@ -12,3 +12,11 @@
 | C04 | Body-only detection; fixtures cover third-party page text, maintainer quotations, unfilled templates, policy acknowledgements, use/non-use statements, and contradictions. Positives export source ID, URL, associated PR author, and PR creation date. |
 
 The [evidence and metric contract](../evidence_and_metrics.md) documents populations, numerators, denominators, uncertainty, source limitations, and review fields. Code and fixtures are implemented; existing historical study data are not relabelled or retroactively reviewed. Dated policy coding, human evidence assessment, recollection, and rerunning empirical validation remain research work before publishing final results.
+
+## C05–C08 — 2026-10-19
+
+[Clean package/test log](c05-c08-maven-test-pass.txt): `mvn --batch-mode clean package`, exit 0, **36 tests**, zero failures/errors/skips. `StudyRunTest` adds 17 tests covering frozen boundary/order/seed settings, individual PR crash recovery, failed-repository retry, changed configuration/list rejection, reviewed-account gating, derived datasets, optional tracker replay, archived source/metadata integrity, source-change reporting, explicit registers, and bot validation.
+
+The release test creates a bundle, unpacks it into a fresh directory, and invokes the included standalone JAR with an invalid HTTPS proxy. Replay reconstructs the tables without copied PR checkpoints or GitHub requests and verifies identical output hashes. The old removal directories are absent from the bundle; `git check-attr export-ignore` also reports them excluded from Git archives.
+
+See [reproducible study workflow](../reproducible_studies.md) for commands, status definitions, register formats, and limitations. The initial UTC bounds derive from the existing dataset timestamp; seeds are explicitly new defaults. Synthetic test labels do not constitute empirical bot-rule validation. Historical API/policy snapshots and a real reviewed account sample were not supplied and have not been invented. Legacy standalone live inspection/validation tools are documented separately from the managed study path.

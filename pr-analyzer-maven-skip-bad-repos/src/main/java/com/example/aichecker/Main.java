@@ -1,5 +1,6 @@
 package com.example.aichecker;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,11 +12,39 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Main {
     public static void main(String[] args) {
         try {
+            if (args.length == 5 && args[0].equals("--study")) {
+                requireComplete(StudyRun.start(Path.of(args[1]), Path.of(args[2]), Path.of(args[3]), Path.of(args[4]))); return;
+            }
+            if (args.length == 2 && args[0].equals("--resume-study")) {
+                requireComplete(StudyRun.resume(Path.of(args[1]))); return;
+            }
+            if (args.length == 3 && args[0].equals("--replay-study")) {
+                requireComplete(StudyRun.replay(Path.of(args[1]), Path.of(args[2]))); return;
+            }
+            if (args.length == 6 && args[0].equals("--derive-study")) {
+                requireComplete(StudyRun.derive(Path.of(args[1]), Path.of(args[2]), Path.of(args[3]), Path.of(args[4]), Path.of(args[5]))); return;
+            }
+            if (args.length == 4 && args[0].equals("--reanalyze-kappa-offline")) {
+                var result = KappaSampleReanalysisWorkflow.reanalyze(Path.of(args[2]), Path.of(args[3]), StudyRun.offlineAnalyzer(Path.of(args[1])));
+                if (!result.failures().isEmpty()) throw new IOException("Offline reanalysis has unavailable source IDs; inspect output failure rows");
+                return;
+            }
+            if (args.length == 4 && args[0].equals("--compare-studies")) {
+                EvidenceArchive.compare(Path.of(args[1]), Path.of(args[2]), Path.of(args[3])); return;
+            }
+            if (args.length >= 3 && args[0].equals("--validate-exclusions")) {
+                StudyDatasetExclusionValidator.validate(java.util.Arrays.stream(args).skip(2).map(Path::of).toList(), Path.of(args[1])); return;
+            }
+            if (args.length == 3 && args[0].equals("--validate-bot-rule")) {
+                BotRuleValidation.write(Path.of(args[1]), Path.of(args[2])); return;
+            }
+            if (args.length == 3 && args[0].equals("--bundle-study")) {
+                StudyBundle.write(Path.of(args[1]), Path.of(args[2])); return;
+            }
             if (args.length == 3 && args[0].equals("--policy-compliance")) {
                 PolicyComplianceWorkflow.analyze(Path.of(args[1]), Path.of(args[2]));
                 return;
@@ -31,26 +60,14 @@ public class Main {
                 RepoUrl repoUrl = RepoUrl.parse(args[1]);
                 int targetCount = Integer.parseInt(args[2]);
                 Path output = Path.of(args[3]);
-                PrAnalyzer analyzer = new PrAnalyzer();
-                List<PrReportRow> rows = analyzer.analyzeLatestClosedHumanPrs(repoUrl, targetCount);
-                CsvWriter.write(output, rows);
-                printSavedSummary(output, rows);
+                managedCollection(List.of(repoUrl), output, null, false);
                 return;
             }
             if ((args.length == 4 || args.length == 5) && args[0].equals("--latest-pr-dataset")) {
                 RepoUrl repoUrl = RepoUrl.parse(args[1]);
                 int targetCount = Integer.parseInt(args[2]);
                 Path output = Path.of(args[3]);
-                PrAnalyzer analyzer = new PrAnalyzer();
-                List<PrReportRow> rows = analyzer.analyzeLatestClosedHumanPrs(repoUrl, targetCount);
-                String analysisCompletedUtc = Instant.now().toString();
-                CsvWriter.writePrDataset(output, rows, analyzer.analysisTimestampUtc(), analysisCompletedUtc);
-                if (args.length == 5) {
-                    Path summaryOutput = Path.of(args[4]);
-                    CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository(), analyzer.analysisTimestampUtc(), analysisCompletedUtc);
-                    System.out.println("Repository automated disclosure summary saved: " + summaryOutput.toAbsolutePath());
-                }
-                printSavedSummary(output, rows);
+                managedCollection(List.of(repoUrl), output, args.length == 5 ? Path.of(args[4]) : null, true);
                 return;
             }
             if (args.length == 4 && args[0].equals("--repos")) {
@@ -58,9 +75,7 @@ public class Main {
                 int targetCountPerRepo = Integer.parseInt(args[2]);
                 Path output = Path.of(args[3]);
                 List<RepoUrl> repoUrls = readRepoList(repoListFile);
-                PrAnalyzer analyzer = new PrAnalyzer();
-                List<PrReportRow> rows = analyzeMultipleReposIncrementally(repoUrls, targetCountPerRepo, output, analyzer, false);
-                printSavedSummary(output, rows);
+                managedCollection(repoUrls, output, null, false);
                 return;
             }
             if ((args.length >= 3 && args.length <= 5) && args[0].equals("--repos-pr-dataset")) {
@@ -74,23 +89,7 @@ public class Main {
                 }
                 Path output = Path.of(args[outputIndex]);
                 List<RepoUrl> repoUrls = readRepoList(repoListFile);
-                PrAnalyzer analyzer = new PrAnalyzer();
-                boolean resumedOutput = Files.exists(output) && Files.size(output) > 0;
-                List<PrReportRow> rows = analyzeMultipleReposIncrementally(repoUrls, targetCountPerRepo, output, analyzer, true);
-                String analysisCompletedUtc = Instant.now().toString();
-                if (!resumedOutput) {
-                    CsvWriter.markAnalysisCompleted(output, analysisCompletedUtc);
-                }
-                if (args.length == summaryIndex + 1) {
-                    Path summaryOutput = Path.of(args[summaryIndex]);
-                    if (resumedOutput) {
-                        System.out.println("Repository automated disclosure summary not written during resume because existing completed rows are not re-analysed in memory. Regenerate the summary after the resumed dataset is complete.");
-                    } else {
-                        CsvWriter.writeRepoComplianceSummary(summaryOutput, rows, analyzer.botPrsExcludedByRepository(), analyzer.analysisTimestampUtc(), analysisCompletedUtc);
-                        System.out.println("Repository automated disclosure summary saved: " + summaryOutput.toAbsolutePath());
-                    }
-                }
-                printSavedSummary(output, rows);
+                managedCollection(repoUrls, output, args.length == summaryIndex + 1 ? Path.of(args[summaryIndex]) : null, true);
                 return;
             }
             if (args.length == 8 && args[0].equals("--sample-all-repos-validation")) {
@@ -134,15 +133,11 @@ public class Main {
                     throw new java.io.IOException("Kappa sample already exists: " + output + ". Choose a new output path to avoid overwriting work.");
                 }
                 List<RepoUrl> repoUrls = readRepoList(repoListFile);
-                long seed = kappaSampleSeed();
-                KappaWorkflow.RepositorySelection selection = KappaWorkflow.selectRandomRepositories(repoUrls, seed);
-                printKappaRepositorySelection(selection, targetCountPerRepo);
-                PrAnalyzer analyzer = new PrAnalyzer();
-                List<PrReportRow> rows = analyzeSelectedKappaRepositories(selection.selectedRepositories(), targetCountPerRepo, analyzer);
-                KappaWorkflow.SampleWriteResult sampleResult = KappaWorkflow.writeSampleWithSummary(output, rows);
-                printKappaSampleSummary(selection.selectedRepositories(), rows, sampleResult);
-                System.out.println("Kappa sample saved: " + output.toAbsolutePath());
-                System.out.println("Sample rows: " + sampleResult.totalRows());
+                Path dataset = output.resolveSibling(output.getFileName() + ".population.csv");
+                managedCollection(repoUrls, dataset, null, true);
+                Path run = dataset.resolveSibling(dataset.getFileName() + ".study");
+                StudyFiles.atomic(output, Files.readAllBytes(run.resolve("kappa_sample.csv")));
+                System.out.println("Frozen kappa sample saved: " + output.toAbsolutePath());
                 return;
             }
             if (args.length == 3 && args[0].equals("--code-kappa-sample")) {
@@ -254,7 +249,7 @@ public class Main {
             if (args.length >= 2 && args[0].equals("--validate-study-exclusions")) {
                 List<Path> paths = List.of(args).subList(1, args.length).stream().map(Path::of).toList();
                 StudyDatasetExclusionValidator.ValidationResult result = StudyDatasetExclusionValidator.validate(paths);
-                System.out.println("Excluded repository absent from checked files: " + StudyDatasetExclusionValidator.EXCLUDED_REPOSITORY);
+                System.out.println("No repository flagged Exclude/Review in study/exclusions-v1.csv occurs in the checked files.");
                 System.out.println("Files checked: " + result.filesChecked());
                 return;
             }
@@ -347,7 +342,8 @@ public class Main {
     }
 
     private static boolean isKnownMode(String mode) {
-        return mode.equals("--policy-compliance")
+        return List.of("--study", "--resume-study", "--replay-study", "--derive-study", "--reanalyze-kappa-offline", "--compare-studies", "--validate-bot-rule", "--validate-exclusions", "--bundle-study").contains(mode)
+                || mode.equals("--policy-compliance")
                 || mode.equals("--latest")
                 || mode.equals("--latest-pr-dataset")
                 || mode.equals("--repos")
@@ -373,6 +369,15 @@ public class Main {
 
     private static String expectedUsage(String mode) {
         return switch (mode) {
+            case "--derive-study" -> "--derive-study SOURCE CONFIG REPOS EXCLUSIONS NEW_RUN";
+            case "--reanalyze-kappa-offline" -> "--reanalyze-kappa-offline RUN SAMPLE OUTPUT";
+            case "--study" -> "--study CONFIG REPOS EXCLUSIONS RUN_DIRECTORY";
+            case "--resume-study" -> "--resume-study RUN_DIRECTORY";
+            case "--replay-study" -> "--replay-study RUN_DIRECTORY NEW_OUTPUT_DIRECTORY";
+            case "--compare-studies" -> "--compare-studies OLD_RUN NEW_RUN changes.csv";
+            case "--validate-exclusions" -> "--validate-exclusions REGISTER FILE [FILE...]";
+            case "--validate-bot-rule" -> "--validate-bot-rule reviewed_accounts.csv validation.csv";
+            case "--bundle-study" -> "--bundle-study RUN_DIRECTORY archive.zip";
             case "--latest" -> "--latest https://github.com/OWNER/REPO COUNT report.csv";
             case "--policy-compliance" -> "--policy-compliance reviewed_pr_dataset.csv reviewed_compliance_summary.csv";
             case "--latest-pr-dataset" -> "--latest-pr-dataset https://github.com/OWNER/REPO COUNT pr_dataset_output.csv [repo_compliance_summary.csv]";
@@ -417,115 +422,24 @@ public class Main {
         }
     }
 
-    private static void printSavedSummary(Path output, List<PrReportRow> rows) {
-        long disclosed = rows.stream().filter(PrReportRow::evidenceComplete).filter(PrReportRow::aiDisclosure).count();
-        long complete = rows.stream().filter(PrReportRow::evidenceComplete).count();
-        double percentage = complete == 0 ? Double.NaN : (disclosed * 100.0 / complete);
-        System.out.println("CSV saved: " + output.toAbsolutePath());
-        System.out.println("Human closed PRs checked: " + rows.size());
-        System.out.printf("Automated PR-body disclosure percentage: %.2f%% (%d/%d)%n", percentage, disclosed, complete);
+    private static void requireComplete(String status) throws IOException {
+        System.out.println("Study status: " + status);
+        if (!status.startsWith("COMPLETE")) throw new IOException("Study is incomplete; inspect status.properties, repository states and bot_review_queue.csv before resuming");
     }
 
-    private static List<PrReportRow> analyzeMultipleReposIncrementally(List<RepoUrl> repoUrls, int targetCountPerRepo, Path output, PrAnalyzer analyzer, boolean prDataset) throws Exception {
-        Set<String> completedIds = prDataset ? CsvWriter.completedPrDatasetIds(output) : CsvWriter.completedReportIds(output);
-        if (!completedIds.isEmpty()) {
-            System.out.println("Resume enabled for " + output.toAbsolutePath() + ": " + completedIds.size() + " completed PR rows already present.");
+    private static void managedCollection(List<RepoUrl> repos, Path output, Path summary, boolean dataset) throws Exception {
+        Path run = output.resolveSibling(output.getFileName() + ".study");
+        if (Files.exists(output) && !Files.exists(run.resolve("identity.properties"))) {
+            throw new IOException("Legacy output has no frozen study configuration; choose a new output path");
         }
-        List<PrReportRow> allNewRows = new ArrayList<>();
-        for (RepoUrl repoUrl : repoUrls) {
-            try {
-                List<PrReportRow> rows = analyzer.analyzeLatestClosedHumanPrs(repoUrl, targetCountPerRepo, completedIds);
-                if (prDataset) {
-                    CsvWriter.appendPrDatasetRows(output, rows, analyzer.analysisTimestampUtc());
-                } else {
-                    CsvWriter.appendReportRows(output, rows);
-                }
-                for (PrReportRow row : rows) {
-                    completedIds.add(row.repository() + "#" + row.pullRequestNumber());
-                }
-                allNewRows.addAll(rows);
-                System.out.println("Incremental rows flushed for " + repoUrl.fullName() + ": " + rows.size());
-            } catch (Exception e) {
-                System.out.println();
-                System.out.println("Skipped repository: " + repoUrl.fullName());
-                System.out.println("Reason: " + shortError(e.getMessage()));
-                System.out.println("The program will continue with the next repository.");
-                System.out.println();
-            }
-        }
-        return allNewRows;
-    }
-
-    private static long kappaSampleSeed() {
-        String value = System.getenv("KAPPA_SAMPLE_SEED");
-        if (value == null || value.isBlank()) {
-            return ThreadLocalRandom.current().nextLong();
-        }
+        Path repoFile = Files.createTempFile("study-repositories-", ".txt");
         try {
-            return Long.parseLong(value.trim());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("KAPPA_SAMPLE_SEED must be a valid integer.");
-        }
-    }
-
-    private static void printKappaRepositorySelection(KappaWorkflow.RepositorySelection selection, int targetCountPerRepo) {
-        System.out.println("Kappa repository selection seed: " + selection.seed());
-        System.out.println("Valid repositories available: " + selection.availableRepositories());
-        System.out.println("Repositories selected: " + selection.selectedRepositories().size());
-        System.out.println("PRs requested per repository: " + targetCountPerRepo);
-        System.out.println();
-        System.out.println("Randomly selected repositories:");
-        int index = 1;
-        for (RepoUrl repoUrl : selection.selectedRepositories()) {
-            System.out.println(index + ". " + repoUrl.fullName());
-            index++;
-        }
-        System.out.println();
-    }
-
-    private static List<PrReportRow> analyzeSelectedKappaRepositories(List<RepoUrl> repoUrls, int targetCountPerRepo, PrAnalyzer analyzer) {
-        List<PrReportRow> allRows = new ArrayList<>();
-        for (RepoUrl repoUrl : repoUrls) {
-            System.out.println("Processing " + repoUrl.fullName() + "...");
-            List<PrReportRow> rows;
-            try {
-                rows = analyzer.analyzeLatestClosedHumanPrs(repoUrl, targetCountPerRepo);
-            } catch (Exception e) {
-                rows = List.of();
-                System.out.println("WARNING: Failed to process " + repoUrl.fullName() + ": " + shortError(e.getMessage()));
-            }
-            System.out.println("Eligible PRs found: " + rows.size());
-            System.out.println("Rows written: " + rows.size());
-            if (rows.size() < targetCountPerRepo) {
-                System.out.println("WARNING: " + repoUrl.fullName() + " contained only " + rows.size() + " eligible closed human PRs.");
-            }
-            System.out.println();
-            allRows.addAll(rows);
-        }
-        return allRows;
-    }
-
-    private static void printKappaSampleSummary(List<RepoUrl> repoUrls, List<PrReportRow> rows, KappaWorkflow.SampleWriteResult sampleResult) {
-        Map<String, Integer> eligibleByRepository = new LinkedHashMap<>();
-        for (RepoUrl repoUrl : repoUrls) {
-            eligibleByRepository.put(repoUrl.fullName(), 0);
-        }
-        for (PrReportRow row : rows) {
-            eligibleByRepository.merge(row.repository(), 1, Integer::sum);
-        }
-
-        System.out.println();
-        System.out.println("Kappa sample repository summary");
-        for (RepoUrl repoUrl : repoUrls) {
-            String repository = repoUrl.fullName();
-            int eligible = eligibleByRepository.getOrDefault(repository, 0);
-            int written = sampleResult.rowsByRepository().getOrDefault(repository, 0);
-            System.out.println("Repository processed: " + repository);
-            System.out.println("Eligible closed human PRs found: " + eligible);
-            System.out.println("PRs written for repository: " + written);
-        }
-        System.out.println("Total rows written: " + sampleResult.totalRows());
-        System.out.println();
+            Files.writeString(repoFile, String.join("\n", repos.stream().map(r -> r.fullName().toLowerCase(java.util.Locale.ROOT)).toList()) + "\n");
+            String status = StudyRun.start(Path.of("study/study-v1.properties"), repoFile, Path.of("study/exclusions-v1.csv"), run);
+            StudyFiles.atomic(output, Files.readAllBytes(run.resolve(dataset ? "pr_dataset.csv" : "report.csv")));
+            if (summary != null) StudyFiles.atomic(summary, Files.readAllBytes(run.resolve("repo_summary.csv")));
+            requireComplete(status);
+        } finally { Files.deleteIfExists(repoFile); }
     }
 
     private static void printConsensusSummary(ConsensusWorkflow.ConsensusResult result) {
@@ -623,6 +537,10 @@ public class Main {
     }
 
     private static void printUsage() {
+        System.out.println("Reproducible study commands:");
+        for (String mode : List.of("--study", "--resume-study", "--replay-study", "--derive-study", "--bundle-study", "--compare-studies", "--reanalyze-kappa-offline", "--validate-bot-rule")) {
+            System.out.println("  " + expectedUsage(mode));
+        }
         System.out.println("Usage:");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar https://github.com/OWNER/REPO/pull/NUMBER");
         System.out.println("  java -jar target/pr-analyzer-maven-1.0.0.jar --latest https://github.com/OWNER/REPO 100 report.csv");

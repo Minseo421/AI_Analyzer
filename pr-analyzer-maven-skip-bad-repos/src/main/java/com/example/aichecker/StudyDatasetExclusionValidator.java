@@ -10,15 +10,23 @@ import java.util.Locale;
 import java.util.Map;
 
 public class StudyDatasetExclusionValidator {
-    public static final String EXCLUDED_REPOSITORY = "punkpeye/awesome-mcp-servers";
+    private static ExclusionRegister defaultRegister() {
+        try { return new ExclusionRegister(Path.of("study/exclusions-v1.csv")); }
+        catch (IOException e) { throw new IllegalArgumentException("Cannot load versioned exclusion register", e); }
+    }
 
     public static ValidationResult validate(List<Path> paths) throws IOException {
+        return validate(paths, Path.of("study/exclusions-v1.csv"));
+    }
+
+    public static ValidationResult validate(List<Path> paths, Path registerPath) throws IOException {
+        ExclusionRegister register = new ExclusionRegister(registerPath);
         List<Occurrence> occurrences = new ArrayList<>();
         for (Path path : paths) {
             if (path.toString().toLowerCase(Locale.ROOT).endsWith(".csv")) {
-                validateCsv(path, occurrences);
+                validateCsv(path, occurrences, register);
             } else {
-                validateText(path, occurrences);
+                validateText(path, occurrences, register);
             }
         }
         if (!occurrences.isEmpty()) {
@@ -27,36 +35,39 @@ public class StudyDatasetExclusionValidator {
         return new ValidationResult(paths.size(), occurrences);
     }
 
-    private static void validateCsv(Path path, List<Occurrence> occurrences) throws IOException {
+    private static void validateCsv(Path path, List<Occurrence> occurrences, ExclusionRegister register) throws IOException {
         List<Map<String, String>> rows = CsvTools.readRows(path);
         for (int i = 0; i < rows.size(); i++) {
             Map<String, String> row = rows.get(i);
             for (Map.Entry<String, String> entry : row.entrySet()) {
-                if (matchesExcludedRepository(entry.getValue())) {
+                if (matchesExcludedRepository(entry.getValue(), register)) {
                     occurrences.add(new Occurrence(path.toString(), i + 2, entry.getKey(), entry.getValue()));
                 }
             }
         }
     }
 
-    private static void validateText(Path path, List<Occurrence> occurrences) throws IOException {
+    private static void validateText(Path path, List<Occurrence> occurrences, ExclusionRegister register) throws IOException {
         List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
         for (int i = 0; i < lines.size(); i++) {
-            if (matchesExcludedRepository(lines.get(i))) {
+            if (matchesExcludedRepository(lines.get(i), register)) {
                 occurrences.add(new Occurrence(path.toString(), i + 1, "", lines.get(i)));
             }
         }
     }
 
     static boolean matchesExcludedRepository(String value) {
+        return matchesExcludedRepository(value, defaultRegister());
+    }
+
+    private static boolean matchesExcludedRepository(String value, ExclusionRegister register) {
         String cleaned = value == null ? "" : value.trim();
         if (cleaned.isBlank()) return false;
         try {
-            return RepoListImporter.normalizeRepository(cleaned).equalsIgnoreCase(EXCLUDED_REPOSITORY);
-        } catch (IllegalArgumentException ignored) {
-            return cleaned.toLowerCase(Locale.ROOT).contains("github.com/" + EXCLUDED_REPOSITORY)
-                    || cleaned.equalsIgnoreCase(EXCLUDED_REPOSITORY);
-        }
+            String repository = RepoListImporter.normalizeRepository(cleaned);
+            ExclusionRegister.Decision d = register.find("repository", repository);
+            return d != null && !d.action().equals("Include");
+        } catch (IllegalArgumentException ignored) { return false; }
     }
 
     public record Occurrence(String path, int rowNumber, String column, String value) {

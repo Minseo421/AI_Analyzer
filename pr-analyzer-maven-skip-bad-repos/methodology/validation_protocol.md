@@ -1,5 +1,6 @@
 # Validation Protocol
 
+Current managed collection uses [frozen study configuration and archived inputs](reproducible_studies.md). This supersedes older rolling-clock collection and random-seed guidance; legacy processed datasets are not retroactively certified.
 This document defines how human researchers should validate AI-use disclosure coding in pull-request data.
 
 ## Rows Requiring Manual Review
@@ -138,7 +139,7 @@ Methodology requirements:
 - Script-human comparison is separate from human-human inter-rater reliability.
 - Human consensus after disagreement resolution becomes the gold-standard dataset.
 - The tool should support consistent presentation and calculation; it does not replace human judgement.
-- Dataset-selection commands apply the rolling four-calendar-month eligibility rule with `closed_at` and write every eligible PR per repository. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands preserve their fixed sample/direct-fetch behavior and do not necessarily reapply dataset-selection eligibility.
+- Dataset-selection commands apply the frozen inclusive UTC eligibility rule with `closed_at` and write every eligible PR per repository. Exact-PR reanalysis, targeted analysis, retry, consensus, and validation commands preserve their fixed sample/direct-fetch behavior and do not necessarily reapply dataset-selection eligibility.
 
 Cohen's Kappa is calculated as `(observed agreement - expected agreement) / (1 - expected agreement)` for:
 

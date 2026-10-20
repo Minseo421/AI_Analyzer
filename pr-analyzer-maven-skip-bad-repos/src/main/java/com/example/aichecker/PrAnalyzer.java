@@ -39,6 +39,12 @@ public class PrAnalyzer {
         this.closedAtCutoff = runDateTime.minusMonths(4).toInstant();
     }
 
+    PrAnalyzer(GitHubClient client, StudyConfiguration config) {
+        this.gitHubClient = client;
+        this.runDateTime = config.end().atZone(ZoneOffset.UTC);
+        this.closedAtCutoff = config.start();
+    }
+
     public PrReportRow analyzeSingle(PullRequestUrl prUrl) throws Exception {
         PullRequestData apiData = gitHubClient.getPullRequest(prUrl.owner(), prUrl.repo(), prUrl.number());
         return analyze(apiData);
@@ -418,7 +424,7 @@ public class PrAnalyzer {
         return cleaned.substring(0, width - 1) + "…";
     }
 
-    private PrReportRow analyze(PullRequestData apiData) {
+    PrReportRow analyze(PullRequestData apiData) {
         HtmlData htmlData = fetchHtmlSafe(apiData.url());
         DisclosureResult disclosure = detector.detect(apiData.repository(), apiData.body(), "");
         return toReportRow(apiData, htmlData, disclosure);
