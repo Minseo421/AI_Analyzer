@@ -3,5 +3,6 @@ target/
 *.log
 *.tmp
 *.lst
+.DS_Store
 
 target/classes/com/example/aichecker/*class
